@@ -22,6 +22,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font:400 16px/1.45 Barlow,sys
 main{max-width:720px;margin:0 auto;padding:16px 16px 90px}
 h1,h2,.num{font-family:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;font-weight:700;margin:0}
 h1{font-size:30px;letter-spacing:.2px}h2{font-size:22px;margin:22px 0 8px}
+button:disabled{opacity:.5;cursor:not-allowed}
 button,input,textarea{font:inherit;color:inherit}
 button{cursor:pointer;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:10px 14px;min-height:44px}
 button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--home);outline-offset:2px}
@@ -46,7 +47,7 @@ nav button[aria-current=page]{color:var(--home);box-shadow:inset 0 3px 0 var(--h
 .pts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .pts button{min-height:60px;font-weight:600;border-width:2px}
 .pts.h button{border-color:var(--home)}.pts.a button{border-color:var(--away)}
-.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}.seg button{flex:1;border:0;border-radius:0;background:var(--card);font-weight:600}.seg button[aria-selected=true]{background:var(--home);color:var(--onc)}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}.seg button{flex:1;border:0;border-radius:0;background:var(--card);font-weight:600}.seg button[aria-selected=true],.seg button[aria-pressed=true]{background:var(--home);color:var(--onc)}
 .chip{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:14px;margin:2px 4px 2px 0}
 .banner{background:var(--card);border:2px solid var(--bad);border-radius:10px;padding:10px 12px;margin:8px 0}
 table{width:100%;border-collapse:collapse;font-size:15px}
@@ -82,7 +83,7 @@ const get=id=>S.m.find(m=>m.id===id);
 const sc=(m,i)=>{let h=0,a=0;m.log.forEach(e=>{if(e.s===i){e.t==='h'?h++:a++}});return[h,a]};
 const target=(m)=>m.n>=4?15:25;
 function go(t){S.tab=t;S.cur=null;S.form=false;S.edit=null;S.team=null;S.tform=false;render()}
-function open_(id){S.cur=id;S.mt=get(id).log.length?'scout':'set';S.pick=null;S.setv=null;render();scrollTo(0,0)}
+function open_(id){S.cur=id;S.mt=get(id).log.length?'scout':'set';S.pick=null;S.setv=null;S.pv='init';render();scrollTo(0,0)}
 function nrSel(){return[...document.querySelectorAll('.nr:checked')].map(e=>S.p.find(p=>p.id===e.value))}
 function nrStatus(){const el=document.getElementById('nr-st'),f=document.getElementById('f-f');if(!el||!f)return;
   const L=nrSel(),fv=f.value==='fivb',c=cnt(L);el.textContent=fv?`${c.pl} of 12 players, ${c.lib} of 2 liberos`:`${L.length} attending`;el.style.color=over({fmt:f.value},L)?'var(--bad)':''}
@@ -97,7 +98,7 @@ function addMatch(){
   S.m.unshift(m);save();S.form=false;open_(m.id)}
 function point(t,type){const m=get(S.cur);if(m.done)return;m.log.push({t,type,s:m.n});save();render()}
 function undo(){const m=get(S.cur);const l=m.log[m.log.length-1];if(l&&l.s===m.n){m.log.pop();save();render()}}
-function endSet(){const m=get(S.cur);if(m.n<4)m.n++;S.mt='set';S.setv=null;S.pick=null;save();render();scrollTo(0,0)}
+function endSet(){const m=get(S.cur);if(m.n<4)m.n++;S.mt='set';S.setv=null;S.pick=null;S.pv='init';save();render();scrollTo(0,0)}
 function finish(){const m=get(S.cur);m.done=!m.done;save();render()}
 function note(v){get(S.cur).notes=v;save()}
 function del(id){if(confirm('Delete this match and its data?')){S.m=S.m.filter(m=>m.id!==id);S.cur=null;save();render()}}
@@ -147,33 +148,50 @@ function luHtml(m,s){const L=m.lu[s],id=s==='h'?m.hid:m.aid,fv=m.fmt==='fivb',c=
 function rosterView(m){const fv=m.fmt==='fivb';
   return`<label for="mf">Tournament rules</label><select id="mf" onchange="setFmt(this.value)"><option value="local"${fv?'':' selected'}>Local tournament, any number of players</option><option value="fivb"${fv?' selected':''}>Official FIVB, 12 players + 1 or 2 liberos</option></select><div class="mut" style="margin-top:6px">Tick the players attending. Number and role changes apply to this match only.</div>${luHtml(m,'h')}`}
 const ANG={3:0,2:60,1:120,6:180,5:240,4:300};
+const RL={'Setter':'S','Opposite':'O','Middle blocker':'M','Outside hitter':'H','Libero':'L','Defensive specialist':'D'};
 const curSet=m=>S.setv==null||S.setv>m.n?m.n:S.setv;
+const setReady=(m,si)=>(m.st[si]||[]).filter(id=>id&&m.lu.h.some(x=>x.pid===id)).length===6&&!!(m.sv||{})[si];
+function startSet(){S.mt='scout';S.pv='init';S.pick=null;render();scrollTo(0,0)}
+function curLU(m,si){let pos=[0,1,2,3,4,5].map(i=>(m.st[si]||[])[i]||null),sv=(m.sv||{})[si]==='h';
+  m.log.forEach(e=>{if(e.s!==si)return;if(e.t==='h'){if(!sv){pos=[pos[1],pos[2],pos[3],pos[4],pos[5],pos[0]];sv=true}}else sv=false});
+  return{pos,serving:sv}}
+function scoutPie(m){const si=m.n,all=m.lu.h,ok=a=>a.map(id=>all.some(x=>x.pid===id)?id:null),cl=curLU(m,si),cur=S.pv==='cur';
+  const arr=cur?ok(cl.pos):ok(m.st[si]||[]),sv=cur?(cl.serving?'h':'a'):(m.sv||{})[si],sp=all.find(x=>x.pid===cl.pos[0]);
+  return`<div class="seg" role="group" aria-label="Line-up view" style="margin:12px 0 6px">${[['init','Initial line-up'],['cur','Current']].map(([k,l])=>`<button aria-pressed="${(cur?'cur':'init')===k}" onclick="S.pv='${k}';render()">${l}</button>`).join('')}</div><div style="max-width:260px;margin:0 auto">${pie(m,arr,sv,true)}</div><div class="mut" style="text-align:center" aria-live="polite">${cur?(cl.serving?esc(m.home)+' serving'+(sp?': '+(sp.num?'#'+esc(sp.num)+' ':'')+esc(sp.name):''):esc(m.away)+' serving')+'. Rotates when your team wins the serve back.':'Starting positions for set '+(si+1)+'.'}</div>`}
+function setSys(k){get(S.cur).sys=k;save();render()}
+function setServe(k){const m=get(S.cur);(m.sv=m.sv||{})[curSet(m)]=k;save();render()}
 function pickPos(p){S.pick=S.pick===p?null:p;render()}
 function setSetView(i){S.setv=i;S.pick=null;render()}
 function setPos(p,pid){const m=get(S.cur),si=curSet(m),a=m.st[si]=m.st[si]||[null,null,null,null,null,null];a[p-1]=pid||null;save();
   const nx=[1,2,3,4,5,6].find(q=>!a[q-1]);S.pick=pid&&nx?nx:null;render()}
 function copyPrev(){const m=get(S.cur),si=curSet(m);m.st[si]=[...(m.st[si-1]||[])];save();S.pick=null;render()}
 function clearSet(){const m=get(S.cur);m.st[curSet(m)]=[null,null,null,null,null,null];save();S.pick=null;render()}
-function pie(m,cur){
+function pie(m,cur,sv,ro){
   const R=140,C=150,pt=(a,r)=>{const t=a*Math.PI/180;return[(C+r*Math.sin(t)).toFixed(1),(C-r*Math.cos(t)).toFixed(1)]};
   const g=[1,2,3,4,5,6].sort((a,b)=>(a===S.pick)-(b===S.pick)).map(p=>{
-    const a=ANG[p],[x1,y1]=pt(a-30,R),[x2,y2]=pt(a+30,R),[tx,ty]=pt(a,R*.58),[lx,ly]=pt(a,R*.87),e=m.lu.h.find(x=>x.pid===cur[p-1]),sel=S.pick===p,tc=e?'var(--onc)':'var(--mut)';
-    return`<g role="button" tabindex="0" aria-label="Position ${p}, ${e?'player '+esc(e.num||'')+' '+esc(e.name):'empty'}" onclick="pickPos(${p})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();pickPos(${p})}" style="cursor:pointer"><path d="M${C} ${C}L${x1} ${y1}A${R} ${R} 0 0 1 ${x2} ${y2}Z" fill="${e?'var(--home)':'var(--card)'}" stroke="${sel?'var(--fg)':'var(--line)'}" stroke-width="${sel?6:2}" stroke-linejoin="round"/><text x="${tx}" y="${ty}" text-anchor="middle" dominant-baseline="central" fill="${tc}" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="${e?44:32}">${e?esc(e.num||'?'):'+'}</text><text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="central" fill="${tc}" font-size="13">P${p}</text></g>`}).join('');
+    const a=ANG[p],[x1,y1]=pt(a-30,R),[x2,y2]=pt(a+30,R),[tx,ty]=pt(a,R*.58),[lx,ly]=pt(a,R*.87),[rx,ry]=pt(a,R*.2),e=m.lu.h.find(x=>x.pid===cur[p-1]),sel=S.pick===p,srv=p===1&&sv==='h',tc=e?'var(--onc)':'var(--mut)';
+    return`<g role="${ro?'img':'button'}"${ro?'':' tabindex="0"'} aria-label="Position ${p}, ${e?'player '+esc(e.num||'')+' '+esc(e.name)+(e.role?', '+esc(e.role):''):'empty'}${srv?', serving':''}" ${ro?'':`onclick="pickPos(${p})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();pickPos(${p})}" style="cursor:pointer"`}><path d="M${C} ${C}L${x1} ${y1}A${R} ${R} 0 0 1 ${x2} ${y2}Z" fill="${e?(srv?'var(--away)':'var(--home)'):'var(--card)'}" stroke="${sel?'var(--fg)':srv?'var(--away)':'var(--line)'}" stroke-width="${sel?6:srv?5:2}" stroke-linejoin="round"/><text x="${tx}" y="${ty}" text-anchor="middle" dominant-baseline="central" fill="${tc}" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="${e?44:32}">${e?esc(e.num||'?'):'+'}</text>${e&&RL[e.role]?`<text x="${rx}" y="${ry}" text-anchor="middle" dominant-baseline="central" fill="${tc}" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="22">${RL[e.role]}</text>`:''}<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="central" fill="${tc}" font-size="13">P${p}${srv?' serving':''}</text></g>`}).join('');
   return`<svg viewBox="0 0 300 300" role="group" aria-label="Starting line-up" style="width:100%;max-width:340px;display:block;margin:0 auto">${g}</svg>`}
 function setView(m){
-  const si=curSet(m),cur=m.st[si]=m.st[si]||[null,null,null,null,null,null],all=m.lu.h;
+  const si=curSet(m),cur=m.st[si]=m.st[si]||[null,null,null,null,null,null],all=m.lu.h,sv=(m.sv=m.sv||{})[si];
   const ok=cur.map(id=>all.some(x=>x.pid===id)?id:null),filled=ok.filter(Boolean).length;
   let h='';
   if(m.n>0)h+=`<div style="margin-bottom:8px">${Array.from({length:m.n+1},(_,i)=>`<button class="chip" style="min-height:36px;${i===si?'background:var(--home);color:var(--onc);border-color:var(--home)':''}" aria-pressed="${i===si}" onclick="setSetView(${i})">Set ${i+1}</button>`).join('')}</div>`;
-  h+=`<h2 style="margin-top:8px">Starting line-up, set ${si+1}</h2>`;
+  h+=`<h2 style="margin-top:8px">First serve, set ${si+1}</h2><div class="mut" style="margin-bottom:6px">${esc(m.home)} will:</div><div class="seg" role="group" aria-label="First serve">${[['h','Serve'],['a','Receive']].map(([k,n])=>`<button style="min-height:54px;overflow-wrap:anywhere" aria-pressed="${sv===k}" onclick="setServe('${k}')">${esc(n)}</button>`).join('')}</div>${sv?`<div style="margin-top:6px">${esc(sv==='h'?m.home:m.away)} serves, ${esc(sv==='h'?m.away:m.home)} receives.</div>`:'<div style="color:var(--bad);margin-top:6px">Not set yet. Choose serve or receive for your team.</div>'}
+  <h2>Team system</h2><div class="seg" role="group" aria-label="Team system" style="margin-bottom:6px">${['6-2','5-1','4-2','none'].map(k=>`<button aria-pressed="${(m.sys||'none')===k}" onclick="setSys('${k}')">${k==='none'?'None':k}</button>`).join('')}</div><div class="mut">Applies to the whole match.</div>
+  <h2>Starting line-up, set ${si+1}</h2>`;
   if(!all.length)return h+`<div class="card"><b>No players in this match yet.</b><div class="mut">Choose who is attending on the Roster tab first.</div><div style="margin-top:12px"><button class="pri" onclick="S.mt='roster';render()">Go to Roster</button></div></div>`;
   h+=`<div class="mut">Tap a slice to choose the player for that position. Numbers run clockwise in rotation order: 1 serves, 2 to 4 are front row (4 is front left), 5 to 6 are back row.</div>
-  <div class="mut" style="text-align:center;margin-top:10px">Net</div>${pie(m,ok)}<div class="mut" style="text-align:center">Back of the court</div>
-  <div class="mut" style="text-align:center;margin:6px 0" aria-live="polite">${filled} of 6 positions filled${filled===6?', line-up complete':''}</div>`;
+  <div class="mut" style="text-align:center;margin-top:10px">Net</div>${pie(m,ok,sv)}<div class="mut" style="text-align:center">Back of the court</div>
+  <div class="mut" style="text-align:center;font-size:13px">S setter, O opposite, M middle, H outside hitter, L libero, D defensive specialist</div>
+  <div class="mut" style="text-align:center;margin:6px 0" aria-live="polite">${filled} of 6 positions filled${filled===6?', line-up complete':''}</div>
+  <div class="mut" style="text-align:center">${sv==='h'?esc(m.home)+' serves first: the player in P1 serves.':sv==='a'?esc(m.away)+' serves first.':'Choose who serves first.'}</div>`;
   if(S.pick){const p=S.pick,placed=ok.filter((id,i)=>id&&i!==p-1),av=all.filter(x=>!placed.includes(x.pid)).sort(byNum);
     h+=`<div class="card"><div class="row sp"><b>Position ${p}</b>${ok[p-1]?`<button class="del" onclick="setPos(${p},null)">Clear</button>`:''}</div>${av.map(x=>`<button class="m" style="margin:6px 0${x.pid===ok[p-1]?';border-color:var(--home);border-width:2px':''}" onclick="setPos(${p},'${x.pid}')"><b>${x.num?'#'+esc(x.num):'–'}</b> ${esc(x.name)}${x.role?', <span class="mut">'+esc(x.role)+'</span>':''}</button>`).join('')||'<div class="mut">Everyone attending is already placed.</div>'}</div>`}
-  h+=`<div class="card">${[1,2,3,4,5,6].map(p=>{const e=all.find(x=>x.pid===ok[p-1]);return`<div class="row" style="padding:3px 0"><span class="mut" style="width:28px">P${p}</span>${e?`<b>${e.num?'#'+esc(e.num):'–'}</b> ${esc(e.name)}${e.role?`<span class="mut">, ${esc(e.role)}</span>`:''}`:'<span class="mut">Empty</span>'}</div>`}).join('')}</div>
-  <div class="row">${si>0&&(m.st[si-1]||[]).some(Boolean)?`<button onclick="copyPrev()">Copy line-up from set ${si}</button>`:''}${filled?'<button class="del" onclick="clearSet()">Clear line-up</button>':''}${filled===6?`<button class="pri" onclick="S.mt='scout';render()">Start scouting</button>`:''}</div>`;
+  h+=`<div class="card">${[1,2,3,4,5,6].map(p=>{const e=all.find(x=>x.pid===ok[p-1]);return`<div class="row" style="padding:3px 0"><span class="mut" style="width:28px">P${p}</span>${e?`<b>${e.num?'#'+esc(e.num):'–'}</b> ${esc(e.name)}${e.role?`<span class="mut">, ${esc(e.role)}</span>`:''}`:'<span class="mut">Empty</span>'}${p===1&&sv==='h'?'<span class="chip" style="margin-left:6px">Serving</span>':''}</div>`}).join('')}</div>
+  <div class="row">${si>0&&(m.st[si-1]||[]).some(Boolean)?`<button onclick="copyPrev()">Copy line-up from set ${si}</button>`:''}${filled?'<button class="del" onclick="clearSet()">Clear line-up</button>':''}</div>`;
+  if(si===m.n){const need=[filled<6?`${6-filled} position${filled===5?'':'s'} still empty`:'',sv?'':'serve or receive not chosen'].filter(Boolean).join(', ');
+    h+=`<div style="margin-top:16px">${!need?`<button class="pri" style="width:100%;min-height:56px;font-size:18px" onclick="startSet()">Start set ${si+1}</button>`:`<button disabled style="width:100%;min-height:56px;font-size:18px">Start set ${si+1}</button><div class="mut" style="margin-top:6px">To start: ${need}.</div>`}</div>`}
   return h}
 function tabsHtml(m){return`<div class="seg" role="tablist" style="margin:12px 0">${[['roster','Roster'],['set','Set '+(m.n+1)],['scout','Scout']].map(([k,l])=>`<button role="tab" aria-selected="${S.mt===k}" onclick="S.mt='${k}';S.pick=null;render()">${l}</button>`).join('')}</div>`}
 function tally(m){const r={h:{},a:{}};m.log.forEach(e=>{r[e.t][e.type]=(r[e.t][e.type]||0)+1});return r}
@@ -204,12 +222,14 @@ function matchView(m){
   const lead=Math.abs(x-y),won=(x>=tg||y>=tg)&&lead>=2;
   let h=`<div class="row sp"><button onclick="go('matches')">Back</button><button class="del" onclick="del('${m.id}')">Delete</button></div>
   <h1 style="margin-top:10px">${esc(m.home)} vs ${esc(m.away)}</h1>
-  <div class="mut">${esc(m.date)}${m.event?', '+esc(m.event):''}, ${m.fmt==='fivb'?'Official FIVB':'Local tournament'}, set ${m.n+1}${m.done?', final':''} (sets ${sh}–${sa})</div>
+  <div class="mut">${esc(m.date)}${m.event?', '+esc(m.event):''}, ${m.fmt==='fivb'?'Official FIVB':'Local tournament'}${m.sys&&m.sys!=='none'?', '+m.sys+' system':''}, set ${m.n+1}${m.done?', final':''} (sets ${sh}–${sa})</div>
   ${tabsHtml(m)}`;
   if(S.mt==='roster')return h+rosterView(m);
   if(S.mt==='set')return h+setView(m);
+  if(!setReady(m,m.n)&&!m.log.some(e=>e.s===m.n))return h+`<div class="card"><b>Set ${m.n+1} is not set up yet.</b><div class="mut">Choose the line-up and serve or receive first, then start the set.</div><div style="margin-top:12px"><button class="pri" onclick="S.mt='set';render()">Go to Set ${m.n+1}</button></div></div>`;
   h+=`<div class="board" aria-live="polite"><div class="side h"><div class="nm">${esc(m.home)}</div><div class="num">${x}</div></div><div class="side a"><div class="nm">${esc(m.away)}</div><div class="num">${y}</div></div></div>`;
   if(won&&!m.done)h+=`<div class="banner"><b>${x>y?esc(m.home):esc(m.away)}</b> has won set ${m.n+1}. ${m.n<4?'End the set to start the next one.':'Finish the match to lock the result.'}</div>`;
+  h+=scoutPie(m);
   if(!m.done){
     h+=`<div class="pts h" style="margin-bottom:8px"><div class="mut" style="grid-column:1/3">Point for ${esc(m.home)}</div>${T.map(([k,l])=>`<button onclick="point('h','${k}')">${l}</button>`).join('')}</div>
     <div class="pts a"><div class="mut" style="grid-column:1/3">Point for ${esc(m.away)}</div>${T.map(([k,l])=>`<button onclick="point('a','${k}')">${l}</button>`).join('')}</div>
@@ -255,9 +275,10 @@ function statsView(){
   <div class="mut" style="margin-top:8px">Errors given: ${r.given}. Share of points from attack: ${r.pf?Math.round(r.kill/r.pf*100):0}%, from serve: ${r.pf?Math.round(r.ace/r.pf*100):0}%.</div></div>`});
   return h}
 
+const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 12</div>';
 function render(){
   const m=S.cur&&get(S.cur);
-  document.getElementById('app').innerHTML=m?matchView(m):S.tab==='stats'?statsView():S.tab==='teams'?teamsView():listView();
+  document.getElementById('app').innerHTML=(m?matchView(m):S.tab==='stats'?statsView():S.tab==='teams'?teamsView():listView())+VER;
   ['matches','teams','stats'].forEach(t=>{const b=document.getElementById('t-'+t);if(S.tab===t&&!m)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});nrStatus()}
 render();
 if("serviceWorker" in navigator){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}
