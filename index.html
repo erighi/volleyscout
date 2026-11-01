@@ -12,10 +12,10 @@
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600&family=Barlow+Condensed:wght@600;700&display=swap">
 <style>
-:root{--bg:#eef3f2;--card:#fff;--fg:#12262b;--mut:#5d7176;--line:#d3dedd;--home:#0e6b73;--away:#b8730a;--onc:#fff;--bad:#b3362b;
+:root{--bg:#eef3f2;--card:#fff;--fg:#12262b;--mut:#5d7176;--line:#d3dedd;--home:#0e6b73;--away:#b8730a;--onc:#fff;--bad:#b3362b;--good:#2e8b3d;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0c1a1d;--card:#13282c;--fg:#e6f0ee;--mut:#8ea5a8;--line:#244045;--home:#3fb4be;--away:#e8a33d;--onc:#0c1a1d;--bad:#ef7b6e;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#0c1a1d;--card:#13282c;--fg:#e6f0ee;--mut:#8ea5a8;--line:#244045;--home:#3fb4be;--away:#e8a33d;--onc:#0c1a1d;--bad:#ef7b6e;color-scheme:dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0c1a1d;--card:#13282c;--fg:#e6f0ee;--mut:#8ea5a8;--line:#244045;--home:#3fb4be;--away:#e8a33d;--onc:#0c1a1d;--bad:#ef7b6e;--good:#5fd070;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0c1a1d;--card:#13282c;--fg:#e6f0ee;--mut:#8ea5a8;--line:#244045;--home:#3fb4be;--away:#e8a33d;--onc:#0c1a1d;--bad:#ef7b6e;--good:#5fd070;color-scheme:dark}
 *,*:before,*:after{box-sizing:inherit}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--fg);font:400 16px/1.45 Barlow,system-ui,-apple-system,Segoe UI,sans-serif}
@@ -152,12 +152,14 @@ const RL={'Setter':'S','Opposite':'O','Middle blocker':'M','Outside hitter':'H',
 const curSet=m=>S.setv==null||S.setv>m.n?m.n:S.setv;
 const setReady=(m,si)=>(m.st[si]||[]).filter(id=>id&&m.lu.h.some(x=>x.pid===id)).length===6&&!!(m.sv||{})[si];
 function startSet(){S.mt='scout';S.pv='init';S.pick=null;render();scrollTo(0,0)}
-function curLU(m,si){let pos=[0,1,2,3,4,5].map(i=>(m.st[si]||[])[i]||null),sv=(m.sv||{})[si]==='h';
-  m.log.forEach(e=>{if(e.s!==si)return;if(e.t==='h'){if(!sv){pos=[pos[1],pos[2],pos[3],pos[4],pos[5],pos[0]];sv=true}}else sv=false});
-  return{pos,serving:sv}}
+function curLU(m,si){let pos=[0,1,2,3,4,5].map(i=>(m.st[si]||[])[i]||null),sv=(m.sv||{})[si]==='h',dots={};
+  const add=(id,c)=>{if(id)(dots[id]=dots[id]||[]).push(c)};
+  if((m.sv||{})[si])add(pos[0],sv?'g':'r');
+  m.log.forEach(e=>{if(e.s!==si)return;if(e.t==='h'){if(!sv){pos=[pos[1],pos[2],pos[3],pos[4],pos[5],pos[0]];sv=true;add(pos[0],'g')}}else sv=false});
+  return{pos,serving:sv,dots}}
 function scoutPie(m){const si=m.n,all=m.lu.h,ok=a=>a.map(id=>all.some(x=>x.pid===id)?id:null),cl=curLU(m,si),cur=S.pv==='cur';
   const arr=cur?ok(cl.pos):ok(m.st[si]||[]),sv=cur?(cl.serving?'h':'a'):(m.sv||{})[si],sp=all.find(x=>x.pid===cl.pos[0]);
-  return`<div class="seg" role="group" aria-label="Line-up view" style="margin:12px 0 6px">${[['init','Initial line-up'],['cur','Current']].map(([k,l])=>`<button aria-pressed="${(cur?'cur':'init')===k}" onclick="S.pv='${k}';render()">${l}</button>`).join('')}</div><div style="max-width:260px;margin:0 auto">${pie(m,arr,sv,true)}</div><div class="mut" style="text-align:center" aria-live="polite">${cur?(cl.serving?esc(m.home)+' serving'+(sp?': '+(sp.num?'#'+esc(sp.num)+' ':'')+esc(sp.name):''):esc(m.away)+' serving')+'. Rotates when your team wins the serve back.':'Starting positions for set '+(si+1)+'.'}</div>`}
+  return`<div class="seg" role="group" aria-label="Line-up view" style="margin:12px 0 6px">${[['init','Initial line-up'],['cur','Current']].map(([k,l])=>`<button aria-pressed="${(cur?'cur':'init')===k}" onclick="S.pv='${k}';render()">${l}</button>`).join('')}</div><div style="max-width:280px;margin:0 auto">${pie(m,arr,sv,true,cl.dots)}</div><div class="mut" style="text-align:center" aria-live="polite">${cur?(cl.serving?esc(m.home)+' serving'+(sp?': '+(sp.num?'#'+esc(sp.num)+' ':'')+esc(sp.name):''):esc(m.away)+' serving')+'. Rotates when your team wins the serve back.':'Starting positions for set '+(si+1)+'.'}</div><div class="mut" style="text-align:center;font-size:13px">Dots by each slice: green means that player started a service, red means the set started on reception.</div>`}
 function setSys(k){get(S.cur).sys=k;save();render()}
 function setServe(k){const m=get(S.cur);(m.sv=m.sv||{})[curSet(m)]=k;save();render()}
 function pickPos(p){S.pick=S.pick===p?null:p;render()}
@@ -166,12 +168,14 @@ function setPos(p,pid){const m=get(S.cur),si=curSet(m),a=m.st[si]=m.st[si]||[nul
   const nx=[1,2,3,4,5,6].find(q=>!a[q-1]);S.pick=pid&&nx?nx:null;render()}
 function copyPrev(){const m=get(S.cur),si=curSet(m);m.st[si]=[...(m.st[si-1]||[])];save();S.pick=null;render()}
 function clearSet(){const m=get(S.cur);m.st[curSet(m)]=[null,null,null,null,null,null];save();S.pick=null;render()}
-function pie(m,cur,sv,ro){
+function pie(m,cur,sv,ro,dots){
   const R=140,C=150,pt=(a,r)=>{const t=a*Math.PI/180;return[(C+r*Math.sin(t)).toFixed(1),(C-r*Math.cos(t)).toFixed(1)]};
   const g=[1,2,3,4,5,6].sort((a,b)=>(a===S.pick)-(b===S.pick)).map(p=>{
-    const a=ANG[p],[x1,y1]=pt(a-30,R),[x2,y2]=pt(a+30,R),[tx,ty]=pt(a,R*.58),[lx,ly]=pt(a,R*.87),[rx,ry]=pt(a,R*.2),e=m.lu.h.find(x=>x.pid===cur[p-1]),sel=S.pick===p,srv=p===1&&sv==='h',tc=e?'var(--onc)':'var(--mut)';
-    return`<g role="${ro?'img':'button'}"${ro?'':' tabindex="0"'} aria-label="Position ${p}, ${e?'player '+esc(e.num||'')+' '+esc(e.name)+(e.role?', '+esc(e.role):''):'empty'}${srv?', serving':''}" ${ro?'':`onclick="pickPos(${p})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();pickPos(${p})}" style="cursor:pointer"`}><path d="M${C} ${C}L${x1} ${y1}A${R} ${R} 0 0 1 ${x2} ${y2}Z" fill="${e?(srv?'var(--away)':'var(--home)'):'var(--card)'}" stroke="${sel?'var(--fg)':srv?'var(--away)':'var(--line)'}" stroke-width="${sel?6:srv?5:2}" stroke-linejoin="round"/><text x="${tx}" y="${ty}" text-anchor="middle" dominant-baseline="central" fill="${tc}" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="${e?44:32}">${e?esc(e.num||'?'):'+'}</text>${e&&RL[e.role]?`<text x="${rx}" y="${ry}" text-anchor="middle" dominant-baseline="central" fill="${tc}" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="22">${RL[e.role]}</text>`:''}<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="central" fill="${tc}" font-size="13">P${p}${srv?' serving':''}</text></g>`}).join('');
-  return`<svg viewBox="0 0 300 300" role="group" aria-label="Starting line-up" style="width:100%;max-width:340px;display:block;margin:0 auto">${g}</svg>`}
+    const a=ANG[p],[x1,y1]=pt(a-30,R),[x2,y2]=pt(a+30,R),[tx,ty]=pt(a,R*.58),[lx,ly]=pt(a,R*.87),[rx,ry]=pt(a,R*.2),e=m.lu.h.find(x=>x.pid===cur[p-1]),sel=S.pick===p;
+    const st=p===1&&sv==='h'?'serving':p===1&&sv==='a'?'receiving':'',col=st==='serving'?'var(--away)':st==='receiving'?'var(--bad)':'',tc=e?'var(--onc)':'var(--mut)';
+    const dd=e&&dots&&dots[e.pid]?dots[e.pid].slice(0,4):[],ns=dd.filter(c=>c==='g').length;
+    return`<g role="${ro?'img':'button'}"${ro?'':' tabindex="0"'} aria-label="Position ${p}, ${e?'player '+esc(e.num||'')+' '+esc(e.name)+(e.role?', '+esc(e.role):''):'empty'}${st?', '+st:''}${ns?', '+ns+(ns===1?' service':' services'):''}" ${ro?'':`onclick="pickPos(${p})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();pickPos(${p})}" style="cursor:pointer"`}><path d="M${C} ${C}L${x1} ${y1}A${R} ${R} 0 0 1 ${x2} ${y2}Z" fill="${e?(col||'var(--home)'):'var(--card)'}" stroke="${sel?'var(--fg)':col||'var(--line)'}" stroke-width="${sel?6:col?5:2}" stroke-linejoin="round"/><text x="${tx}" y="${ty}" text-anchor="middle" dominant-baseline="central" fill="${tc}" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="${e?44:32}">${e?esc(e.num||'?'):'+'}</text>${e&&RL[e.role]?`<text x="${rx}" y="${ry}" text-anchor="middle" dominant-baseline="central" fill="${tc}" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="22">${RL[e.role]}</text>`:''}<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="central" fill="${tc}" font-size="13">P${p}${st?' '+st:''}</text>${dd.map((c,i)=>{const[dx,dy]=pt(a+[-18,-6,6,18][i],153);return`<circle cx="${dx}" cy="${dy}" r="6" fill="${c==='g'?'var(--good)':'var(--bad)'}"/>`}).join('')}</g>`}).join('');
+  return`<svg viewBox="-14 -14 328 328" role="group" aria-label="Starting line-up" style="width:100%;max-width:340px;display:block;margin:0 auto">${g}</svg>`}
 function setView(m){
   const si=curSet(m),cur=m.st[si]=m.st[si]||[null,null,null,null,null,null],all=m.lu.h,sv=(m.sv=m.sv||{})[si];
   const ok=cur.map(id=>all.some(x=>x.pid===id)?id:null),filled=ok.filter(Boolean).length;
@@ -188,7 +192,7 @@ function setView(m){
   <div class="mut" style="text-align:center">${sv==='h'?esc(m.home)+' serves first: the player in P1 serves.':sv==='a'?esc(m.away)+' serves first.':'Choose who serves first.'}</div>`;
   if(S.pick){const p=S.pick,placed=ok.filter((id,i)=>id&&i!==p-1),av=all.filter(x=>!placed.includes(x.pid)).sort(byNum);
     h+=`<div class="card"><div class="row sp"><b>Position ${p}</b>${ok[p-1]?`<button class="del" onclick="setPos(${p},null)">Clear</button>`:''}</div>${av.map(x=>`<button class="m" style="margin:6px 0${x.pid===ok[p-1]?';border-color:var(--home);border-width:2px':''}" onclick="setPos(${p},'${x.pid}')"><b>${x.num?'#'+esc(x.num):'–'}</b> ${esc(x.name)}${x.role?', <span class="mut">'+esc(x.role)+'</span>':''}</button>`).join('')||'<div class="mut">Everyone attending is already placed.</div>'}</div>`}
-  h+=`<div class="card">${[1,2,3,4,5,6].map(p=>{const e=all.find(x=>x.pid===ok[p-1]);return`<div class="row" style="padding:3px 0"><span class="mut" style="width:28px">P${p}</span>${e?`<b>${e.num?'#'+esc(e.num):'–'}</b> ${esc(e.name)}${e.role?`<span class="mut">, ${esc(e.role)}</span>`:''}`:'<span class="mut">Empty</span>'}${p===1&&sv==='h'?'<span class="chip" style="margin-left:6px">Serving</span>':''}</div>`}).join('')}</div>
+  h+=`<div class="card">${[1,2,3,4,5,6].map(p=>{const e=all.find(x=>x.pid===ok[p-1]);return`<div class="row" style="padding:3px 0"><span class="mut" style="width:28px">P${p}</span>${e?`<b>${e.num?'#'+esc(e.num):'–'}</b> ${esc(e.name)}${e.role?`<span class="mut">, ${esc(e.role)}</span>`:''}`:'<span class="mut">Empty</span>'}${p===1&&sv==='h'?'<span class="chip" style="margin-left:6px">Serving</span>':p===1&&sv==='a'?'<span class="chip" style="margin-left:6px">Receiving</span>':''}</div>`}).join('')}</div>
   <div class="row">${si>0&&(m.st[si-1]||[]).some(Boolean)?`<button onclick="copyPrev()">Copy line-up from set ${si}</button>`:''}${filled?'<button class="del" onclick="clearSet()">Clear line-up</button>':''}</div>`;
   if(si===m.n){const need=[filled<6?`${6-filled} position${filled===5?'':'s'} still empty`:'',sv?'':'serve or receive not chosen'].filter(Boolean).join(', ');
     h+=`<div style="margin-top:16px">${!need?`<button class="pri" style="width:100%;min-height:56px;font-size:18px" onclick="startSet()">Start set ${si+1}</button>`:`<button disabled style="width:100%;min-height:56px;font-size:18px">Start set ${si+1}</button><div class="mut" style="margin-top:6px">To start: ${need}.</div>`}</div>`}
@@ -275,7 +279,7 @@ function statsView(){
   <div class="mut" style="margin-top:8px">Errors given: ${r.given}. Share of points from attack: ${r.pf?Math.round(r.kill/r.pf*100):0}%, from serve: ${r.pf?Math.round(r.ace/r.pf*100):0}%.</div></div>`});
   return h}
 
-const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 12</div>';
+const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 13</div>';
 function render(){
   const m=S.cur&&get(S.cur);
   document.getElementById('app').innerHTML=(m?matchView(m):S.tab==='stats'?statsView():S.tab==='teams'?teamsView():listView())+VER;
