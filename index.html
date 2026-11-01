@@ -57,13 +57,13 @@ th:first-child,td:first-child{text-align:left}
 </head>
 <body>
 <main id="app"></main>
-<nav aria-label="Sections"><button id="t-matches" onclick="go('matches')">Matches</button><button id="t-teams" onclick="go('teams')">Teams</button><button id="t-stats" onclick="go('stats')">Stats</button></nav>
+<nav aria-label="Sections"><button id="t-teams" onclick="go('teams')">Teams</button><button id="t-matches" onclick="go('matches')">Matches</button><button id="t-stats" onclick="go('stats')">Stats</button></nav>
 <script>
 const K='vb-scout-v1';
 const T=[['kill','Attack kill'],['ace','Ace'],['block','Block'],['err','Opp. error']];
 const PK='vb-scout-players-v1',TK='vb-scout-teams-v1';
 const ROLES=['Setter','Outside hitter','Opposite','Middle blocker','Libero','Defensive specialist'];
-let S={m:[],p:[],t:[],cur:null,tab:'matches',form:false,edit:null,team:null,tform:false};
+let S={m:[],p:[],t:[],cur:null,tab:'teams',form:false,edit:null,team:null,tform:false};
 try{const r=localStorage.getItem(K);if(r)S.m=JSON.parse(r)||[]}catch(e){}
 try{const r=localStorage.getItem(PK);if(r)S.p=JSON.parse(r)||[]}catch(e){}
 const saveP=()=>{try{localStorage.setItem(PK,JSON.stringify(S.p))}catch(e){}};
@@ -109,6 +109,7 @@ function addTeam(){const n=document.getElementById('tm-n').value.trim();if(!n){a
   const mine=document.getElementById('tm-m').checked;if(mine)S.t.forEach(t=>t.mine=false);
   const t={id:'t'+Date.now().toString(36),name:n,mine};S.t.push(t);saveT();S.tform=false;S.team=t.id;render()}
 function openTeam(id){S.team=id;S.edit=null;render();scrollTo(0,0)}
+function toggleMine(){const t=S.t.find(t=>t.id===S.team);const on=!t.mine;S.t.forEach(x=>x.mine=false);t.mine=on;saveT();render()}
 function renameTeam(){const t=S.t.find(t=>t.id===S.team);const n=prompt('Team name',t.name);if(n&&n.trim()){t.name=n.trim();saveT();render()}}
 function delTeam(){const t=S.t.find(t=>t.id===S.team);if(confirm('Delete '+t.name+' and its roster? Matches already logged keep their data.')){S.p=S.p.filter(p=>p.teamId!==t.id);S.t=S.t.filter(x=>x.id!==t.id);S.team=null;saveP();saveT();render()}}
 const cnt=L=>{const lib=L.filter(x=>x.role==='Libero').length;return{lib,pl:L.length-lib}};
@@ -172,7 +173,7 @@ function teamsView(){
   if(S.team){
     const t=S.t.find(x=>x.id===S.team),ed=S.edit&&S.edit!=='new'?S.p.find(p=>p.id===S.edit):null;
     const L=S.p.filter(p=>p.teamId===t.id).sort((a,b)=>(parseInt(a.num,10)||999)-(parseInt(b.num,10)||999)||a.name.localeCompare(b.name));
-    let h=`<div class="row sp"><button onclick="S.team=null;S.edit=null;render()">Back</button><div class="row"><button onclick="renameTeam()">Rename</button><button class="del" onclick="delTeam()">Delete</button></div></div>
+    let h=`<div class="row sp"><button onclick="S.team=null;S.edit=null;render()">Back</button><div class="row"><button onclick="toggleMine()">${t.mine?'Not my team':'Set as my team'}</button><button onclick="renameTeam()">Rename</button><button class="del" onclick="delTeam()">Delete</button></div></div>
     <div class="row sp" style="margin-top:10px"><h1>${esc(t.name)}</h1>${S.edit?'':'<button class="pri" onclick="editPlayer(\'new\')">Add player</button>'}</div>
     <div class="mut">${t.mine?'Your team. ':''}These are default numbers and roles. Each new match gets a copy you can change without touching this roster.</div>`;
     if(S.edit)h+=`<div class="card"><label for="p-n">Name</label><input id="p-n" autocomplete="off" value="${esc(ed?ed.name:'')}"><label for="p-#">Shirt number</label><input id="p-#" inputmode="numeric" maxlength="3" autocomplete="off" value="${esc(ed?ed.num:'')}"><label for="p-r">Preferred role</label><select id="p-r"><option value="">Not set</option>${ROLES.map(r=>`<option${ed&&ed.role===r?' selected':''}>${r}</option>`).join('')}</select>
