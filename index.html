@@ -46,6 +46,7 @@ nav button[aria-current=page]{color:var(--home);box-shadow:inset 0 3px 0 var(--h
 .pts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .pts button{min-height:60px;font-weight:600;border-width:2px}
 .pts.h button{border-color:var(--home)}.pts.a button{border-color:var(--away)}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}.seg button{flex:1;border:0;border-radius:0;background:var(--card);font-weight:600}.seg button[aria-selected=true]{background:var(--home);color:var(--onc)}
 .chip{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:14px;margin:2px 4px 2px 0}
 .banner{background:var(--card);border:2px solid var(--bad);border-radius:10px;padding:10px 12px;margin:8px 0}
 table{width:100%;border-collapse:collapse;font-size:15px}
@@ -66,31 +67,37 @@ const ROLES=['Setter','Outside hitter','Opposite','Middle blocker','Libero','Def
 let S={m:[],p:[],t:[],cur:null,tab:'teams',form:false,edit:null,team:null,tform:false};
 try{const r=localStorage.getItem(K);if(r)S.m=JSON.parse(r)||[]}catch(e){}
 try{const r=localStorage.getItem(PK);if(r)S.p=JSON.parse(r)||[]}catch(e){}
-const saveP=()=>{try{localStorage.setItem(PK,JSON.stringify(S.p))}catch(e){}};
 try{const r=localStorage.getItem(TK);if(r)S.t=JSON.parse(r)||[]}catch(e){}
+const saveP=()=>{try{localStorage.setItem(PK,JSON.stringify(S.p))}catch(e){}};
 const saveT=()=>{try{localStorage.setItem(TK,JSON.stringify(S.t))}catch(e){}};
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(S.m))}catch(e){}};
 if(S.p.some(p=>!p.teamId)){let t=S.t.find(x=>x.mine);if(!t){t={id:'t-mine',name:'My team',mine:true};S.t.push(t)}S.p.forEach(p=>{if(!p.teamId)p.teamId=t.id});saveT();saveP()}
 const myTeam=()=>S.t.find(t=>t.mine);
+const byNum=(a,b)=>(parseInt(a.num,10)||999)-(parseInt(b.num,10)||999)||a.name.localeCompare(b.name);
 const teamByName=n=>S.t.find(t=>t.name.toLowerCase()===n.toLowerCase());
 function ensureTeam(n){let t=teamByName(n);if(!t){t={id:'t'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name:n,mine:false};S.t.push(t);saveT()}return t}
 const snap=t=>S.p.filter(p=>p.teamId===t.id).map(p=>({pid:p.id,name:p.name,num:p.num,role:p.role}));
-const save=()=>{try{localStorage.setItem(K,JSON.stringify(S.m))}catch(e){}};
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const get=id=>S.m.find(m=>m.id===id);
 const sc=(m,i)=>{let h=0,a=0;m.log.forEach(e=>{if(e.s===i){e.t==='h'?h++:a++}});return[h,a]};
 const target=(m)=>m.n>=4?15:25;
 function go(t){S.tab=t;S.cur=null;S.form=false;S.edit=null;S.team=null;S.tform=false;render()}
-function open_(id){S.cur=id;S.lu=undefined;render();scrollTo(0,0)}
+function open_(id){S.cur=id;S.mt=get(id).log.length?'scout':'set';S.pick=null;S.setv=null;render();scrollTo(0,0)}
+function nrSel(){return[...document.querySelectorAll('.nr:checked')].map(e=>S.p.find(p=>p.id===e.value))}
+function nrStatus(){const el=document.getElementById('nr-st'),f=document.getElementById('f-f');if(!el||!f)return;
+  const L=nrSel(),fv=f.value==='fivb',c=cnt(L);el.textContent=fv?`${c.pl} of 12 players, ${c.lib} of 2 liberos`:`${L.length} attending`;el.style.color=over({fmt:f.value},L)?'var(--bad)':''}
 function addMatch(){
-  const v=id=>document.getElementById(id).value.trim();
-  if(!v('f-h')||!v('f-a')){alert('Enter both team names.');return}
-  if(v('f-h').toLowerCase()===v('f-a').toLowerCase()){alert('Pick two different teams.');return}
-  const H=ensureTeam(v('f-h')),A=ensureTeam(v('f-a'));
-  const m={id:Date.now().toString(36),home:H.name,away:A.name,hid:H.id,aid:A.id,lu:{h:[],a:[]},fmt:v('f-f'),event:v('f-e'),date:v('f-d')||new Date().toISOString().slice(0,10),n:0,done:false,log:[],notes:''};
+  const v=id=>document.getElementById(id).value.trim(),my=myTeam();
+  const n=v('f-a');if(!n){alert('Enter the opponent name.');return}
+  if(n.toLowerCase()===my.name.toLowerCase()){alert('The opponent must be a different team.');return}
+  const L=nrSel(),fmt=v('f-f'),msg=over({fmt},L);
+  if(msg){alert(msg+' Untick some players or switch to Local tournament.');return}
+  const A=ensureTeam(n);
+  const m={id:Date.now().toString(36),home:my.name,away:A.name,hid:my.id,aid:A.id,lu:{h:L.map(p=>({pid:p.id,name:p.name,num:p.num,role:p.role})),a:[]},fmt,event:'',date:v('f-d')||new Date().toISOString().slice(0,10),n:0,done:false,log:[],notes:'',st:{}};
   S.m.unshift(m);save();S.form=false;open_(m.id)}
 function point(t,type){const m=get(S.cur);if(m.done)return;m.log.push({t,type,s:m.n});save();render()}
 function undo(){const m=get(S.cur);const l=m.log[m.log.length-1];if(l&&l.s===m.n){m.log.pop();save();render()}}
-function endSet(){const m=get(S.cur);if(m.n<4)m.n++;save();render()}
+function endSet(){const m=get(S.cur);if(m.n<4)m.n++;S.mt='set';S.setv=null;S.pick=null;save();render();scrollTo(0,0)}
 function finish(){const m=get(S.cur);m.done=!m.done;save();render()}
 function note(v){get(S.cur).notes=v;save()}
 function del(id){if(confirm('Delete this match and its data?')){S.m=S.m.filter(m=>m.id!==id);S.cur=null;save();render()}}
@@ -117,47 +124,91 @@ const over=(m,L)=>{if(m.fmt!=='fivb')return'';const c=cnt(L);return c.pl>12?'FIV
 function luSet(s,i,f,v){const m=get(S.cur),L=m.lu[s],t=L.map(x=>({...x}));t[i][f]=v.trim();
   if(f==='role'&&over(m,t)){alert(over(m,t));render();return}
   L[i][f]=v.trim();save();render()}
-function luDel(s,i){get(S.cur).lu[s].splice(i,1);save();render()}
+function unplace(m,pid){Object.values(m.st||{}).forEach(a=>a.forEach((x,i)=>{if(x===pid)a[i]=null}))}
+function luDel(s,i){const m=get(S.cur);unplace(m,m.lu[s][i].pid);m.lu[s].splice(i,1);save();render()}
 function luToggle(s,pid,on){const m=get(S.cur),L=m.lu[s];
   if(on){const p=S.p.find(p=>p.id===pid),t=[...L,{role:p.role}];if(over(m,t)){alert(over(m,t)+' Remove someone first or change a role.');render();return}
     L.push({pid:p.id,name:p.name,num:p.num,role:p.role})}
-  else m.lu[s]=L.filter(x=>x.pid!==pid);
+  else{unplace(m,pid);m.lu[s]=L.filter(x=>x.pid!==pid)}
   save();render()}
 function luGuest(s){const m=get(S.cur),n=(prompt('Player name')||'').trim();if(!n)return;const num=(prompt('Shirt number (optional)')||'').trim();
   const t=[...m.lu[s],{role:''}];if(over(m,t)){alert(over(m,t));return}
-  m.lu[s].push({pid:null,name:n,num,role:''});save();render()}
+  m.lu[s].push({pid:'g'+Date.now().toString(36),name:n,num,role:''});save();render()}
 function setFmt(v){get(S.cur).fmt=v;save();render()}
-function luRow(s,x,i,lead){return`<div class="row" style="margin-top:8px;flex-wrap:nowrap">${lead}<input aria-label="Shirt number for ${esc(x.name)}" style="width:60px" inputmode="numeric" maxlength="3" value="${esc(x.num)}" onchange="luSet('${s}',${i},'num',this.value)"><select aria-label="Role for ${esc(x.name)}" style="width:auto;max-width:42%" onchange="luSet('${s}',${i},'role',this.value)"><option value="">No role</option>${ROLES.map(r=>`<option${x.role===r?' selected':''}>${r}</option>`).join('')}</select>${x.pid?'':`<button aria-label="Remove ${esc(x.name)}" onclick="luDel('${s}',${i})">✕</button>`}</div>`}
+function luRow(s,x,i,lead,rm){return`<div class="row" style="margin-top:8px;flex-wrap:nowrap">${lead}<input aria-label="Shirt number for ${esc(x.name)}" style="width:60px" inputmode="numeric" maxlength="3" value="${esc(x.num)}" onchange="luSet('${s}',${i},'num',this.value)"><select aria-label="Role for ${esc(x.name)}" style="width:auto;max-width:42%" onchange="luSet('${s}',${i},'role',this.value)"><option value="">No role</option>${ROLES.map(r=>`<option${x.role===r?' selected':''}>${r}</option>`).join('')}</select>${rm?`<button aria-label="Remove ${esc(x.name)}" onclick="luDel('${s}',${i})">✕</button>`:''}</div>`}
 function luHtml(m,s){const L=m.lu[s],id=s==='h'?m.hid:m.aid,fv=m.fmt==='fivb',c=cnt(L),ro=S.p.filter(p=>p.teamId===id).sort((a,b)=>(parseInt(a.num,10)||999)-(parseInt(b.num,10)||999)||a.name.localeCompare(b.name));
   const st=fv?`${c.pl} of 12 players, ${c.lib} of 2 liberos${c.lib<1?'. Add at least 1 libero.':''}`:`${L.length} attending`;
   let h=`<div style="border-top:1px solid var(--line);margin-top:12px;padding-top:10px"><div class="row sp"><b>${esc(s==='h'?m.home:m.away)}</b><span class="mut" ${over(m,L)||(fv&&c.lib<1)?'style="color:var(--bad)"':''}>${st}</span></div>`;
   ro.forEach(p=>{const i=L.findIndex(x=>x.pid===p.id);const lead=`<label style="display:flex;gap:8px;align-items:center;color:var(--fg);font-size:16px;margin:0;flex:1;min-width:0"><input type="checkbox" style="width:22px;height:22px;flex:none" ${i>=0?'checked':''} onchange="luToggle('${s}','${p.id}',this.checked)"><span style="overflow-wrap:anywhere">${esc(p.name)}</span></label>`;
     h+=i>=0?luRow(s,L[i],i,lead):`<div class="row" style="margin-top:8px">${lead}<span class="mut">${p.num?'#'+esc(p.num):''}</span></div>`});
-  L.forEach((x,i)=>{if(!ro.some(p=>p.id===x.pid))h+=luRow(s,x,i,`<span style="flex:1;min-width:0;overflow-wrap:anywhere">${esc(x.name)}</span>`)});
+  L.forEach((x,i)=>{if(!ro.some(p=>p.id===x.pid))h+=luRow(s,x,i,`<span style="flex:1;min-width:0;overflow-wrap:anywhere">${esc(x.name)}</span>`,true)});
   if(!ro.length&&!L.length)h+=`<div class="mut" style="margin-top:6px">No saved players for this team yet.</div>`;
   return h+`<button style="margin-top:10px" onclick="luGuest('${s}')">Add a player not on the roster</button></div>`}
-function luBlock(m){const o=S.lu===undefined?!m.log.length:S.lu,fv=m.fmt==='fivb';
-  return`<details class="card" ${o?'open':''}><summary onclick="S.lu=!this.parentNode.open" style="cursor:pointer;font-weight:600;min-height:28px">Who is playing (${m.lu.h.length} v ${m.lu.a.length})</summary><label for="mf">Format</label><select id="mf" onchange="setFmt(this.value)"><option value="local"${fv?'':' selected'}>Local tournament, any number of players</option><option value="fivb"${fv?' selected':''}>Official FIVB, 12 players + 1 or 2 liberos</option></select><div class="mut" style="margin-top:6px">Tick the players attending. Number and role changes apply to this match only.</div>${luHtml(m,'h')}${luHtml(m,'a')}</details>`}
+function rosterView(m){const fv=m.fmt==='fivb';
+  return`<label for="mf">Tournament rules</label><select id="mf" onchange="setFmt(this.value)"><option value="local"${fv?'':' selected'}>Local tournament, any number of players</option><option value="fivb"${fv?' selected':''}>Official FIVB, 12 players + 1 or 2 liberos</option></select><div class="mut" style="margin-top:6px">Tick the players attending. Number and role changes apply to this match only.</div>${luHtml(m,'h')}`}
+const ANG={3:0,2:60,1:120,6:180,5:240,4:300};
+const curSet=m=>S.setv==null||S.setv>m.n?m.n:S.setv;
+function pickPos(p){S.pick=S.pick===p?null:p;render()}
+function setSetView(i){S.setv=i;S.pick=null;render()}
+function setPos(p,pid){const m=get(S.cur),si=curSet(m),a=m.st[si]=m.st[si]||[null,null,null,null,null,null];a[p-1]=pid||null;save();
+  const nx=[1,2,3,4,5,6].find(q=>!a[q-1]);S.pick=pid&&nx?nx:null;render()}
+function copyPrev(){const m=get(S.cur),si=curSet(m);m.st[si]=[...(m.st[si-1]||[])];save();S.pick=null;render()}
+function clearSet(){const m=get(S.cur);m.st[curSet(m)]=[null,null,null,null,null,null];save();S.pick=null;render()}
+function pie(m,cur){
+  const R=140,C=150,pt=(a,r)=>{const t=a*Math.PI/180;return[(C+r*Math.sin(t)).toFixed(1),(C-r*Math.cos(t)).toFixed(1)]};
+  const g=[1,2,3,4,5,6].sort((a,b)=>(a===S.pick)-(b===S.pick)).map(p=>{
+    const a=ANG[p],[x1,y1]=pt(a-30,R),[x2,y2]=pt(a+30,R),[tx,ty]=pt(a,R*.58),[lx,ly]=pt(a,R*.87),e=m.lu.h.find(x=>x.pid===cur[p-1]),sel=S.pick===p,tc=e?'var(--onc)':'var(--mut)';
+    return`<g role="button" tabindex="0" aria-label="Position ${p}, ${e?'player '+esc(e.num||'')+' '+esc(e.name):'empty'}" onclick="pickPos(${p})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();pickPos(${p})}" style="cursor:pointer"><path d="M${C} ${C}L${x1} ${y1}A${R} ${R} 0 0 1 ${x2} ${y2}Z" fill="${e?'var(--home)':'var(--card)'}" stroke="${sel?'var(--fg)':'var(--line)'}" stroke-width="${sel?6:2}" stroke-linejoin="round"/><text x="${tx}" y="${ty}" text-anchor="middle" dominant-baseline="central" fill="${tc}" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="${e?44:32}">${e?esc(e.num||'?'):'+'}</text><text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="central" fill="${tc}" font-size="13">P${p}</text></g>`}).join('');
+  return`<svg viewBox="0 0 300 300" role="group" aria-label="Starting line-up" style="width:100%;max-width:340px;display:block;margin:0 auto">${g}</svg>`}
+function setView(m){
+  const si=curSet(m),cur=m.st[si]=m.st[si]||[null,null,null,null,null,null],all=m.lu.h;
+  const ok=cur.map(id=>all.some(x=>x.pid===id)?id:null),filled=ok.filter(Boolean).length;
+  let h='';
+  if(m.n>0)h+=`<div style="margin-bottom:8px">${Array.from({length:m.n+1},(_,i)=>`<button class="chip" style="min-height:36px;${i===si?'background:var(--home);color:var(--onc);border-color:var(--home)':''}" aria-pressed="${i===si}" onclick="setSetView(${i})">Set ${i+1}</button>`).join('')}</div>`;
+  h+=`<h2 style="margin-top:8px">Starting line-up, set ${si+1}</h2>`;
+  if(!all.length)return h+`<div class="card"><b>No players in this match yet.</b><div class="mut">Choose who is attending on the Roster tab first.</div><div style="margin-top:12px"><button class="pri" onclick="S.mt='roster';render()">Go to Roster</button></div></div>`;
+  h+=`<div class="mut">Tap a slice to choose the player for that position. Numbers run clockwise in rotation order: 1 serves, 2 to 4 are front row (4 is front left), 5 to 6 are back row.</div>
+  <div class="mut" style="text-align:center;margin-top:10px">Net</div>${pie(m,ok)}<div class="mut" style="text-align:center">Back of the court</div>
+  <div class="mut" style="text-align:center;margin:6px 0" aria-live="polite">${filled} of 6 positions filled${filled===6?', line-up complete':''}</div>`;
+  if(S.pick){const p=S.pick,placed=ok.filter((id,i)=>id&&i!==p-1),av=all.filter(x=>!placed.includes(x.pid)).sort(byNum);
+    h+=`<div class="card"><div class="row sp"><b>Position ${p}</b>${ok[p-1]?`<button class="del" onclick="setPos(${p},null)">Clear</button>`:''}</div>${av.map(x=>`<button class="m" style="margin:6px 0${x.pid===ok[p-1]?';border-color:var(--home);border-width:2px':''}" onclick="setPos(${p},'${x.pid}')"><b>${x.num?'#'+esc(x.num):'–'}</b> ${esc(x.name)}${x.role?', <span class="mut">'+esc(x.role)+'</span>':''}</button>`).join('')||'<div class="mut">Everyone attending is already placed.</div>'}</div>`}
+  h+=`<div class="card">${[1,2,3,4,5,6].map(p=>{const e=all.find(x=>x.pid===ok[p-1]);return`<div class="row" style="padding:3px 0"><span class="mut" style="width:28px">P${p}</span>${e?`<b>${e.num?'#'+esc(e.num):'–'}</b> ${esc(e.name)}${e.role?`<span class="mut">, ${esc(e.role)}</span>`:''}`:'<span class="mut">Empty</span>'}</div>`}).join('')}</div>
+  <div class="row">${si>0&&(m.st[si-1]||[]).some(Boolean)?`<button onclick="copyPrev()">Copy line-up from set ${si}</button>`:''}${filled?'<button class="del" onclick="clearSet()">Clear line-up</button>':''}${filled===6?`<button class="pri" onclick="S.mt='scout';render()">Start scouting</button>`:''}</div>`;
+  return h}
+function tabsHtml(m){return`<div class="seg" role="tablist" style="margin:12px 0">${[['roster','Roster'],['set','Set '+(m.n+1)],['scout','Scout']].map(([k,l])=>`<button role="tab" aria-selected="${S.mt===k}" onclick="S.mt='${k}';S.pick=null;render()">${l}</button>`).join('')}</div>`}
 function tally(m){const r={h:{},a:{}};m.log.forEach(e=>{r[e.t][e.type]=(r[e.t][e.type]||0)+1});return r}
 function setsWon(m){let h=0,a=0;for(let i=0;i<=m.n;i++){const[x,y]=sc(m,i);if(i<m.n||m.done){if(x>y)h++;else if(y>x)a++}}return[h,a]}
 
 function listView(){
-  let h=`<div class="row sp"><h1>Matches</h1><button class="pri" onclick="S.form=!S.form;render()">${S.form?'Cancel':'New match'}</button></div>`;
-  if(S.form)h+=`<div class="card"><datalist id="tl">${S.t.map(t=>`<option value="${esc(t.name)}">`).join('')}</datalist><label for="f-h">Home team</label><input id="f-h" list="tl" autocomplete="off" value="${esc(myTeam()?myTeam().name:'')}"><label for="f-a">Opponent</label><input id="f-a" list="tl" autocomplete="off"><div class="mut" style="margin-top:6px">Pick a saved team to copy its players into this match, or type a new name.</div><label for="f-e">Event (optional)</label><input id="f-e" autocomplete="off"><label for="f-f">Format</label><select id="f-f"><option value="local">Local tournament, any number of players</option><option value="fivb">Official FIVB, 12 players + 1 or 2 liberos</option></select><label for="f-d">Date</label><input id="f-d" type="date" value="${new Date().toISOString().slice(0,10)}"><div style="margin-top:14px"><button class="pri" onclick="addMatch()">Start scouting</button></div></div>`;
-  if(!S.m.length&&!S.form)h+=`<div class="card"><b>No matches yet.</b><div class="mut">Tap “New match” to log your first one. Everything is saved on this device.</div></div>`;
+  const my=myTeam();
+  let h=`<div class="row sp"><h1>Matches</h1>${my?`<button class="pri" onclick="S.form=!S.form;render()">${S.form?'Cancel':'New match'}</button>`:''}</div>`;
+  if(!my)h+=`<div class="card"><b>Set up your team first.</b><div class="mut">Matches use your team and its players. Add it on the Teams tab and tick “This is my team”.</div><div style="margin-top:12px"><button class="pri" onclick="go('teams')">Go to Teams</button></div></div>`;
+  if(S.form&&my){
+    const ps=S.p.filter(p=>p.teamId===my.id).sort(byNum);
+    h+=`<div class="card"><datalist id="tl">${S.t.filter(t=>!t.mine).map(t=>`<option value="${esc(t.name)}">`).join('')}</datalist>
+    <label for="f-a">Opponent</label><input id="f-a" list="tl" autocomplete="off">
+    <label for="f-f">Tournament rules</label><select id="f-f" onchange="nrStatus()"><option value="local">Local tournament, any number of players</option><option value="fivb">Official FIVB, 12 players + 1 or 2 liberos</option></select>
+    <label for="f-d">Date</label><input id="f-d" type="date" value="${new Date().toISOString().slice(0,10)}">
+    <div class="row sp" style="margin-top:16px"><b>Who is playing (${esc(my.name)})</b><span id="nr-st" class="mut"></span></div>
+    ${ps.length?ps.map(p=>`<label style="display:flex;gap:8px;align-items:center;color:var(--fg);font-size:16px;margin:6px 0"><input type="checkbox" class="nr" value="${p.id}" style="width:22px;height:22px;flex:none" checked onchange="nrStatus()"><span>${p.num?'#'+esc(p.num)+' ':''}${esc(p.name)}${p.role?', '+esc(p.role):''}</span></label>`).join(''):`<div class="mut">Your team has no players yet. Add them on the Teams tab.</div>`}
+    <div style="margin-top:14px"><button class="pri" onclick="addMatch()">Create match</button></div></div>`}
+  if(!S.m.length&&!S.form&&my)h+=`<div class="card"><b>No matches yet.</b><div class="mut">Tap “New match” to create your first one.</div></div>`;
   [...S.m].sort((a,b)=>b.date.localeCompare(a.date)).forEach(m=>{
     const[a,b]=setsWon(m);
-    h+=`<button class="m" onclick="open_('${m.id}')"><div class="row sp"><b>${esc(m.home)} vs ${esc(m.away)}</b><span class="num" style="font-size:24px">${a}–${b}</span></div><div class="mut">${esc(m.date)}${m.event?', '+esc(m.event):''}${m.done?', final':', in progress'}</div></button>`});
+    h+=`<button class="m" onclick="open_('${m.id}')"><div class="row sp"><b>${esc(m.home)} vs ${esc(m.away)}</b><span class="num" style="font-size:24px">${a}–${b}</span></div><div class="mut">${esc(m.date)}${m.event?', '+esc(m.event):''}, ${m.done?'final':'in progress'}</div></button>`});
   return h}
 
 function matchView(m){
-  m.lu=m.lu||{h:[],a:[]};
+  m.lu=m.lu||{h:[],a:[]};m.st=m.st||{};
   const[x,y]=sc(m,m.n),tg=target(m),[sh,sa]=setsWon(m),tl=tally(m);
   const lead=Math.abs(x-y),won=(x>=tg||y>=tg)&&lead>=2;
   let h=`<div class="row sp"><button onclick="go('matches')">Back</button><button class="del" onclick="del('${m.id}')">Delete</button></div>
   <h1 style="margin-top:10px">${esc(m.home)} vs ${esc(m.away)}</h1>
-  <div class="mut">${esc(m.date)}${m.event?', '+esc(m.event):''}, set ${m.n+1}${m.done?', final':''} (sets ${sh}–${sa})</div>
-  ${luBlock(m)}<div class="board" aria-live="polite"><div class="side h"><div class="nm">${esc(m.home)}</div><div class="num">${x}</div></div><div class="side a"><div class="nm">${esc(m.away)}</div><div class="num">${y}</div></div></div>`;
+  <div class="mut">${esc(m.date)}${m.event?', '+esc(m.event):''}, ${m.fmt==='fivb'?'Official FIVB':'Local tournament'}, set ${m.n+1}${m.done?', final':''} (sets ${sh}–${sa})</div>
+  ${tabsHtml(m)}`;
+  if(S.mt==='roster')return h+rosterView(m);
+  if(S.mt==='set')return h+setView(m);
+  h+=`<div class="board" aria-live="polite"><div class="side h"><div class="nm">${esc(m.home)}</div><div class="num">${x}</div></div><div class="side a"><div class="nm">${esc(m.away)}</div><div class="num">${y}</div></div></div>`;
   if(won&&!m.done)h+=`<div class="banner"><b>${x>y?esc(m.home):esc(m.away)}</b> has won set ${m.n+1}. ${m.n<4?'End the set to start the next one.':'Finish the match to lock the result.'}</div>`;
   if(!m.done){
     h+=`<div class="pts h" style="margin-bottom:8px"><div class="mut" style="grid-column:1/3">Point for ${esc(m.home)}</div>${T.map(([k,l])=>`<button onclick="point('h','${k}')">${l}</button>`).join('')}</div>
@@ -207,7 +258,7 @@ function statsView(){
 function render(){
   const m=S.cur&&get(S.cur);
   document.getElementById('app').innerHTML=m?matchView(m):S.tab==='stats'?statsView():S.tab==='teams'?teamsView():listView();
-  ['matches','teams','stats'].forEach(t=>{const b=document.getElementById('t-'+t);if(S.tab===t&&!m)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')})}
+  ['matches','teams','stats'].forEach(t=>{const b=document.getElementById('t-'+t);if(S.tab===t&&!m)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});nrStatus()}
 render();
 if("serviceWorker" in navigator){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}
 </script>
