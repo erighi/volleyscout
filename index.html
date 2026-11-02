@@ -35,7 +35,7 @@ label{display:block;font-size:14px;color:var(--mut);margin:10px 0 4px}
 select{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);font:inherit;color:inherit}
 input,textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
 nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
-nav button{flex:1;border:0;border-radius:0;background:none;min-height:52px;font-weight:600;color:var(--mut)}
+nav button{flex:1;border:0;border-radius:0;background:none;min-height:52px;font-weight:600;font-size:13px;padding:0 2px;color:var(--mut)}
 nav button[aria-current=page]{color:var(--home);box-shadow:inset 0 3px 0 var(--home)}
 .m{display:block;width:100%;text-align:left;margin:8px 0;padding:12px 14px}
 .m b{font-size:17px}
@@ -60,7 +60,7 @@ th:first-child,td:first-child{text-align:left}
 </head>
 <body>
 <main id="app"></main>
-<nav aria-label="Sections"><button id="t-teams" onclick="go('teams')">Teams</button><button id="t-matches" onclick="go('matches')">Matches</button><button id="t-stats" onclick="go('stats')">Stats</button><button id="t-settings" onclick="go('settings')">Settings</button></nav>
+<nav aria-label="Sections"><button id="t-teams" onclick="go('teams')">Teams</button><button id="t-opps" onclick="go('opps')">Opponents</button><button id="t-matches" onclick="go('matches')">Matches</button><button id="t-stats" onclick="go('stats')">Stats</button><button id="t-settings" onclick="go('settings')">Settings</button></nav>
 <script>
 const K='vb-scout-v1';
 const T=[['kill','Attack kill'],['ace','Ace'],['block','Block'],['err','Opp. error']];
@@ -88,8 +88,23 @@ const SCDEF=[{k:'--',n:'Error',d:'Ball out or on the net. Point to the opponents
 const SK='vb-scout-scale-v1';
 let SC=JSON.parse(JSON.stringify(SCDEF));
 try{const r=localStorage.getItem(SK);if(r){const a=JSON.parse(r);if(Array.isArray(a)&&a.length===5)SC=a.map((x,i)=>({k:SCDEF[i].k,n:x.n||SCDEF[i].n,d:x.d||SCDEF[i].d}))}}catch(e){}
-function saveScale(){SC=SC.map((x,i)=>({k:x.k,n:(document.getElementById('sc-n'+i).value.trim()||SCDEF[i].n).slice(0,12),d:document.getElementById('sc-d'+i).value.trim()||SCDEF[i].d}));try{localStorage.setItem(SK,JSON.stringify(SC))}catch(e){}render()}
-function resetScale(){SC=JSON.parse(JSON.stringify(SCDEF));try{localStorage.removeItem(SK)}catch(e){}render()}
+const SKN={serve:'Serve',pass:'Pass',set:'Set',attack:'Attack',block:'Block'};
+const SKXDEF={
+pass:[{n:'Ace against',d:'Service ace for the opponents. Point to them'},{n:'Poor',d:'Ball not playable. The setter cannot set and we send a free ball over'},{n:'Medium',d:'Setter must move and some attack options are not available'},{n:'Good',d:'Setter reaches the ball with most attack options open'},{n:'Perfect',d:'Perfect pass to the setter. All attack options open'}],
+set:[{n:'Error',d:'Double touch, lift or net error. Point to the opponents'},{n:'Poor',d:'Hitter has no real attack and must play an easy ball'},{n:'Medium',d:'Hitter attacks against a ready block with limited options'},{n:'Good',d:'Good set. Hitter attacks with a clear option'},{n:'Perfect',d:'Perfect set. Hitter has full options against a poor block'}],
+attack:[{n:'Error',d:'Ball out, on the net or blocked for a point. Point to the opponents'},{n:'Poor',d:'Easy ball for the opponents to counter-attack'},{n:'Medium',d:'Defended. The opponents attack with limited options'},{n:'Good',d:'Hard to defend. The opponents are out of system'},{n:'Kill',d:'Point for us'}],
+block:[{n:'Error',d:'Net touch, out or block fault. Point to the opponents'},{n:'Poor',d:'Block does not touch the ball or does not help. The opponent scores'},{n:'Touch',d:'Touch that does not stop the attack. The ball is defended or lost'},{n:'Soft',d:'Block slows the ball and we get an easy counter'},{n:'Stuff',d:'Block point for us'}]};
+const SKXK='vb-scout-skills-v1',GRK=['--','-','0','+','++'];
+let SKX=JSON.parse(JSON.stringify(SKXDEF));
+function setSkx(o){Object.keys(SKXDEF).forEach(k=>{if(o&&Array.isArray(o[k])&&o[k].length===5)SKX[k]=o[k].map((x,i)=>({n:x.n||SKXDEF[k][i].n,d:x.d||SKXDEF[k][i].d}))})}
+try{const r=localStorage.getItem(SKXK);if(r)setSkx(JSON.parse(r))}catch(e){}
+function saveSkx(){try{localStorage.setItem(SKXK,JSON.stringify(SKX))}catch(e){}}
+const gScale=sk=>sk==='serve'?SC:SKX[sk].map((x,i)=>({k:GRK[i],n:x.n,d:x.d}));
+function saveScale(sk){sk=sk||'serve';const rd=i=>({n:document.getElementById('g-'+sk+'-n'+i).value.trim().slice(0,12),d:document.getElementById('g-'+sk+'-d'+i).value.trim()});
+  if(sk==='serve'){SC=SC.map((x,i)=>{const v=rd(i);return{k:x.k,n:v.n||SCDEF[i].n,d:v.d||SCDEF[i].d}});try{localStorage.setItem(SK,JSON.stringify(SC))}catch(e){}}
+  else{SKX[sk]=SKX[sk].map((x,i)=>{const v=rd(i);return{n:v.n||SKXDEF[sk][i].n,d:v.d||SKXDEF[sk][i].d}});saveSkx()}
+  render()}
+function resetScale(sk){sk=sk||'serve';if(sk==='serve'){SC=JSON.parse(JSON.stringify(SCDEF));try{localStorage.removeItem(SK)}catch(e){}}else{SKX[sk]=JSON.parse(JSON.stringify(SKXDEF[sk]));saveSkx()}render()}
 function serve(g){const m=get(S.cur);if(m.done)return;const cl=curLU(m,m.n);if(!cl.serving||!cl.pos[0])return;const L=m.log.length,sl=m.sl=m.sl||[],ls=sl[sl.length-1];if(ls&&ls.s===m.n&&ls.at===L)return;
   sl.push({s:m.n,pid:cl.pos[0],g,at:L,q:(m.q=(m.q||0)+1)});
   if(g==='--')m.log.push({t:'a',type:'err',s:m.n,a:1});else if(g==='++')m.log.push({t:'h',type:'ace',s:m.n,a:1});
@@ -168,7 +183,7 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const get=id=>S.m.find(m=>m.id===id);
 const sc=(m,i)=>{let h=0,a=0;m.log.forEach(e=>{if(e.s===i){e.t==='h'?h++:a++}});return[h,a]};
 const target=(m)=>m.n>=4?15:25;
-function go(t){S.impMsg='';S.tab=t;S.cur=null;S.form=false;S.edit=null;S.team=null;S.tform=false;S.rd=null;render()}
+function go(t){S.tab=t;S.cur=null;S.form=false;S.edit=null;S.team=null;S.tform=false;S.rd=null;render()}
 function open_(id){S.cur=id;S.mt=get(id).log.length?'scout':'set';S.pick=null;S.sb=null;S.setv=null;S.pv='init';render();scrollTo(0,0)}
 function nrSel(){return[...document.querySelectorAll('.nr:checked')].map(e=>S.p.find(p=>p.id===e.value))}
 function nrStatus(){const el=document.getElementById('nr-st'),f=document.getElementById('f-f');if(!el||!f)return;
@@ -183,7 +198,8 @@ function addMatch(){
   const m={id:Date.now().toString(36),home:my.name,away:A.name,hid:my.id,aid:A.id,lu:{h:L.map(p=>({pid:p.id,name:p.name,num:p.num,role:p.role})),a:[]},fmt,rule:copy(getRule(fmt)),event:'',date:v('f-d')||new Date().toISOString().slice(0,10),n:0,done:false,log:[],notes:'',st:{}};
   S.m.unshift(m);save();S.form=false;open_(m.id)}
 function point(t,type){const m=get(S.cur);if(m.done)return;m.log.push({t,type,s:m.n});save();render()}
-function endSet(){const m=get(S.cur);if(m.n<ruleOf(m).sets.length-1)m.n++;S.sb=null;S.mt='set';S.setv=null;S.pick=null;S.pv='init';save();render();scrollTo(0,0)}
+const autoServe=(m,si)=>{m.sv=m.sv||{};if(si>0&&si<ruleOf(m).sets.length-1&&!m.sv[si]&&m.sv[si-1])m.sv[si]=m.sv[si-1]==='h'?'a':'h'};
+function endSet(){const m=get(S.cur);if(m.n<ruleOf(m).sets.length-1){m.n++;autoServe(m,m.n)}S.sb=null;S.mt='set';S.setv=null;S.pick=null;S.pv='init';save();render();scrollTo(0,0)}
 function finish(){const m=get(S.cur);m.done=!m.done;save();render()}
 function note(v){get(S.cur).notes=v;save()}
 function del(id){if(confirm('Delete this match and its data?')){S.m=S.m.filter(m=>m.id!==id);S.cur=null;save();render()}}
@@ -199,10 +215,10 @@ function editPlayer(id){S.edit=id;render();const el=document.getElementById('p-n
 function delPlayer(id){const p=S.p.find(p=>p.id===id);if(confirm('Remove '+p.name+' from the roster? Past matches keep their own copy.')){S.p=S.p.filter(p=>p.id!==id);saveP();S.edit=null;render()}}
 function addTeam(){const n=document.getElementById('tm-n').value.trim();if(!n){alert('Enter a team name.');return}
   if(teamByName(n)){alert('That team already exists.');return}
-  const mine=document.getElementById('tm-m').checked;if(mine)S.t.forEach(t=>t.mine=false);
+  const mine=S.tab==='teams';if(mine)S.t.forEach(t=>t.mine=false);
   const t={id:'t'+Date.now().toString(36),name:n,mine};S.t.push(t);saveT();S.tform=false;S.team=t.id;render()}
 function openTeam(id){S.team=id;S.edit=null;render();scrollTo(0,0)}
-function toggleMine(){const t=S.t.find(t=>t.id===S.team);const on=!t.mine;S.t.forEach(x=>x.mine=false);t.mine=on;saveT();render()}
+function toggleMine(){const t=S.t.find(t=>t.id===S.team);const on=!t.mine;S.t.forEach(x=>x.mine=false);t.mine=on;S.tab=on?'teams':'opps';saveT();render()}
 function renameTeam(){const t=S.t.find(t=>t.id===S.team);const n=prompt('Team name',t.name);if(n&&n.trim()){t.name=n.trim();saveT();render()}}
 function delTeam(){const t=S.t.find(t=>t.id===S.team);if(confirm('Delete '+t.name+' and its roster? Matches already logged keep their data.')){S.p=S.p.filter(p=>p.teamId!==t.id);S.t=S.t.filter(x=>x.id!==t.id);S.team=null;saveP();saveT();render()}}
 const cnt=L=>{const lib=L.filter(x=>x.role==='Libero').length;return{lib,pl:L.length-lib}};
@@ -294,24 +310,26 @@ function pastSetView(m,si){const[x,y]=sc(m,si),cl=curLU(m,si),all=m.lu.h,ok=a=>a
   h+=`<div class="card"><div><b>Substitutions:</b> ${used} of ${ruleSub(ruleOf(m))}</div>${sbs.map(e=>`<div class="mut" style="margin-top:4px">${pnum(m,e.in)} in for ${pnum(m,e.out)} at ${e.sc[0]}–${e.sc[1]}${e.lib?' (libero swap)':''}</div>`).join('')}<div style="margin-top:8px"><b>Timeouts:</b> ${esc(m.home)} ${tos.filter(e=>e.t==='h').length}, ${esc(m.away)} ${tos.filter(e=>e.t==='a').length}</div>${tos.map(e=>`<div class="mut" style="margin-top:4px">${esc(e.t==='h'?m.home:m.away)} at ${e.sc[0]}–${e.sc[1]}</div>`).join('')}</div>`;
   if(si===m.n-1)h+=reopenBtn(m)||`<div class="mut">Set ${m.n+1} already has activity, so set ${si+1} can no longer be reopened.</div>`;
   return h}
+function listPick(pid){const m=get(S.cur),si=curSet(m),a=m.st[si]=m.st[si]||[null,null,null,null,null,null],p=S.pick||[1,2,3,4,5,6].find(q=>!a[q-1]);if(p)setPos(p,pid)}
+function sideList(m,ok,all){const p=S.pick,nx=[1,2,3,4,5,6].find(q=>!ok[q-1]),tgt=p||nx,placed=ok.filter((id,i)=>id&&i!==(tgt||0)-1),av=all.filter(x=>!placed.includes(x.pid)).sort(byNum);
+  return`<div id="pl-list" style="flex:0 0 44%;min-width:0;max-height:70vh;overflow-y:auto"><div class="row sp" style="margin-bottom:4px"><b>${p?'P'+p:'Players'}</b>${p&&ok[p-1]?`<button class="del" style="min-height:32px;padding:0 8px" onclick="setPos(${p},null)">Clear</button>`:''}</div><div class="mut" style="font-size:13px;margin-bottom:4px">${tgt?'For position '+tgt:''}</div>${av.map(x=>`<button class="m" style="margin:4px 0;padding:8px 10px;min-height:44px;font-size:15px${x.pid===ok[tgt-1]?';border-color:var(--home);border-width:2px':''}" onclick="listPick('${x.pid}')"><b>${x.num?'#'+esc(x.num):'–'}</b> ${esc(x.name)}${x.role?`<div class="mut" style="font-size:12px">${esc(x.role)}</div>`:''}</button>`).join('')||'<div class="mut">Everyone attending is already placed.</div>'}</div>`}
 function setView(m){
+  const si0=curSet(m);if(si0===m.n&&autoServe(m,si0),m.sv&&m.sv[si0])save();
   const si=curSet(m),cur=m.st[si]=m.st[si]||[null,null,null,null,null,null],all=m.lu.h,sv=(m.sv=m.sv||{})[si];
   const ok=cur.map(id=>all.some(x=>x.pid===id)?id:null),filled=ok.filter(Boolean).length;
   let h='';
   if(m.n>0)h+=`<div style="margin-bottom:8px">${Array.from({length:m.n+1},(_,i)=>`<button class="chip" style="min-height:36px;${i===si?'background:var(--home);color:var(--onc);border-color:var(--home)':''}" aria-pressed="${i===si}" onclick="setSetView(${i})">Set ${i+1}</button>`).join('')}</div>`;
   if(si<m.n)return h+pastSetView(m,si);
   if(si===m.n)h+=reopenBtn(m);
-  h+=`<h2 style="margin-top:8px">First serve, set ${si+1}</h2><div class="mut" style="margin-bottom:6px">${esc(m.home)} will:</div><div class="seg" role="group" aria-label="First serve">${[['h','Serve'],['a','Receive']].map(([k,n])=>`<button style="min-height:54px;overflow-wrap:anywhere" aria-pressed="${sv===k}" onclick="setServe('${k}')">${esc(n)}</button>`).join('')}</div>${sv?`<div style="margin-top:6px">${esc(sv==='h'?m.home:m.away)} serves, ${esc(sv==='h'?m.away:m.home)} receives.</div>`:'<div style="color:var(--bad);margin-top:6px">Not set yet. Choose serve or receive for your team.</div>'}
+  h+=`<h2 style="margin-top:8px">First serve, set ${si+1}</h2><div class="mut" style="margin-bottom:6px">${esc(m.home)} will:</div><div class="seg" role="group" aria-label="First serve">${[['h','Serve'],['a','Receive']].map(([k,n])=>`<button style="min-height:54px;overflow-wrap:anywhere" aria-pressed="${sv===k}" onclick="setServe('${k}')">${esc(n)}</button>`).join('')}</div>${sv?`<div style="margin-top:6px">${esc(sv==='h'?m.home:m.away)} serves, ${esc(sv==='h'?m.away:m.home)} receives.</div>${si>0?(si===ruleOf(m).sets.length-1?'<div class="mut">Deciding set: a new toss decides who serves first.</div>':'<div class="mut">Set automatically: the first serve alternates each set. Change it if needed.</div>'):''}`:`<div style="color:var(--bad);margin-top:6px">${si>0&&si===ruleOf(m).sets.length-1?'Deciding set: a new toss decides who serves first. ':'Not set yet. '}Choose serve or receive for your team.</div>`}
   <h2>Team system</h2><div class="seg" role="group" aria-label="Team system" style="margin-bottom:6px">${['6-2','5-1','4-2','none'].map(k=>`<button aria-pressed="${(m.sys||'none')===k}" onclick="setSys('${k}')">${k==='none'?'None':k}</button>`).join('')}</div><div class="mut">Applies to the whole match.</div>
   <h2>Starting line-up, set ${si+1}</h2>`;
   if(!all.length)return h+`<div class="card"><b>No players in this match yet.</b><div class="mut">Choose who is attending on the Roster tab first.</div><div style="margin-top:12px"><button class="pri" onclick="S.mt='roster';render()">Go to Roster</button></div></div>`;
-  h+=`<div class="mut">Tap a slice to choose the player for that position. Numbers run clockwise in rotation order: 1 serves, 2 to 4 are front row (4 is front left), 5 to 6 are back row.</div>
-  <div class="mut" style="text-align:center;margin-top:10px">Net</div>${pie(m,ok,{pid:ok[0],st:sv==='h'?'serving':sv==='a'?'receiving':''})}<div class="mut" style="text-align:center">Back of the court</div>
+  h+=`<div class="mut">Tap a slice, then pick the player from the list on the right. Numbers run clockwise in rotation order: 1 serves, 2 to 4 are front row (4 is front left), 5 to 6 are back row.</div>
+  <div style="display:flex;gap:10px;align-items:flex-start;margin-top:10px"><div style="flex:1 1 0;min-width:0"><div class="mut" style="text-align:center">Net</div>${pie(m,ok,{pid:ok[0],st:sv==='h'?'serving':sv==='a'?'receiving':''})}<div class="mut" style="text-align:center">Back of the court</div></div>${S.pick||filled<6?sideList(m,ok,all):''}</div>
   <div class="mut" style="text-align:center;font-size:13px">S setter, O opposite, M middle, H outside hitter, L libero, D defensive specialist</div>
   <div class="mut" style="text-align:center;margin:6px 0" aria-live="polite">${filled} of 6 positions filled${filled===6?', line-up complete':''}</div>
   <div class="mut" style="text-align:center">${sv==='h'?esc(m.home)+' serves first: the player in P1 serves.':sv==='a'?esc(m.away)+' serves first.':'Choose who serves first.'}</div>${sysCheck(m,ok)}`;
-  if(S.pick){const p=S.pick,placed=ok.filter((id,i)=>id&&i!==p-1),av=all.filter(x=>!placed.includes(x.pid)).sort(byNum);
-    h+=`<div class="card"><div class="row sp"><b>Position ${p}</b>${ok[p-1]?`<button class="del" onclick="setPos(${p},null)">Clear</button>`:''}</div>${av.map(x=>`<button class="m" style="margin:6px 0${x.pid===ok[p-1]?';border-color:var(--home);border-width:2px':''}" onclick="setPos(${p},'${x.pid}')"><b>${x.num?'#'+esc(x.num):'–'}</b> ${esc(x.name)}${x.role?', <span class="mut">'+esc(x.role)+'</span>':''}</button>`).join('')||'<div class="mut">Everyone attending is already placed.</div>'}</div>`}
   h+=`<div class="card">${[1,2,3,4,5,6].map(p=>{const e=all.find(x=>x.pid===ok[p-1]);return`<div class="row" style="padding:3px 0"><span class="mut" style="width:28px">P${p}</span>${e?`<b>${e.num?'#'+esc(e.num):'–'}</b> ${esc(e.name)}${e.role?`<span class="mut">, ${esc(e.role)}</span>`:''}`:'<span class="mut">Empty</span>'}${p===1&&sv==='h'?'<span class="chip" style="margin-left:6px">Serving</span>':p===1&&sv==='a'?'<span class="chip" style="margin-left:6px">Receiving</span>':''}</div>`}).join('')}</div>
   <div class="row">${si>0&&(m.st[si-1]||[]).some(Boolean)?`<button onclick="copyPrev()">Copy line-up from set ${si}</button>`:''}${filled?'<button class="del" onclick="clearSet()">Clear line-up</button>':''}</div>`;
   if(si===m.n){const need=[filled<6?`${6-filled} position${filled===5?'':'s'} still empty`:'',sv?'':'serve or receive not chosen'].filter(Boolean).join(', ');
@@ -324,7 +342,7 @@ function setsWon(m){let h=0,a=0;for(let i=0;i<=m.n;i++){const[x,y]=sc(m,i);if(i<
 function listView(){
   const my=myTeam();
   let h=`<div class="row sp"><h1>Matches</h1>${my?`<button class="pri" onclick="S.form=!S.form;render()">${S.form?'Cancel':'New match'}</button>`:''}</div>`;
-  if(!my)h+=`<div class="card"><b>Set up your team first.</b><div class="mut">Matches use your team and its players. Add it on the Teams tab and tick “This is my team”.</div><div style="margin-top:12px"><button class="pri" onclick="go('teams')">Go to Teams</button></div></div>`;
+  if(!my)h+=`<div class="card"><b>Set up your team first.</b><div class="mut">Matches use your team and its players. Add it on the Teams tab.</div><div style="margin-top:12px"><button class="pri" onclick="go('teams')">Go to Teams</button></div></div>`;
   if(S.form&&my){
     const ps=S.p.filter(p=>p.teamId===my.id).sort(byNum);
     h+=`<div class="card"><datalist id="tl">${S.t.filter(t=>!t.mine).map(t=>`<option value="${esc(t.name)}">`).join('')}</datalist>
@@ -340,6 +358,14 @@ function listView(){
     h+=`<button class="m" onclick="open_('${m.id}')"><div class="row sp"><b>${esc(m.home)} vs ${esc(m.away)}</b><span class="num" style="font-size:24px">${a}–${b}</span></div><div class="mut">${esc(m.date)}${m.event?', '+esc(m.event):''}, ${m.done?'final':'in progress'}</div></button>`});
   return h}
 
+const MDK='vb-scout-mode-v1',ADVK=['block','pass','set','attack'];
+let scoutMode='simple';try{if(localStorage.getItem(MDK)==='adv')scoutMode='adv'}catch(e){}
+function setMode(k){scoutMode=k==='adv'?'adv':'simple';try{localStorage.setItem(MDK,scoutMode)}catch(e){}render()}
+function modeToggle(){return`<div class="seg" role="group" aria-label="Scouting mode" style="margin:8px 0">${[['simple','Simple'],['adv','Medium']].map(([k,l])=>`<button aria-pressed="${scoutMode===k}" onclick="setMode('${k}')">${l}</button>`).join('')}</div>`}
+function advAct(sk){const m=get(S.cur);if(m.done||!ADVK.includes(sk))return;m.log.push({t:'a',type:sk==='pass'?'ace':'err',s:m.n,x:sk});save();render()}
+function advRow(m){return`<div class="pts a" style="grid-template-columns:repeat(4,1fr);margin-top:8px"><div class="mut" style="grid-column:1/-1">Point lost by ${esc(m.home)}, by action</div>${ADVK.map(sk=>`<button style="padding:6px 2px;min-height:64px;font-size:15px" aria-label="${SKN[sk]}, ${esc(SKX[sk][0].n)}" onclick="advAct('${sk}')"><span style="display:block">${SKN[sk]}</span><span class="mut" style="display:block;font-size:12px">${G('--')} ${esc(SKX[sk][0].n)}</span></button>`).join('')}</div>`}
+function lostTable(m){const c=ADVK.map(sk=>m.log.filter(e=>e.x===sk).length),tot=c.reduce((a,b)=>a+b,0);if(!tot&&scoutMode!=='adv')return'';
+  return`<h2>Points lost by action</h2><div class="card sc"><table><tr><th></th>${ADVK.map(sk=>`<th>${SKN[sk]}</th>`).join('')}</tr><tr><td>${esc(m.home)}</td>${c.map(n=>`<td>${n}</td>`).join('')}</tr></table></div>`}
 function matchView(m){
   m.lu=m.lu||{h:[],a:[]};m.st=m.st||{};
   const[x,y]=sc(m,m.n),[sh,sa]=setsWon(m),tl=tally(m);
@@ -359,13 +385,14 @@ function matchView(m){
   else if(!m.done&&tup)h+=`<div class="banner">Time is up and the score is level. The next point wins the set.</div>`;
   h+=toBoxes(m)+subCard(m)+scoutPie(m)+serveCard(m);
   if(!m.done){
+    h+=modeToggle();
     h+=`<div class="pts h" style="margin-bottom:8px;grid-template-columns:1fr 1fr 1fr"><div class="mut" style="grid-column:1/-1">Point for ${esc(m.home)}</div>${TH.map(([k,l])=>`<button onclick="point('h','${k}')">${l}</button>`).join('')}</div>
-    <div class="pts a"><div class="mut" style="grid-column:1/-1">Point for ${esc(m.away)}</div>${T.map(([k,l])=>`<button onclick="point('a','${k}')">${l}</button>`).join('')}</div>
+    <div class="pts a"><div class="mut" style="grid-column:1/-1">Point for ${esc(m.away)}</div>${T.map(([k,l])=>`<button onclick="point('a','${k}')">${l}</button>`).join('')}</div>${scoutMode==='adv'?advRow(m):''}
     <div class="row" style="margin-top:12px"><button onclick="undo()" ${m.log.length||(m.sl||[]).some(e=>e.s===m.n)||(m.sb||[]).some(e=>e.s===m.n)?'':'disabled'}>Undo last point</button>${!last&&!tup?`<button onclick="endSet()">End set ${m.n+1}</button>`:''}<button class="pri" onclick="finish()">Finish match</button></div>`}
   else h+=`<div class="row"><button onclick="finish()">Reopen match</button></div>`;
   h+=`<h2>Set scores</h2><div>${Array.from({length:m.n+1},(_,i)=>{const[a,b]=sc(m,i);return i<m.n?`<button class="chip" style="min-height:36px" onclick="S.mt='set';S.setv=${i};S.pick=null;render()">Set ${i+1}: ${a}–${b}</button>`:`<span class="chip">Set ${i+1}: ${a}–${b}</span>`}).join('')}</div>${m.n>0?'<div class="mut">Tap a finished set to see how it ended.</div>':''}
   <h2>How points were scored</h2><div class="card sc"><table><tr><th></th><th>${esc(m.home)}</th><th>${esc(m.away)}</th></tr>${T.map(([k,l])=>`<tr><td>${l}</td><td>${tl.h[k]||0}</td><td>${tl.a[k]||0}</td></tr>`).join('')}</table></div>
-  ${serveTable(m)}<h2>Scouting notes</h2><textarea rows="5" aria-label="Scouting notes" placeholder="Rotations, serving targets, weak passers, setter habits" onchange="note(this.value)">${esc(m.notes)}</textarea>`;
+  ${lostTable(m)}${serveTable(m)}<h2>Scouting notes</h2><textarea rows="5" aria-label="Scouting notes" placeholder="Rotations, serving targets, weak passers, setter habits" onchange="note(this.value)">${esc(m.notes)}</textarea>`;
   return h}
 
 function teamsView(){
@@ -380,60 +407,27 @@ function teamsView(){
     if(!L.length&&!S.edit)h+=`<div class="card"><b>No players yet.</b><div class="mut">Add each player with a shirt number and preferred role.</div></div>`;
     L.forEach(p=>{h+=`<button class="m" onclick="editPlayer('${p.id}')"><div class="row"><span class="num" style="font-size:34px;min-width:52px">${p.num?'#'+esc(p.num):'–'}</span><div><b>${esc(p.name)}</b><div class="mut">${p.role?esc(p.role):'None'}</div></div></div></button>`});
     return h}
-  let h=`<div class="row sp"><h1>Teams</h1><button class="pri" onclick="S.tform=!S.tform;render()">${S.tform?'Cancel':'Add team'}</button></div>`;
-  if(S.tform)h+=`<div class="card"><label for="tm-n">Team name</label><input id="tm-n" autocomplete="off"><label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input id="tm-m" type="checkbox" style="width:auto" ${S.t.length?'':'checked'}>This is my team</label><div style="margin-top:14px"><button class="pri" onclick="addTeam()">Save team</button></div></div>`;
-  if(!S.t.length&&!S.tform)h+=`<div class="card"><b>Start with your own team.</b><div class="mut">Save it once with its players, then pick it for every match. Opponents can be saved too.</div></div>`;
-  [...S.t].sort((a,b)=>(b.mine?1:0)-(a.mine?1:0)||a.name.localeCompare(b.name)).forEach(t=>{const n=S.p.filter(p=>p.teamId===t.id).length;
-    h+=`<button class="m" onclick="openTeam('${t.id}')"><div class="row sp"><b>${esc(t.name)}</b><span class="mut">${t.mine?'Your team, ':''}${n} player${n===1?'':'s'}</span></div></button>`});
+  const opp=S.tab==='opps',my=S.t.find(t=>t.mine);
+  let h=`<div class="row sp"><h1>${opp?'Opponents':'Teams'}</h1>${opp||!my?`<button class="pri" onclick="S.tform=!S.tform;render()">${S.tform?'Cancel':opp?'Add opponent':'Add my team'}</button>`:''}</div>`;
+  if(S.tform)h+=`<div class="card"><label for="tm-n">${opp?'Opponent name':'Team name'}</label><input id="tm-n" autocomplete="off"><div style="margin-top:14px"><button class="pri" onclick="addTeam()">Save team</button></div></div>`;
+  if(!opp&&!S.t.length&&!S.tform)h+=`<div class="card"><b>Start with your own team.</b><div class="mut">Save it once with its players, then pick it for every match. Opponents are saved automatically when you create a match, and you can manage them on the Opponents tab.</div></div>`;
+  if(!opp&&S.t.length&&!my&&!S.tform)h+=`<div class="card"><b>No team is marked as yours.</b><div class="mut">Add your team here, or open a team on the Opponents tab and choose “Set as my team”.</div></div>`;
+  if(opp&&!S.t.some(t=>!t.mine)&&!S.tform)h+=`<div class="card"><b>No opponents yet.</b><div class="mut">Opponents are saved when you create a match. You can also add one here and give it a roster.</div></div>`;
+  S.t.filter(t=>opp?!t.mine:t.mine).sort((a,b)=>a.name.localeCompare(b.name)).forEach(t=>{const n=S.p.filter(p=>p.teamId===t.id).length;
+    h+=`<button class="m" onclick="openTeam('${t.id}')"><div class="row sp"><b>${esc(t.name)}</b><span class="mut">${n} player${n===1?'':'s'}</span></div></button>`});
   return h}
 
-const XK='vb-scout-export-v1';
-const expJson=()=>JSON.stringify({app:'volleyscout',format:1,exported:new Date().toISOString(),data:{matches:S.m,players:S.p,teams:S.t,rules:S.r,scale:SC.map(x=>({n:x.n,d:x.d}))}});
-const expName=()=>'volleyscout-backup-'+new Date().toISOString().slice(0,10)+'.json';
-function markExport(){try{localStorage.setItem(XK,new Date().toISOString())}catch(e){}render()}
-function doExport(){const b=new Blob([expJson()],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=expName();document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);markExport()}
-async function shareExport(){try{await navigator.share({files:[new File([expJson()],expName(),{type:'application/json'})],title:'VolleyScout backup'});markExport()}catch(e){}}
-const canShareFile=()=>{try{return!!(navigator.canShare&&typeof File!=='undefined'&&navigator.canShare({files:[new File(['x'],'a.json',{type:'application/json'})]}))}catch(e){return false}};
-function pickImport(inp){const f=inp.files&&inp.files[0];if(!f)return;const r=new FileReader();
-  r.onload=()=>{try{const j=JSON.parse(r.result),d=j&&j.app==='volleyscout'&&j.data;
-    if(!d||!Array.isArray(d.matches)||!Array.isArray(d.players)||!Array.isArray(d.teams))throw 0;
-    if(!d.matches.every(m=>m&&m.id&&Array.isArray(m.log)&&m.lu)||!d.players.every(x=>x&&x.id)||!d.teams.every(t=>t&&t.id&&t.name))throw 0;
-    S.imp={name:f.name,when:j.exported||'',d:{matches:d.matches,players:d.players,teams:d.teams,rules:Array.isArray(d.rules)?d.rules.filter(x=>x&&x.id&&x.name&&Array.isArray(x.sets)):[],scale:Array.isArray(d.scale)&&d.scale.length===5?d.scale:null}};S.impMsg=''}
-    catch(e){S.imp=null;alert('That file is not a VolleyScout backup.')}render()};
-  r.readAsText(f);inp.value=''}
-function cancelImport(){S.imp=null;render()}
-function applyImport(mode){const i=S.imp;if(!i)return;const d=copy(i.d);let msg;
-  if(mode==='replace'){if(!confirm('Replace all data on this device with the backup? This cannot be undone.'))return;
-    S.m=d.matches;S.p=d.players;S.t=d.teams;S.r=d.rules;
-    if(d.scale){SC=SCDEF.map((x,k)=>({k:x.k,n:String(d.scale[k].n||x.n).slice(0,12),d:String(d.scale[k].d||x.d)}));try{localStorage.setItem(SK,JSON.stringify(SC))}catch(e){}}
-    msg=`Replaced this device’s data: ${S.m.length} matches, ${S.p.length} players, ${S.t.length} teams, ${S.r.length} rule sets.`}
-  else{const tmap={};let nm=0,um=0;
-    d.teams.forEach(t=>{const ex=S.t.find(x=>x.id===t.id)||teamByName(t.name);if(ex)tmap[t.id]=ex.id;else{S.t.push({...t,mine:!!t.mine&&!myTeam()});tmap[t.id]=t.id}});
-    let np=0;d.players.forEach(x=>{if(S.p.some(y=>y.id===x.id))return;S.p.push({...x,teamId:tmap[x.teamId]||x.teamId});np++});
-    const act=m=>m.log.length+(m.sl||[]).length+(m.sb||[]).length+(m.to||[]).length;
-    d.matches.forEach(m=>{m.hid=tmap[m.hid]||m.hid;m.aid=tmap[m.aid]||m.aid;const k=S.m.findIndex(x=>x.id===m.id);if(k<0){S.m.push(m);nm++}else if(act(m)>act(S.m[k])){S.m[k]=m;um++}});
-    let nr=0;d.rules.forEach(r=>{if(!allRules().some(x=>x.id===r.id||String(x.name).toLowerCase()===String(r.name).toLowerCase())){S.r.push(r);nr++}});
-    msg=`Merged: ${nm} new matches, ${um} updated (the copy with more scouting data wins), ${np} new players, ${nr} new rule sets. Everything else on this device was kept.`}
-  save();saveP();saveT();saveR();S.imp=null;S.impMsg=msg;S.cur=null;render()}
-function backupCard(){const last=(()=>{try{return localStorage.getItem(XK)}catch(e){return null}})(),i=S.imp;
-  let h=`<h2>Backup and move data</h2><div class="mut">Your data lives only on this device. Export a file, send it to your other device (AirDrop, email, a cloud drive) and import it there.</div>
-  <div class="card"><div class="mut">On this device: ${S.m.length} matches, ${S.p.length} players, ${S.t.length} teams.${last?' Last export: '+esc(last.slice(0,10))+'.':' Not exported yet.'}</div><div class="row" style="margin-top:10px"><button class="pri" onclick="doExport()">Export data</button>${canShareFile()?'<button onclick="shareExport()">Share file</button>':''}</div>
-  <label for="imp-f" style="margin-top:16px">Import a backup file</label><input id="imp-f" type="file" accept=".json,application/json" onchange="pickImport(this)"></div>`;
-  if(S.impMsg)h+=`<div class="banner" role="status">${esc(S.impMsg)}</div>`;
-  if(i)h+=`<div class="card"><b>Backup ready: ${esc(i.name)}</b><div class="mut">${i.d.matches.length} matches, ${i.d.players.length} players, ${i.d.teams.length} teams, ${i.d.rules.length} rule sets${i.when?', exported '+esc(String(i.when).slice(0,10)):''}.</div>
-  <div class="mut" style="margin-top:8px"><b>Replace</b> makes this device match the file exactly, and removes what is only on this device. <b>Merge</b> adds what is missing and keeps the rest; teams are matched by name.</div>
-  <div class="row" style="margin-top:10px"><button class="pri" onclick="applyImport('replace')">Replace everything</button><button onclick="applyImport('merge')">Merge</button><button onclick="cancelImport()">Cancel</button></div></div>`;
-  return h}
-function buildBackup(){return{app:'volleyscout',v:22,exported:new Date().toISOString(),data:{matches:S.m,players:S.p,teams:S.t,rules:S.r,scale:SC.map(x=>({n:x.n,d:x.d}))}}}
+function buildBackup(){return{app:'volleyscout',v:22,exported:new Date().toISOString(),data:{matches:S.m,players:S.p,teams:S.t,rules:S.r,scale:SC.map(x=>({n:x.n,d:x.d})),skills:SKX}}}
 async function exportData(){const txt=JSON.stringify(buildBackup()),name='volleyscout-backup-'+new Date().toISOString().slice(0,10)+'.json';
   try{const f=new File([txt],name,{type:'application/json'});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'VolleyScout backup'});return}}catch(e){if(e&&e.name==='AbortError')return}
   const a=document.createElement('a'),u=URL.createObjectURL(new Blob([txt],{type:'application/json'}));a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
 function parseBackup(txt){let o;try{o=JSON.parse(txt)}catch(e){return null}const d=o&&o.app==='volleyscout'&&o.data;
   if(!d||!Array.isArray(d.matches)||!Array.isArray(d.players)||!Array.isArray(d.teams))return null;
-  return{matches:d.matches,players:d.players,teams:d.teams,rules:Array.isArray(d.rules)?d.rules:[],scale:Array.isArray(d.scale)&&d.scale.length===5?d.scale:null}}
+  return{matches:d.matches,players:d.players,teams:d.teams,rules:Array.isArray(d.rules)?d.rules:[],scale:Array.isArray(d.scale)&&d.scale.length===5?d.scale:null,skills:d.skills&&typeof d.skills==='object'?d.skills:null}}
 function applyBackup(d,mode){
   if(mode==='replace'){S.m=d.matches;S.p=d.players;S.t=d.teams;S.r=d.rules;
-    if(d.scale){SC=d.scale.map((x,i)=>({k:SCDEF[i].k,n:x.n||SCDEF[i].n,d:x.d||SCDEF[i].d}));try{localStorage.setItem(SK,JSON.stringify(SC))}catch(e){}}}
+    if(d.scale){SC=d.scale.map((x,i)=>({k:SCDEF[i].k,n:x.n||SCDEF[i].n,d:x.d||SCDEF[i].d}));try{localStorage.setItem(SK,JSON.stringify(SC))}catch(e){}}
+    if(d.skills){setSkx(d.skills);saveSkx()}}
   else{const map={};
     d.teams.forEach(t=>{const l=S.t.find(x=>x.name.toLowerCase()===String(t.name).toLowerCase());if(l)map[t.id]=l.id;else{const n={...t};if(n.mine&&myTeam())n.mine=false;S.t.push(n);map[t.id]=n.id}});
     d.players.forEach(p=>{if(S.p.some(x=>x.id===p.id))return;S.p.push({...p,teamId:map[p.teamId]||p.teamId})});
@@ -449,10 +443,10 @@ function importFile(inp){const f=inp.files&&inp.files[0];if(!f)return;const r=ne
   r.readAsText(f)}
 function settingsView(){
   if(S.rd)return ruleForm();
-  let h=`<h1>Settings</h1><h2 style="margin-top:8px">Appearance</h2><div class="seg" role="group" aria-label="Theme">${[['auto','Auto'],['light','Light'],['dark','Dark']].map(([k,l])=>`<button aria-pressed="${themeMode===k}" onclick="setTheme('${k}')">${l}</button>`).join('')}</div><div class="mut" style="margin-top:6px">Auto follows your phone setting.</div>${backupCard()}<h2>Tournament rules</h2><div class="mut">A rule set defines the number of sets, the points to win, hard limits and time limits. You pick one when you create a match.</div>`;
+  let h=`<h1>Settings</h1><h2 style="margin-top:8px">Appearance</h2><div class="seg" role="group" aria-label="Theme">${[['auto','Auto'],['light','Light'],['dark','Dark']].map(([k,l])=>`<button aria-pressed="${themeMode===k}" onclick="setTheme('${k}')">${l}</button>`).join('')}</div><div class="mut" style="margin-top:6px">Auto follows your phone setting.</div><h2>Tournament rules</h2><div class="mut">A rule set defines the number of sets, the points to win, hard limits and time limits. You pick one when you create a match.</div>`;
   allRules().forEach(r=>{const bi=BUILT.some(b=>b.id===r.id);
     h+=`<div class="card"><div class="row sp"><b>${esc(r.name)}</b>${bi?'<span class="mut">Built in</span>':`<button onclick="editRule('${r.id}')">Edit</button>`}</div>${r.sets.map((x,i)=>`<div class="mut">Set ${i+1}: ${x.win} to win${x.hard?', hard limit '+x.hard:', win by 2'}</div>`).join('')}${ruleMin(r)?`<div class="mut">Match time: ${ruleMin(r)} minutes</div>`:''}<div class="mut">Timeouts: ${ruleTO(r)} per team per set</div><div class="mut">Substitutions: ${ruleSub(r)} per team per set</div>${r.roster?'<div class="mut">Roster limit: 12 players + 1 or 2 liberos</div>':''}</div>`});
-  h+=`<button class="pri" onclick="newRule()">Create rule set</button><h2>Serve grades</h2><div class="mut">Five buttons appear when your team serves. The symbols are fixed; you can rename them and change the descriptions. A ${G('--')} gives the opponents the point and a ${G('++')} gives your team the point.</div>${SC.map((x,i)=>`<div class="card"><b>${G(x.k)}</b><label for="sc-n${i}">Short label</label><input id="sc-n${i}" maxlength="12" value="${esc(x.n)}"><label for="sc-d${i}">Description</label><input id="sc-d${i}" value="${esc(x.d)}"></div>`).join('')}<div class="row"><button class="pri" onclick="saveScale()">Save grades</button><button onclick="resetScale()">Reset to defaults</button></div>`;
+  h+=`<button class="pri" onclick="newRule()">Create rule set</button><h2>Grades</h2><div class="mut">The same five symbols are used for every skill. The symbols are fixed; you can rename each one and change its description. Open a skill to edit it. For serves, a ${G('--')} gives the opponents the point and a ${G('++')} gives your team the point. Only serves are graded on the Scout page for now.</div>${Object.keys(SKN).map(sk=>`<details class="card" ${S.gopen&&S.gopen[sk]?'open':''} ontoggle="(S.gopen=S.gopen||{})['${sk}']=this.open"><summary><b>${SKN[sk]} grades</b></summary>${gScale(sk).map((x,i)=>`<div style="margin-top:10px"><b>${G(x.k)}</b><label for="g-${sk}-n${i}">Short label</label><input id="g-${sk}-n${i}" maxlength="12" value="${esc(x.n)}"><label for="g-${sk}-d${i}">Description</label><input id="g-${sk}-d${i}" value="${esc(x.d)}"></div>`).join('')}<div class="row" style="margin-top:12px"><button class="pri" onclick="saveScale('${sk}')">Save</button><button onclick="resetScale('${sk}')">Reset to defaults</button></div></details>`).join('')}`;
   h+=`<h2>Backup and transfer</h2><div class="card"><div class="mut">Data lives only on this device. Export a file, send it to your other device (AirDrop, email, messages, cloud drive) and import it there. Export also works as a backup.</div><div class="row" style="margin-top:12px"><button class="pri" onclick="exportData()">Export data</button></div><div class="row" style="margin-top:10px"><button onclick="pickImport('replace')">Import and replace</button><button onclick="pickImport('merge')">Import and add</button></div><div class="mut" style="margin-top:8px"><b>Replace</b> makes this device match the file. <b>Add</b> keeps what is here and adds the matches, teams and players that are missing.</div><input id="imp" type="file" accept=".json,application/json" style="display:none" onchange="importFile(this)"></div>`;
   return h}
 const RD0=()=>({id:null,name:'',min:null,to:2,sub:8,roster:false,sets:[{win:21,hard:23},{win:21,hard:23},{win:15,hard:15}]});
@@ -477,10 +471,10 @@ function ruleForm(){const d=S.rd;
   <div style="margin-top:14px"><button class="pri" onclick="saveRule()">Save rule set</button></div>`}
 
 function serveStats(){
-  const F=S.sf=S.sf||{opp:'',from:'',to:''},any=S.m.some(m=>(m.sl||[]).length);
+  const F=S.sf=S.sf||{opp:'',rule:'',from:'',to:''},any=S.m.some(m=>(m.sl||[]).length);
   let h=`<h2 style="margin-top:8px">Serving by player</h2>`;
   if(!any)return h+`<div class="card"><b>No graded serves yet.</b><div class="mut">Grade serves on the scout page while your team is serving, and each player's totals appear here.</div></div>`;
-  const opps=[...new Set(S.m.map(m=>m.away))].sort(),ms=S.m.filter(m=>(m.sl||[]).length&&(!F.opp||m.away===F.opp)&&(!F.from||m.date>=F.from)&&(!F.to||m.date<=F.to));
+  const opps=[...new Set(S.m.map(m=>m.away))].sort(),ms=S.m.filter(m=>(m.sl||[]).length&&fOk(m,F));
   const by={};
   ms.forEach(m=>m.sl.forEach(e=>{const p=S.p.find(x=>x.id===e.pid),le=m.lu.h.find(x=>x.pid===e.pid),name=p?p.name:le?le.name:'Player',key=p?e.pid:'n:'+name.toLowerCase();const r=by[key]=by[key]||{name,c:{}};r.c[e.g]=(r.c[e.g]||0)+1}));
   const tot=r=>SC.reduce((a,x)=>a+(r.c[x.k]||0),0),pc=(n,t)=>t?Math.round(n/t*100)+'%':'–';
@@ -490,10 +484,10 @@ function serveStats(){
   if(!rows.length)return h+`<div class="card"><div class="mut">No graded serves match these filters.</div></div>`;
   return h+`<div class="mut">${ms.length} match${ms.length===1?'':'es'}, ${tot(all)} graded serves. Good = ${G(SC[3].k)} and ${G(SC[4].k)}, Err = ${G(SC[0].k)}.</div><div class="card sc"><table><tr><th>Player</th>${SC.map(x=>`<th>${G(x.k)}</th>`).join('')}<th>All</th><th>Good</th><th>Err</th></tr>${rows.map(tr).join('')}<tr style="font-weight:600">${tr(all).slice(4)}</table></div>`}
 
-function statsFilter(){const F=S.sf=S.sf||{opp:'',from:'',to:''};if(!S.m.length)return'';const opps=[...new Set(S.m.map(m=>m.away))].sort();
-  return`<div class="card"><div class="row" style="gap:10px;align-items:flex-start"><div style="flex:1;min-width:140px"><label for="sf-o">Opponent</label><select id="sf-o" onchange="S.sf.opp=this.value;render()"><option value="">All opponents</option>${opps.map(o=>`<option value="${esc(o)}"${F.opp===o?' selected':''}>${esc(o)}</option>`).join('')}</select></div><div style="flex:1;min-width:120px"><label for="sf-f">From</label><input id="sf-f" type="date" value="${esc(F.from)}" onchange="S.sf.from=this.value;render()"></div><div style="flex:1;min-width:120px"><label for="sf-t">To</label><input id="sf-t" type="date" value="${esc(F.to)}" onchange="S.sf.to=this.value;render()"></div></div>${F.opp||F.from||F.to?'<div style="margin-top:10px"><button onclick="S.sf={opp:\'\',from:\'\',to:\'\'};render()">Clear filters</button></div>':''}</div>`}
-const fOk=(m,F)=>(!F.opp||m.away===F.opp)&&(!F.from||m.date>=F.from)&&(!F.to||m.date<=F.to);
-function attendStats(){const F=S.sf=S.sf||{opp:'',from:'',to:''},ms=S.m.filter(m=>m.log.length&&fOk(m,F)),by={};let nsets=0;
+function statsFilter(){const F=S.sf=S.sf||{opp:'',rule:'',from:'',to:''};if(!S.m.length)return'';const opps=[...new Set(S.m.map(m=>m.away))].sort(),rids=[...new Set(S.m.map(m=>m.fmt).filter(Boolean))],rn=id=>{const r=allRules().find(x=>x.id===id)||(S.m.find(m=>m.fmt===id)||{}).rule;return r&&r.name?r.name:id},rl=rids.map(id=>[id,rn(id)]).sort((a,b)=>a[1].localeCompare(b[1]));
+  return`<div class="card"><div class="row" style="gap:10px;align-items:flex-start"><div style="flex:1;min-width:140px"><label for="sf-o">Opponent</label><select id="sf-o" onchange="S.sf.opp=this.value;render()"><option value="">All opponents</option>${opps.map(o=>`<option value="${esc(o)}"${F.opp===o?' selected':''}>${esc(o)}</option>`).join('')}</select></div><div style="flex:1;min-width:140px"><label for="sf-r">Rule set</label><select id="sf-r" onchange="S.sf.rule=this.value;render()"><option value="">All rule sets</option>${rl.map(([id,n])=>`<option value="${esc(id)}"${F.rule===id?' selected':''}>${esc(n)}</option>`).join('')}</select></div><div style="flex:1;min-width:120px"><label for="sf-f">From</label><input id="sf-f" type="date" value="${esc(F.from)}" onchange="S.sf.from=this.value;render()"></div><div style="flex:1;min-width:120px"><label for="sf-t">To</label><input id="sf-t" type="date" value="${esc(F.to)}" onchange="S.sf.to=this.value;render()"></div></div>${F.opp||F.rule||F.from||F.to?'<div style="margin-top:10px"><button onclick="S.sf={opp:\'\',rule:\'\',from:\'\',to:\'\'};render()">Clear filters</button></div>':''}</div>`}
+const fOk=(m,F)=>(!F.opp||m.away===F.opp)&&(!F.rule||m.fmt===F.rule)&&(!F.from||m.date>=F.from)&&(!F.to||m.date<=F.to);
+function attendStats(){const F=S.sf=S.sf||{opp:'',rule:'',from:'',to:''},ms=S.m.filter(m=>m.log.length&&fOk(m,F)),by={};let nsets=0;
   ms.forEach(m=>{const mk=new Set(),ids=new Set(m.lu.h.map(x=>x.pid));
     const row=pid=>{const p=S.p.find(x=>x.id===pid),le=m.lu.h.find(x=>x.pid===pid),name=p?p.name:le?le.name:'Player',key=p?pid:'n:'+name.toLowerCase();return[key,by[key]=by[key]||{name,m:0,st:0,sp:0}]};
     m.lu.h.forEach(x=>{const[k,r]=row(x.pid);if(!mk.has(k)){mk.add(k);r.m++}});
@@ -504,29 +498,31 @@ function attendStats(){const F=S.sf=S.sf||{opp:'',from:'',to:''},ms=S.m.filter(m
       stt.forEach(k=>by[k].st++);pl.forEach(k=>by[k].sp++)}});
   const rows=Object.values(by).sort((a,b)=>b.sp-a.sp||b.m-a.m||a.name.localeCompare(b.name));
   let h=`<h2 style="margin-top:8px">Appearances</h2>`;
-  if(!rows.length)return h+`<div class="card"><div class="mut">No played matches${F.opp||F.from||F.to?' match these filters':' yet'}. A match counts once a point has been scored.</div></div>`;
+  if(!rows.length)return h+`<div class="card"><div class="mut">No played matches${F.opp||F.rule||F.from||F.to?' match these filters':' yet'}. A match counts once a point has been scored.</div></div>`;
   return h+`<div class="mut">${ms.length} match${ms.length===1?'':'es'}, ${nsets} set${nsets===1?'':'s'} played. Matches: attended. Starts: sets in the starting six. Sets: sets on court, as a starter or a substitute.</div><div class="card sc"><table><tr><th>Player</th><th>Matches</th><th>Starts</th><th>Sets</th></tr>${rows.map(r=>`<tr><td>${esc(r.name)}</td><td>${r.m}</td><td>${r.st}</td><td>${r.sp}</td></tr>`).join('')}</table></div>`}
 function statsView(){
   const R={};
   S.m.forEach(m=>{
+    if(!m.log.length)return;
     [['h',m.home],['a',m.away]].forEach(([s,name])=>{
-      const k=name.toLowerCase();const r=R[k]=R[k]||{name,m:0,sw:0,sl:0,kill:0,ace:0,block:0,err:0,given:0,pf:0,pa:0};
-      const o=s==='h'?'a':'h';r.m++;
+      const k=name.toLowerCase();const r=R[k]=R[k]||{name,m:0,mw:0,sw:0,sl:0,kill:0,ace:0,block:0,err:0,given:0,pf:0,pa:0};
+      const o=s==='h'?'a':'h';r.m++;if(m.done){const[x,y]=setsWon(m);if((s==='h'?x:y)>(s==='h'?y:x))r.mw++}
       m.log.forEach(e=>{if(e.t===s){r[e.type]++;r.pf++}else{r.pa++;if(e.type==='err')r.given++}});
       for(let i=0;i<=m.n;i++){if(i<m.n||m.done){const q=sc(m,i),a=s==='h'?q[0]:q[1],b=s==='h'?q[1]:q[0];if(a>b)r.sw++;else if(b>a)r.sl++}}})});
   const L=Object.values(R).sort((a,b)=>b.m-a.m||a.name.localeCompare(b.name));
-  let h=`<h1>Stats</h1>${statsFilter()}${attendStats()}${serveStats()}<h2>Teams</h2><div class="mut">Totals across every match you have logged. “Errors given” counts points this team handed to opponents.</div>`;
+  let h=`<h1>Stats</h1>${statsFilter()}${attendStats()}${serveStats()}<h2>Teams</h2><div class="mut">Totals across every match with at least one point scored. Matches won and sets are counted for finished matches and closed sets. “Errors given” counts points this team handed to opponents.</div>`;
   if(!L.length)return h+`<div class="card"><b>Nothing to show yet.</b><div class="mut">Log a match and each team’s profile appears here.</div></div>`;
-  L.forEach(r=>{h+=`<div class="card sc"><div class="row sp"><b style="font-size:18px">${esc(r.name)}</b><span class="mut">${r.m} match${r.m>1?'es':''}, sets ${r.sw}–${r.sl}</span></div>
-  <table><tr><th>Points scored</th><th>Kills</th><th>Aces</th><th>Blocks</th><th>Opp. err.</th></tr><tr><td>${r.pf} (allowed ${r.pa})</td><td>${r.kill}</td><td>${r.ace}</td><td>${r.block}</td><td>${r.err}</td></tr></table>
+  L.forEach(r=>{h+=`<div class="card sc"><b style="font-size:18px">${esc(r.name)}</b>
+  <table style="margin-top:8px"><tr><th>Matches played</th><th>Matches won</th><th>Sets won</th><th>Sets lost</th></tr><tr><td>${r.m}</td><td>${r.mw}</td><td>${r.sw}</td><td>${r.sl}</td></tr></table>
+  <table style="margin-top:12px"><tr><th>Points scored</th><th>Kills</th><th>Aces</th><th>Blocks</th><th>Opp. err.</th></tr><tr><td>${r.pf} (allowed ${r.pa})</td><td>${r.kill}</td><td>${r.ace}</td><td>${r.block}</td><td>${r.err}</td></tr></table>
   <div class="mut" style="margin-top:8px">Errors given: ${r.given}. Share of points from attack: ${r.pf?Math.round(r.kill/r.pf*100):0}%, from serve: ${r.pf?Math.round(r.ace/r.pf*100):0}%.</div></div>`});
   return h}
 
-const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 24</div>';
+const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 32</div>';
 function render(){
   const m=S.cur&&get(S.cur);
-  document.getElementById('app').innerHTML=(m?matchView(m):S.tab==='stats'?statsView():S.tab==='settings'?settingsView():S.tab==='teams'?teamsView():listView())+VER;
-  ['matches','teams','stats','settings'].forEach(t=>{const b=document.getElementById('t-'+t);if(S.tab===t&&!m)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});nrStatus()}
+  document.getElementById('app').innerHTML=(m?matchView(m):S.tab==='stats'?statsView():S.tab==='settings'?settingsView():S.tab==='teams'||S.tab==='opps'?teamsView():listView())+VER;
+  ['matches','teams','opps','stats','settings'].forEach(t=>{const b=document.getElementById('t-'+t);if(S.tab===t&&!m)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});nrStatus()}
 render();
 if("serviceWorker" in navigator){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}
 </script>
