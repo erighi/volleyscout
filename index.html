@@ -55,6 +55,7 @@ th,td{padding:6px 4px;text-align:right;border-bottom:1px solid var(--line)}
 th:first-child,td:first-child{text-align:left}
 .sc{overflow-x:auto}
 .del{color:var(--bad)}
+.dd{display:inline-flex;align-items:center;gap:.18em;vertical-align:middle}.dd i{display:block;width:.38em;min-width:5px;height:.09em;min-height:2px;background:currentColor;border-radius:1px}
 </style>
 </head>
 <body>
@@ -63,12 +64,21 @@ th:first-child,td:first-child{text-align:left}
 <script>
 const K='vb-scout-v1';
 const T=[['kill','Attack kill'],['ace','Ace'],['block','Block'],['err','Opp. error']];
+const TH=T.filter(x=>x[0]!=='ace');
+const G=k=>k==='--'?'<span class="dd" role="img" aria-label="minus minus"><i></i><i></i></span>':esc(k);
 const PK='vb-scout-players-v1',TK='vb-scout-teams-v1';
 const ROLES=['Setter','Outside hitter','Opposite','Middle blocker','Libero','Defensive specialist'];
 let S={m:[],p:[],t:[],r:[],rd:null,cur:null,tab:'teams',form:false,edit:null,team:null,tform:false};
 try{const r=localStorage.getItem(K);if(r)S.m=JSON.parse(r)||[]}catch(e){}
 try{const r=localStorage.getItem(PK);if(r)S.p=JSON.parse(r)||[]}catch(e){}
 try{const r=localStorage.getItem(TK);if(r)S.t=JSON.parse(r)||[]}catch(e){}
+const THK='vb-scout-theme-v1';
+let themeMode='auto';try{const r=localStorage.getItem(THK);if(r==='light'||r==='dark')themeMode=r}catch(e){}
+function applyTheme(){const d=document.documentElement;if(themeMode==='auto')d.removeAttribute('data-theme');else d.setAttribute('data-theme',themeMode);
+  const dk=themeMode==='dark'||(themeMode==='auto'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches),mt=document.querySelector('meta[name=theme-color]');if(mt)mt.setAttribute('content',dk?'#0c1a1d':'#0e6b73')}
+function setTheme(k){themeMode=k;try{if(k==='auto')localStorage.removeItem(THK);else localStorage.setItem(THK,k)}catch(e){}applyTheme();render()}
+try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(themeMode==='auto')applyTheme()})}catch(e){}
+applyTheme();
 const saveP=()=>{try{localStorage.setItem(PK,JSON.stringify(S.p))}catch(e){}};
 const saveT=()=>{try{localStorage.setItem(TK,JSON.stringify(S.t))}catch(e){}};
 const save=()=>{try{localStorage.setItem(K,JSON.stringify(S.m))}catch(e){}};
@@ -81,20 +91,43 @@ try{const r=localStorage.getItem(SK);if(r){const a=JSON.parse(r);if(Array.isArra
 function saveScale(){SC=SC.map((x,i)=>({k:x.k,n:(document.getElementById('sc-n'+i).value.trim()||SCDEF[i].n).slice(0,12),d:document.getElementById('sc-d'+i).value.trim()||SCDEF[i].d}));try{localStorage.setItem(SK,JSON.stringify(SC))}catch(e){}render()}
 function resetScale(){SC=JSON.parse(JSON.stringify(SCDEF));try{localStorage.removeItem(SK)}catch(e){}render()}
 function serve(g){const m=get(S.cur);if(m.done)return;const cl=curLU(m,m.n);if(!cl.serving||!cl.pos[0])return;const L=m.log.length,sl=m.sl=m.sl||[],ls=sl[sl.length-1];if(ls&&ls.s===m.n&&ls.at===L)return;
-  sl.push({s:m.n,pid:cl.pos[0],g,at:L});
+  sl.push({s:m.n,pid:cl.pos[0],g,at:L,q:(m.q=(m.q||0)+1)});
   if(g==='--')m.log.push({t:'a',type:'err',s:m.n,a:1});else if(g==='++')m.log.push({t:'h',type:'ace',s:m.n,a:1});
   save();render()}
-function undo(){const m=get(S.cur),L=m.log.length,sl=m.sl=m.sl||[],ls=sl[sl.length-1];
-  if(ls&&ls.s===m.n&&ls.at===L)sl.pop();
+function undo(){const m=get(S.cur),L=m.log.length,sl=m.sl=m.sl||[],ls=sl[sl.length-1],sb=m.sb=m.sb||[],K=m.log.filter(e=>e.s===m.n).length;
+  let lb=null;for(let i=sb.length-1;i>=0;i--)if(sb[i].s===m.n){lb=sb[i];break}
+  const gp=!!(ls&&ls.s===m.n&&ls.at===L),sp=!!(lb&&lb.k===K);
+  if(sp&&(!gp||(lb.q||0)>(ls.q||0)))sb.splice(sb.indexOf(lb),1);
+  else if(gp)sl.pop();
   else{const p=m.log[L-1];if(!p||p.s!==m.n)return;m.log.pop();if(p.a&&ls&&ls.at===L-1)sl.pop()}
   save();render()}
+const subsUsed=(m,si)=>(m.sb||[]).filter(x=>x.s===si&&!x.lib).length;
+const pnum=(m,pid)=>{const e=m.lu.h.find(x=>x.pid===pid);return e?(e.num?'#'+esc(e.num):esc(e.name)):'?'};
+function subOpen(on){S.sb=on?{out:null}:null;render()}
+function subOut(pid){if(S.sb){S.sb.out=pid;render()}}
+function subIn(pid){const m=get(S.cur);if(m.done||!S.sb||!S.sb.out)return;const cl=curLU(m,m.n);
+  if(!cl.pos.includes(S.sb.out)||cl.pos.includes(pid))return;
+  const eo=m.lu.h.find(x=>x.pid===S.sb.out),ei=m.lu.h.find(x=>x.pid===pid),lib=!!((eo&&eo.role==='Libero')||(ei&&ei.role==='Libero'));
+  if(!lib&&subsUsed(m,m.n)>=ruleSub(ruleOf(m))){alert('All substitutions for this set are used.');return}
+  const[x,y]=sc(m,m.n);(m.sb=m.sb||[]).push({s:m.n,k:m.log.filter(e=>e.s===m.n).length,out:S.sb.out,in:pid,lib:lib?1:0,sc:[x,y],q:(m.q=(m.q||0)+1)});
+  S.sb=null;save();render()}
+function subCard(m){const lim=ruleSub(ruleOf(m));if(!lim)return'';
+  const used=subsUsed(m,m.n),mine=(m.sb||[]).filter(x=>x.s===m.n),cl=curLU(m,m.n),all=m.lu.h;
+  let h=`<div class="card"><div class="row sp"><b>Substitutions, ${esc(m.home)}</b><span><span class="num" style="font-size:28px">${used}</span> <span class="mut">of ${lim}</span></span></div>`;
+  h+=mine.map(x=>`<div class="mut" style="margin-top:4px">${pnum(m,x.in)} in for ${pnum(m,x.out)} at ${x.sc[0]}–${x.sc[1]}${x.lib?' (libero swap, not counted)':''}</div>`).join('');
+  if(m.done)return h+'</div>';
+  const full=used>=lim,cancel=`<div style="margin-top:8px"><button onclick="subOpen(false)">Cancel</button></div>`;
+  if(!S.sb)return h+`<div style="margin-top:10px"><button onclick="subOpen(true)">Substitution</button></div>${full?'<div class="mut" style="margin-top:6px">Limit reached. Only libero swaps can still be recorded.</div>':''}</div>`;
+  if(!S.sb.out)return h+`<div style="margin-top:10px"><b>Who goes out?</b></div>${cl.pos.map((id,i)=>id?`<button class="m" style="margin:6px 0" onclick="subOut('${id}')"><b>P${i+1}</b> ${pnum(m,id)} ${esc((all.find(x=>x.pid===id)||{}).name||'')}</button>`:'').join('')}${cancel}</div>`;
+  const eo=all.find(x=>x.pid===S.sb.out),bench=all.filter(x=>!cl.pos.includes(x.pid)).sort(byNum);
+  return h+`<div style="margin-top:10px"><b>Who comes in for ${pnum(m,S.sb.out)} ${esc(eo?eo.name:'')}?</b></div>${bench.map(x=>{const lib=x.role==='Libero'||(eo&&eo.role==='Libero'),dis=full&&!lib;return`<button class="m" style="margin:6px 0" ${dis?'disabled':''} onclick="subIn('${x.pid}')"><b>${x.num?'#'+esc(x.num):'–'}</b> ${esc(x.name)}${x.role?', <span class="mut">'+esc(x.role)+'</span>':''}</button>`}).join('')||'<div class="mut" style="margin-top:6px">No one on the bench. Tick more players on the Roster tab.</div>'}<div class="row" style="margin-top:8px"><button onclick="S.sb.out=null;render()">Back</button><button onclick="subOpen(false)">Cancel</button></div></div>`}
 function serveCard(m){const cl=curLU(m,m.n);if(m.done||!cl.serving||!cl.pos[0])return'';
   const L=m.log.length,sl=m.sl||[],ls=sl[sl.length-1],rated=ls&&ls.s===m.n&&ls.at===L,e=m.lu.h.find(x=>x.pid===cl.pos[0]),who=e?(e.num?'#'+esc(e.num)+' ':'')+esc(e.name):'';
-  if(rated){const g=SC.find(x=>x.k===ls.g);return`<div class="card"><b>Serve${who?': '+who:''}</b><div class="mut">Graded <b>${esc(ls.g)}</b>${g?' ('+esc(g.n)+')':''}. Now record how the rally ended.</div></div>`}
-  return`<div class="card"><b>Serve${who?': '+who:''}</b><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px">${SC.map(x=>`<button aria-label="${esc(x.k)} ${esc(x.n)}: ${esc(x.d)}" style="min-height:64px;padding:6px 2px;line-height:1.1${x.k==='--'?';border-color:var(--bad)':x.k==='++'?';border-color:var(--good)':''}" onclick="serve('${x.k}')"><span class="num" style="font-size:26px;display:block">${esc(x.k)}</span><span style="font-size:11px">${esc(x.n)}</span></button>`).join('')}</div><details style="margin-top:8px"><summary class="mut" style="cursor:pointer">What do the grades mean?</summary>${SC.map(x=>`<div class="mut" style="margin-top:4px"><b>${esc(x.k)}</b> ${esc(x.d)}</div>`).join('')}</details></div>`}
+  if(rated){const g=SC.find(x=>x.k===ls.g);return`<div class="card"><b>Serve${who?': '+who:''}</b><div class="mut">Graded <b>${G(ls.g)}</b>${g?' ('+esc(g.n)+')':''}. Now record how the rally ended.</div></div>`}
+  return`<div class="card"><b>Serve${who?': '+who:''}</b><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px">${SC.map(x=>`<button aria-label="${esc(x.k)} ${esc(x.n)}: ${esc(x.d)}" style="min-height:64px;padding:6px 2px;line-height:1.1${x.k==='--'?';border-color:var(--bad)':x.k==='++'?';border-color:var(--good)':''}" onclick="serve('${x.k}')"><span class="num" style="font-size:26px;display:block">${G(x.k)}</span><span style="font-size:11px">${esc(x.n)}</span></button>`).join('')}</div><details style="margin-top:8px"><summary class="mut" style="cursor:pointer">What do the grades mean?</summary>${SC.map(x=>`<div class="mut" style="margin-top:4px"><b>${G(x.k)}</b> ${esc(x.d)}</div>`).join('')}</details></div>`}
 function serveTable(m){const sl=m.sl||[];if(!sl.length)return'';const by={};sl.forEach(e=>{const r=by[e.pid]=by[e.pid]||{};r[e.g]=(r[e.g]||0)+1});
   const rows=Object.keys(by).map(pid=>{const e=m.lu.h.find(x=>x.pid===pid),r=by[pid],t=SC.reduce((a,x)=>a+(r[x.k]||0),0);return`<tr><td>${e?(e.num?'#'+esc(e.num)+' ':'')+esc(e.name):'Player'}</td>${SC.map(x=>`<td>${r[x.k]||0}</td>`).join('')}<td>${t}</td></tr>`}).join('');
-  return`<h2>Serve grades</h2><div class="card sc"><table><tr><th></th>${SC.map(x=>`<th>${esc(x.k)}</th>`).join('')}<th>All</th></tr>${rows}</table></div>`}
+  return`<h2>Serve grades</h2><div class="card sc"><table><tr><th></th>${SC.map(x=>`<th>${G(x.k)}</th>`).join('')}<th>All</th></tr>${rows}</table></div>`}
 const RK='vb-scout-rules-v1';
 try{const r=localStorage.getItem(RK);if(r)S.r=JSON.parse(r)||[]}catch(e){}
 const saveR=()=>{try{localStorage.setItem(RK,JSON.stringify(S.r))}catch(e){}};
@@ -106,6 +139,16 @@ const copy=o=>JSON.parse(JSON.stringify(o));
 const setRule=(m,si)=>{const R=ruleOf(m);return R.sets[Math.min(si,R.sets.length-1)]};
 const ruleText=r=>r.sets.map(s=>s.win+(s.hard?' hard '+s.hard:' win by 2')).join(' | ')+(ruleMin(r)?' | match time '+ruleMin(r)+' min':'');
 const fmtT=ms=>{const t=Math.max(0,Math.ceil(ms/1000));return Math.floor(t/60)+':'+String(t%60).padStart(2,'0')};
+const ruleTO=r=>r.to==null?2:r.to;
+const ruleSub=r=>r.sub==null?8:r.sub;
+function callTO(t,i){const m=get(S.cur);if(m.done)return;m.to=m.to||[];const mine=m.to.filter(e=>e.s===m.n&&e.t===t);
+  if(mine[i]){m.to.splice(m.to.indexOf(mine[i]),1)}
+  else{if(mine.length>=ruleTO(ruleOf(m)))return;const[x,y]=sc(m,m.n);m.to.push({s:m.n,t,sc:[x,y]})}
+  save();render()}
+function toBoxes(m){const n=ruleTO(ruleOf(m));if(!n||m.done)return'';
+  const col=(t,nm)=>{const used=(m.to||[]).filter(e=>e.s===m.n&&e.t===t),c=t==='h'?'var(--home)':'var(--away)';
+    return`<div style="flex:1;min-width:0"><div class="mut" style="font-size:13px;margin-bottom:4px;overflow-wrap:anywhere">${esc(nm)}</div><div class="row" style="gap:6px;flex-wrap:nowrap">${Array.from({length:n},(_,i)=>{const e=used[i];return`<button aria-pressed="${!!e}" aria-label="${esc(nm)} timeout ${i+1}${e?', called at '+e.sc[0]+' '+e.sc[1]:', not used'}" style="flex:1;min-width:0;min-height:46px;padding:4px;border-color:${c}${e?';background:'+c+';color:var(--onc);font-weight:600':''}" onclick="callTO('${t}',${i})">${e?e.sc[0]+'–'+e.sc[1]:''}</button>`}).join('')}</div></div>`};
+  return`<div style="margin:10px 0"><div class="mut" style="margin-bottom:4px">Timeouts, set ${m.n+1}. Tap a box to record one, tap it again to remove it.</div><div class="row" style="gap:12px;align-items:flex-start;flex-wrap:nowrap">${col('h',m.home)}${col('a',m.away)}</div></div>`}
 const ruleMin=r=>r.min||((r.sets||[]).find(x=>x.min)||{}).min||null;
 const tmOf=m=>m.tm&&typeof m.tm.acc==='number'?m.tm:null;
 function elapsed(m){const t=tmOf(m);return t?t.acc+(t.run?Date.now()-t.run:0):0}
@@ -126,7 +169,7 @@ const get=id=>S.m.find(m=>m.id===id);
 const sc=(m,i)=>{let h=0,a=0;m.log.forEach(e=>{if(e.s===i){e.t==='h'?h++:a++}});return[h,a]};
 const target=(m)=>m.n>=4?15:25;
 function go(t){S.tab=t;S.cur=null;S.form=false;S.edit=null;S.team=null;S.tform=false;S.rd=null;render()}
-function open_(id){S.cur=id;S.mt=get(id).log.length?'scout':'set';S.pick=null;S.setv=null;S.pv='init';render();scrollTo(0,0)}
+function open_(id){S.cur=id;S.mt=get(id).log.length?'scout':'set';S.pick=null;S.sb=null;S.setv=null;S.pv='init';render();scrollTo(0,0)}
 function nrSel(){return[...document.querySelectorAll('.nr:checked')].map(e=>S.p.find(p=>p.id===e.value))}
 function nrStatus(){const el=document.getElementById('nr-st'),f=document.getElementById('f-f');if(!el||!f)return;
   const L=nrSel(),rl=getRule(f.value),fv=rl.roster,c=cnt(L);const rt=document.getElementById('f-rt');if(rt)rt.textContent=ruleText(rl);el.textContent=fv?`${c.pl} of 12 players, ${c.lib} of 2 liberos`:`${L.length} attending`;el.style.color=over({rule:rl},L)?'var(--bad)':''}
@@ -140,7 +183,7 @@ function addMatch(){
   const m={id:Date.now().toString(36),home:my.name,away:A.name,hid:my.id,aid:A.id,lu:{h:L.map(p=>({pid:p.id,name:p.name,num:p.num,role:p.role})),a:[]},fmt,rule:copy(getRule(fmt)),event:'',date:v('f-d')||new Date().toISOString().slice(0,10),n:0,done:false,log:[],notes:'',st:{}};
   S.m.unshift(m);save();S.form=false;open_(m.id)}
 function point(t,type){const m=get(S.cur);if(m.done)return;m.log.push({t,type,s:m.n});save();render()}
-function endSet(){const m=get(S.cur);if(m.n<ruleOf(m).sets.length-1)m.n++;S.mt='set';S.setv=null;S.pick=null;S.pv='init';save();render();scrollTo(0,0)}
+function endSet(){const m=get(S.cur);if(m.n<ruleOf(m).sets.length-1)m.n++;S.sb=null;S.mt='set';S.setv=null;S.pick=null;S.pv='init';save();render();scrollTo(0,0)}
 function finish(){const m=get(S.cur);m.done=!m.done;save();render()}
 function note(v){get(S.cur).notes=v;save()}
 function del(id){if(confirm('Delete this match and its data?')){S.m=S.m.filter(m=>m.id!==id);S.cur=null;save();render()}}
@@ -177,8 +220,9 @@ function luToggle(s,pid,on){const m=get(S.cur),L=m.lu[s];
 function luGuest(s){const m=get(S.cur),n=(prompt('Player name')||'').trim();if(!n)return;const num=(prompt('Shirt number (optional)')||'').trim();
   const t=[...m.lu[s],{role:''}];if(over(m,t)){alert(over(m,t));return}
   m.lu[s].push({pid:'g'+Date.now().toString(36),name:n,num,role:''});save();render()}
+function setDate(v){const m=get(S.cur);if(v)m.date=v;save();render()}
 function setFmt(v){const m=get(S.cur);m.fmt=v;m.rule=copy(getRule(v));save();render()}
-function luRow(s,x,i,lead,rm){return`<div class="row" style="margin-top:8px;flex-wrap:nowrap">${lead}<input aria-label="Shirt number for ${esc(x.name)}" style="width:60px" inputmode="numeric" maxlength="3" value="${esc(x.num)}" onchange="luSet('${s}',${i},'num',this.value)"><select aria-label="Role for ${esc(x.name)}" style="width:auto;max-width:42%" onchange="luSet('${s}',${i},'role',this.value)"><option value="">No role</option>${ROLES.map(r=>`<option${x.role===r?' selected':''}>${r}</option>`).join('')}</select>${rm?`<button aria-label="Remove ${esc(x.name)}" onclick="luDel('${s}',${i})">✕</button>`:''}</div>`}
+function luRow(s,x,i,lead,rm){return`<div class="row" style="margin-top:8px;flex-wrap:nowrap">${lead}<input aria-label="Shirt number for ${esc(x.name)}" style="width:60px" inputmode="numeric" maxlength="3" value="${esc(x.num)}" onchange="luSet('${s}',${i},'num',this.value)"><select aria-label="Role for ${esc(x.name)}" style="width:auto;max-width:42%" onchange="luSet('${s}',${i},'role',this.value)"><option value="">None</option>${ROLES.map(r=>`<option${x.role===r?' selected':''}>${r}</option>`).join('')}</select>${rm?`<button aria-label="Remove ${esc(x.name)}" onclick="luDel('${s}',${i})">✕</button>`:''}</div>`}
 function luHtml(m,s){const L=m.lu[s],id=s==='h'?m.hid:m.aid,fv=ruleOf(m).roster,c=cnt(L),ro=S.p.filter(p=>p.teamId===id).sort((a,b)=>(parseInt(a.num,10)||999)-(parseInt(b.num,10)||999)||a.name.localeCompare(b.name));
   const st=fv?`${c.pl} of 12 players, ${c.lib} of 2 liberos${c.lib<1?'. Add at least 1 libero.':''}`:`${L.length} attending`;
   let h=`<div style="border-top:1px solid var(--line);margin-top:12px;padding-top:10px"><div class="row sp"><b>${esc(s==='h'?m.home:m.away)}</b><span class="mut" ${over(m,L)||(fv&&c.lib<1)?'style="color:var(--bad)"':''}>${st}</span></div>`;
@@ -189,20 +233,26 @@ function luHtml(m,s){const L=m.lu[s],id=s==='h'?m.hid:m.aid,fv=ruleOf(m).roster,
   return h+`<button style="margin-top:10px" onclick="luGuest('${s}')">Add a player not on the roster</button></div>`}
 function rosterView(m){
   const opts=allRules().map(r=>`<option value="${r.id}"${ruleOf(m).id===r.id?' selected':''}>${esc(r.name)}</option>`).join('');
-  return`<label for="mf">Tournament rules</label><select id="mf" onchange="setFmt(this.value)">${opts}</select><div class="mut" style="margin-top:6px">${esc(ruleText(ruleOf(m)))}. Tick the players attending. Number and role changes apply to this match only.</div>${luHtml(m,'h')}`}
+  return`<label for="md">Match date</label><input id="md" type="date" value="${esc(m.date)}" onchange="setDate(this.value)"><label for="mf">Tournament rules</label><select id="mf" onchange="setFmt(this.value)">${opts}</select><div class="mut" style="margin-top:6px">${esc(ruleText(ruleOf(m)))}. Tick the players attending. Number and role changes apply to this match only.</div><h2>Players attending</h2>${luHtml(m,'h')}`}
 const ANG={3:0,2:60,1:120,6:180,5:240,4:300};
 const RL={'Setter':'S','Opposite':'O','Middle blocker':'M','Outside hitter':'H','Libero':'L','Defensive specialist':'D'};
 const curSet=m=>S.setv==null||S.setv>m.n?m.n:S.setv;
 const setReady=(m,si)=>(m.st[si]||[]).filter(id=>id&&m.lu.h.some(x=>x.pid===id)).length===6&&!!(m.sv||{})[si];
 function startSet(){const m=get(S.cur);{const ev=sysEval(m,(m.st[m.n]||[]).map(id=>m.lu.h.some(x=>x.pid===id)?id:null));if(ev.state==='bad'&&!confirm('The line-up does not match the '+m.sys+' system. Start the set anyway?'))return}if(ruleMin(ruleOf(m))&&!tmOf(m)){m.tm={acc:0,run:Date.now()};save()}S.mt='scout';S.pv='init';S.pick=null;render();scrollTo(0,0)}
-function curLU(m,si){let pos=[0,1,2,3,4,5].map(i=>(m.st[si]||[])[i]||null),sv=(m.sv||{})[si]==='h',dots={};
-  const add=(id,c)=>{if(id)(dots[id]=dots[id]||[]).push(c)};
+function curLU(m,si){let pos=[0,1,2,3,4,5].map(i=>(m.st[si]||[])[i]||null),sl=[0,1,2,3,4,5],sv=(m.sv||{})[si]==='h',dots={},was={},pend=false,k=0;
+  const sbs=(m.sb||[]).filter(x=>x.s===si),add=(id,c)=>{if(id)(dots[id]=dots[id]||[]).push(c)};
+  const ap=n=>sbs.filter(x=>x.k===n).forEach(x=>{const j=pos.indexOf(x.out);if(j<0)return;pos[j]=x.in;was[x.in]=[...(was[x.out]||[]),x.out];
+    if(j===0&&pend&&dots[x.out]&&dots[x.out].length)add(x.in,dots[x.out].pop())});
+  ap(0);
   if((m.sv||{})[si])add(pos[0],sv?'g':'r');
-  m.log.forEach(e=>{if(e.s!==si)return;if(e.t==='h'){if(!sv){pos=[pos[1],pos[2],pos[3],pos[4],pos[5],pos[0]];sv=true;add(pos[0],'g')}}else sv=false});
-  return{pos,serving:sv,dots}}
+  m.log.forEach(e=>{if(e.s!==si)return;pend=false;
+    if(e.t==='h'){if(!sv){pos=[pos[1],pos[2],pos[3],pos[4],pos[5],pos[0]];sl=[sl[1],sl[2],sl[3],sl[4],sl[5],sl[0]];sv=true;add(pos[0],'g');pend=true}}else sv=false;
+    k++;ap(k)});
+  const init=[null,null,null,null,null,null];pos.forEach((id,j)=>{init[sl[j]]=id});
+  return{pos,serving:sv,dots,was,init}}
 function scoutPie(m){const si=m.n,all=m.lu.h,ok=a=>a.map(id=>all.some(x=>x.pid===id)?id:null),cl=curLU(m,si),cur=S.pv==='cur';
-  const arr=cur?ok(cl.pos):ok(m.st[si]||[]),sv=cur?(cl.serving?'h':'a'):(m.sv||{})[si],sp=all.find(x=>x.pid===cl.pos[0]);
-  return`<div class="seg" role="group" aria-label="Line-up view" style="margin:12px 0 6px">${[['init','Initial line-up'],['cur','Current']].map(([k,l])=>`<button aria-pressed="${(cur?'cur':'init')===k}" onclick="S.pv='${k}';render()">${l}</button>`).join('')}</div><div style="max-width:280px;margin:0 auto">${pie(m,arr,{pid:cl.pos[0],st:cl.serving?'serving':'receiving'},true,cl.dots)}</div><div class="mut" style="text-align:center" aria-live="polite">${cur?(cl.serving?esc(m.home)+' serving'+(sp?': '+(sp.num?'#'+esc(sp.num)+' ':'')+esc(sp.name):''):esc(m.away)+' serving')+'. Rotates when your team wins the serve back.':'Starting positions for set '+(si+1)+'.'}</div><div class="mut" style="text-align:center;font-size:13px">Dots by each slice: green means that player started a service, red means the set started on reception.</div>`}
+  const arr=cur?ok(cl.pos):ok(cl.init),sv=cur?(cl.serving?'h':'a'):(m.sv||{})[si],sp=all.find(x=>x.pid===cl.pos[0]);
+  return`<div class="seg" role="group" aria-label="Line-up view" style="margin:12px 0 6px">${[['init','Initial line-up'],['cur','Current']].map(([k,l])=>`<button aria-pressed="${(cur?'cur':'init')===k}" onclick="S.pv='${k}';render()">${l}</button>`).join('')}</div><div style="max-width:280px;margin:0 auto">${pie(m,arr,{pid:cl.pos[0],st:cl.serving?'serving':'receiving'},true,cl.dots,cl.was)}</div><div class="mut" style="text-align:center" aria-live="polite">${cur?(cl.serving?esc(m.home)+' serving'+(sp?': '+(sp.num?'#'+esc(sp.num)+' ':'')+esc(sp.name):''):esc(m.away)+' serving')+'. Rotates when your team wins the serve back.':'Starting positions for set '+(si+1)+'.'}</div><div class="mut" style="text-align:center;font-size:13px">Dots by each slice: green means that player started a service, red means the set started on reception.</div>`}
 function setSys(k){get(S.cur).sys=k;save();render()}
 function setServe(k){const m=get(S.cur);(m.sv=m.sv||{})[curSet(m)]=k;save();render()}
 function pickPos(p){S.pick=S.pick===p?null:p;render()}
@@ -211,13 +261,14 @@ function setPos(p,pid){const m=get(S.cur),si=curSet(m),a=m.st[si]=m.st[si]||[nul
   const nx=[1,2,3,4,5,6].find(q=>!a[q-1]);S.pick=pid&&nx?nx:null;render()}
 function copyPrev(){const m=get(S.cur),si=curSet(m);m.st[si]=[...(m.st[si-1]||[])];save();S.pick=null;render()}
 function clearSet(){const m=get(S.cur);m.st[curSet(m)]=[null,null,null,null,null,null];save();S.pick=null;render()}
-function pie(m,cur,hl,ro,dots){
+function pie(m,cur,hl,ro,dots,was){
   const R=140,C=150,pt=(a,r)=>{const t=a*Math.PI/180;return[(C+r*Math.sin(t)).toFixed(1),(C-r*Math.cos(t)).toFixed(1)]};
   const g=[1,2,3,4,5,6].sort((a,b)=>(a===S.pick)-(b===S.pick)).map(p=>{
     const a=ANG[p],[x1,y1]=pt(a-30,R),[x2,y2]=pt(a+30,R),[tx,ty]=pt(a,R*.58),[lx,ly]=pt(a,R*.87),[rx,ry]=pt(a,R*.2),e=m.lu.h.find(x=>x.pid===cur[p-1]),sel=S.pick===p;
     const st=e&&hl&&hl.pid===e.pid?hl.st:'',col=st==='serving'?'var(--yel)':st==='receiving'?'var(--bad)':'',tc=e?(st==='serving'?'var(--onyel)':'var(--onc)'):'var(--mut)';
     const dd=e&&dots&&dots[e.pid]?dots[e.pid].slice(0,4):[],ns=dd.filter(c=>c==='g').length;
-    return`<g role="${ro?'img':'button'}"${ro?'':' tabindex="0"'} aria-label="Position ${p}, ${e?'player '+esc(e.num||'')+' '+esc(e.name)+(e.role?', '+esc(e.role):''):'empty'}${st?', '+st:''}${ns?', '+ns+(ns===1?' service':' services'):''}" ${ro?'':`onclick="pickPos(${p})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();pickPos(${p})}" style="cursor:pointer"`}><path d="M${C} ${C}L${x1} ${y1}A${R} ${R} 0 0 1 ${x2} ${y2}Z" fill="${e?(col||'var(--home)'):'var(--card)'}" stroke="${sel?'var(--fg)':col||'var(--line)'}" stroke-width="${sel?6:col?5:2}" stroke-linejoin="round"/><text x="${tx}" y="${ty}" text-anchor="middle" dominant-baseline="central" fill="${tc}" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="${e?44:32}">${e?esc(e.num||'?'):'+'}</text>${e&&RL[e.role]?`<text x="${rx}" y="${ry}" text-anchor="middle" dominant-baseline="central" fill="${tc}" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="22">${RL[e.role]}</text>`:''}<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="central" fill="${tc}" font-size="13">P${p}</text>${dd.map((c,i)=>{const[dx,dy]=pt(a+[-18,-6,6,18][i],153);return`<circle cx="${dx}" cy="${dy}" r="6" fill="${c==='g'?'var(--good)':'var(--bad)'}"/>`}).join('')}</g>`}).join('');
+    const wd=e&&was&&was[e.pid]?was[e.pid].slice(-2).map(id=>{const w=m.lu.h.find(x=>x.pid===id);return w&&w.num?w.num:'?'}):[],[bx,by]=pt(a,wd.length?R*.66:R*.58),[wx,wy]=pt(a,R*.4);
+    return`<g role="${ro?'img':'button'}"${ro?'':' tabindex="0"'} aria-label="Position ${p}, ${e?'player '+esc(e.num||'')+' '+esc(e.name)+(e.role?', '+esc(e.role):''):'empty'}${st?', '+st:''}${wd.length?', replaced '+esc(wd.join(', ')):''}${ns?', '+ns+(ns===1?' service':' services'):''}" ${ro?'':`onclick="pickPos(${p})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();pickPos(${p})}" style="cursor:pointer"`}><path d="M${C} ${C}L${x1} ${y1}A${R} ${R} 0 0 1 ${x2} ${y2}Z" fill="${e?(col||'var(--home)'):'var(--card)'}" stroke="${sel?'var(--fg)':col||'var(--line)'}" stroke-width="${sel?6:col?5:2}" stroke-linejoin="round"/><text x="${e?bx:tx}" y="${e?by:ty}" text-anchor="middle" dominant-baseline="central" fill="${tc}" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="${e?44:32}">${e?esc(e.num||'?'):'+'}</text>${wd.length?`<text x="${wx}" y="${wy}" text-anchor="middle" dominant-baseline="central" fill="${tc}" opacity=".85" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="600" font-size="16">${esc(wd.join(' '))}</text>`:''}${e&&RL[e.role]?`<text x="${rx}" y="${ry}" text-anchor="middle" dominant-baseline="central" fill="${tc}" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="22">${RL[e.role]}</text>`:''}<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="central" fill="${tc}" font-size="13">P${p}</text>${dd.map((c,i)=>{const[dx,dy]=pt(a+[-18,-6,6,18][i],153);return`<circle cx="${dx}" cy="${dy}" r="6" fill="${c==='g'?'var(--good)':'var(--bad)'}"/>`}).join('')}</g>`}).join('');
   return`<svg viewBox="-14 -14 328 328" role="group" aria-label="Starting line-up" style="width:100%;max-width:340px;display:block;margin:0 auto">${g}</svg>`}
 const SYSP={'5-1':['S','H','M','O','H','M'],'6-2':['X','H','M','X','H','M'],'4-2':['X','H','M','X','H','M']};
 const RC={'Setter':'S','Outside hitter':'H','Middle blocker':'M','Opposite':'O'};
@@ -294,11 +345,11 @@ function matchView(m){
   if(sw&&!m.done){const wn=sw[0]==='h'?m.home:m.away,pr=[...Array(m.n).keys()].filter(i=>{const[a,b]=sc(m,i);return sw[0]==='h'?a>b:b>a}).length+1;
     h+=`<div class="banner"><b>${esc(wn)}</b> has won set ${m.n+1}${sw[1]==='time'?' on time, with the most points. Time is up, so the match is over: finish the match to lock the result.':'. '+(pr>=need?'That wins the match. Finish the match to lock the result.':!last?'End the set to start the next one.':'Finish the match to lock the result.')}</div>`}
   else if(!m.done&&tup)h+=`<div class="banner">Time is up and the score is level. The next point wins the set.</div>`;
-  h+=scoutPie(m)+serveCard(m);
+  h+=toBoxes(m)+subCard(m)+scoutPie(m)+serveCard(m);
   if(!m.done){
-    h+=`<div class="pts h" style="margin-bottom:8px"><div class="mut" style="grid-column:1/3">Point for ${esc(m.home)}</div>${T.map(([k,l])=>`<button onclick="point('h','${k}')">${l}</button>`).join('')}</div>
-    <div class="pts a"><div class="mut" style="grid-column:1/3">Point for ${esc(m.away)}</div>${T.map(([k,l])=>`<button onclick="point('a','${k}')">${l}</button>`).join('')}</div>
-    <div class="row" style="margin-top:12px"><button onclick="undo()" ${m.log.length||(m.sl||[]).some(e=>e.s===m.n)?'':'disabled'}>Undo last point</button>${!last&&!tup?`<button onclick="endSet()">End set ${m.n+1}</button>`:''}<button class="pri" onclick="finish()">Finish match</button></div>`}
+    h+=`<div class="pts h" style="margin-bottom:8px;grid-template-columns:1fr 1fr 1fr"><div class="mut" style="grid-column:1/-1">Point for ${esc(m.home)}</div>${TH.map(([k,l])=>`<button onclick="point('h','${k}')">${l}</button>`).join('')}</div>
+    <div class="pts a"><div class="mut" style="grid-column:1/-1">Point for ${esc(m.away)}</div>${T.map(([k,l])=>`<button onclick="point('a','${k}')">${l}</button>`).join('')}</div>
+    <div class="row" style="margin-top:12px"><button onclick="undo()" ${m.log.length||(m.sl||[]).some(e=>e.s===m.n)||(m.sb||[]).some(e=>e.s===m.n)?'':'disabled'}>Undo last point</button>${!last&&!tup?`<button onclick="endSet()">End set ${m.n+1}</button>`:''}<button class="pri" onclick="finish()">Finish match</button></div>`}
   else h+=`<div class="row"><button onclick="finish()">Reopen match</button></div>`;
   h+=`<h2>Set scores</h2><div>${Array.from({length:m.n+1},(_,i)=>{const[a,b]=sc(m,i);return`<span class="chip">Set ${i+1}: ${a}–${b}</span>`}).join('')}</div>
   <h2>How points were scored</h2><div class="card sc"><table><tr><th></th><th>${esc(m.home)}</th><th>${esc(m.away)}</th></tr>${T.map(([k,l])=>`<tr><td>${l}</td><td>${tl.h[k]||0}</td><td>${tl.a[k]||0}</td></tr>`).join('')}</table></div>
@@ -312,10 +363,10 @@ function teamsView(){
     let h=`<div class="row sp"><button onclick="S.team=null;S.edit=null;render()">Back</button><div class="row"><button onclick="toggleMine()">${t.mine?'Not my team':'Set as my team'}</button><button onclick="renameTeam()">Rename</button><button class="del" onclick="delTeam()">Delete</button></div></div>
     <div class="row sp" style="margin-top:10px"><h1>${esc(t.name)}</h1>${S.edit?'':'<button class="pri" onclick="editPlayer(\'new\')">Add player</button>'}</div>
     <div class="mut">${t.mine?'Your team. ':''}These are default numbers and roles. Each new match gets a copy you can change without touching this roster.</div>`;
-    if(S.edit)h+=`<div class="card"><label for="p-n">Name</label><input id="p-n" autocomplete="off" value="${esc(ed?ed.name:'')}"><label for="p-#">Shirt number</label><input id="p-#" inputmode="numeric" maxlength="3" autocomplete="off" value="${esc(ed?ed.num:'')}"><label for="p-r">Preferred role</label><select id="p-r"><option value="">Not set</option>${ROLES.map(r=>`<option${ed&&ed.role===r?' selected':''}>${r}</option>`).join('')}</select>
+    if(S.edit)h+=`<div class="card"><label for="p-n">Name</label><input id="p-n" autocomplete="off" value="${esc(ed?ed.name:'')}"><label for="p-#">Shirt number</label><input id="p-#" inputmode="numeric" maxlength="3" autocomplete="off" value="${esc(ed?ed.num:'')}"><label for="p-r">Preferred role</label><select id="p-r"><option value="">None</option>${ROLES.map(r=>`<option${ed&&ed.role===r?' selected':''}>${r}</option>`).join('')}</select>
     <div class="row" style="margin-top:14px"><button class="pri" onclick="savePlayer()">Save player</button><button onclick="S.edit=null;render()">Cancel</button>${ed?`<button class="del" onclick="delPlayer('${ed.id}')">Remove</button>`:''}</div></div>`;
     if(!L.length&&!S.edit)h+=`<div class="card"><b>No players yet.</b><div class="mut">Add each player with a shirt number and preferred role.</div></div>`;
-    L.forEach(p=>{h+=`<button class="m" onclick="editPlayer('${p.id}')"><div class="row"><span class="num" style="font-size:34px;min-width:52px">${p.num?'#'+esc(p.num):'–'}</span><div><b>${esc(p.name)}</b><div class="mut">${p.role?esc(p.role):'Role not set'}</div></div></div></button>`});
+    L.forEach(p=>{h+=`<button class="m" onclick="editPlayer('${p.id}')"><div class="row"><span class="num" style="font-size:34px;min-width:52px">${p.num?'#'+esc(p.num):'–'}</span><div><b>${esc(p.name)}</b><div class="mut">${p.role?esc(p.role):'None'}</div></div></div></button>`});
     return h}
   let h=`<div class="row sp"><h1>Teams</h1><button class="pri" onclick="S.tform=!S.tform;render()">${S.tform?'Cancel':'Add team'}</button></div>`;
   if(S.tform)h+=`<div class="card"><label for="tm-n">Team name</label><input id="tm-n" autocomplete="off"><label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input id="tm-m" type="checkbox" style="width:auto" ${S.t.length?'':'checked'}>This is my team</label><div style="margin-top:14px"><button class="pri" onclick="addTeam()">Save team</button></div></div>`;
@@ -326,15 +377,15 @@ function teamsView(){
 
 function settingsView(){
   if(S.rd)return ruleForm();
-  let h=`<h1>Settings</h1><h2 style="margin-top:8px">Tournament rules</h2><div class="mut">A rule set defines the number of sets, the points to win, hard limits and time limits. You pick one when you create a match.</div>`;
+  let h=`<h1>Settings</h1><h2 style="margin-top:8px">Appearance</h2><div class="seg" role="group" aria-label="Theme">${[['auto','Auto'],['light','Light'],['dark','Dark']].map(([k,l])=>`<button aria-pressed="${themeMode===k}" onclick="setTheme('${k}')">${l}</button>`).join('')}</div><div class="mut" style="margin-top:6px">Auto follows your phone setting.</div><h2>Tournament rules</h2><div class="mut">A rule set defines the number of sets, the points to win, hard limits and time limits. You pick one when you create a match.</div>`;
   allRules().forEach(r=>{const bi=BUILT.some(b=>b.id===r.id);
-    h+=`<div class="card"><div class="row sp"><b>${esc(r.name)}</b>${bi?'<span class="mut">Built in</span>':`<button onclick="editRule('${r.id}')">Edit</button>`}</div>${r.sets.map((x,i)=>`<div class="mut">Set ${i+1}: ${x.win} to win${x.hard?', hard limit '+x.hard:', win by 2'}</div>`).join('')}${ruleMin(r)?`<div class="mut">Match time: ${ruleMin(r)} minutes</div>`:''}${r.roster?'<div class="mut">Roster limit: 12 players + 1 or 2 liberos</div>':''}</div>`});
-  h+=`<button class="pri" onclick="newRule()">Create rule set</button><h2>Serve grades</h2><div class="mut">Five buttons appear when your team serves. The symbols are fixed; you can rename them and change the descriptions. A -- gives the opponents the point and a ++ gives your team the point.</div>${SC.map((x,i)=>`<div class="card"><b>${esc(x.k)}</b><label for="sc-n${i}">Short label</label><input id="sc-n${i}" maxlength="12" value="${esc(x.n)}"><label for="sc-d${i}">Description</label><input id="sc-d${i}" value="${esc(x.d)}"></div>`).join('')}<div class="row"><button class="pri" onclick="saveScale()">Save grades</button><button onclick="resetScale()">Reset to defaults</button></div>`;
+    h+=`<div class="card"><div class="row sp"><b>${esc(r.name)}</b>${bi?'<span class="mut">Built in</span>':`<button onclick="editRule('${r.id}')">Edit</button>`}</div>${r.sets.map((x,i)=>`<div class="mut">Set ${i+1}: ${x.win} to win${x.hard?', hard limit '+x.hard:', win by 2'}</div>`).join('')}${ruleMin(r)?`<div class="mut">Match time: ${ruleMin(r)} minutes</div>`:''}<div class="mut">Timeouts: ${ruleTO(r)} per team per set</div><div class="mut">Substitutions: ${ruleSub(r)} per team per set</div>${r.roster?'<div class="mut">Roster limit: 12 players + 1 or 2 liberos</div>':''}</div>`});
+  h+=`<button class="pri" onclick="newRule()">Create rule set</button><h2>Serve grades</h2><div class="mut">Five buttons appear when your team serves. The symbols are fixed; you can rename them and change the descriptions. A ${G('--')} gives the opponents the point and a ${G('++')} gives your team the point.</div>${SC.map((x,i)=>`<div class="card"><b>${G(x.k)}</b><label for="sc-n${i}">Short label</label><input id="sc-n${i}" maxlength="12" value="${esc(x.n)}"><label for="sc-d${i}">Description</label><input id="sc-d${i}" value="${esc(x.d)}"></div>`).join('')}<div class="row"><button class="pri" onclick="saveScale()">Save grades</button><button onclick="resetScale()">Reset to defaults</button></div>`;
   return h}
-const RD0=()=>({id:null,name:'',min:null,roster:false,sets:[{win:21,hard:23},{win:21,hard:23},{win:15,hard:15}]});
+const RD0=()=>({id:null,name:'',min:null,to:2,sub:8,roster:false,sets:[{win:21,hard:23},{win:21,hard:23},{win:15,hard:15}]});
 function newRule(){S.rd=RD0();render()}
-function editRule(id){S.rd=copy(S.r.find(r=>r.id===id));S.rd.min=ruleMin(S.rd);S.rd.sets.forEach(x=>{delete x.min});render()}
-function syncRule(){const d=S.rd,g=i=>document.getElementById(i);if(!g('r-n'))return;d.name=g('r-n').value.trim();d.roster=g('r-ro').checked;d.min=parseInt(g('r-t').value,10)||null;
+function editRule(id){S.rd=copy(S.r.find(r=>r.id===id));S.rd.min=ruleMin(S.rd);S.rd.to=ruleTO(S.rd);S.rd.sub=ruleSub(S.rd);S.rd.sets.forEach(x=>{delete x.min});render()}
+function syncRule(){const d=S.rd,g=i=>document.getElementById(i);if(!g('r-n'))return;d.name=g('r-n').value.trim();d.roster=g('r-ro').checked;d.min=parseInt(g('r-t').value,10)||null;{const v=g('r-to').value.trim();d.to=v===''?2:Math.max(0,Math.min(9,parseInt(v,10)||0))}{const v=g('r-sb').value.trim();d.sub=v===''?8:Math.max(0,Math.min(99,parseInt(v,10)||0))}
   d.sets=d.sets.map((x,i)=>({win:parseInt(g('r-w'+i).value,10)||0,hard:parseInt(g('r-h'+i).value,10)||null}))}
 function ruleCount(n){syncRule();const d=S.rd;n=Math.max(1,Math.min(5,n));while(d.sets.length<n)d.sets.push({...d.sets[d.sets.length-1]});d.sets.length=n;render()}
 function saveRule(){syncRule();const d=S.rd;
@@ -346,7 +397,7 @@ function delRule(){const d=S.rd;if(d.id&&confirm('Delete this rule set? Matches 
 function ruleForm(){const d=S.rd;
   return`<div class="row sp"><button onclick="S.rd=null;render()">Back</button>${d.id?'<button class="del" onclick="delRule()">Delete</button>':''}</div><h1 style="margin-top:10px">${d.id?'Edit rule set':'New rule set'}</h1>
   <div class="card"><label for="r-n">Name</label><input id="r-n" autocomplete="off" value="${esc(d.name)}" placeholder="For example SADVA"><label for="r-c">Number of sets</label><select id="r-c" onchange="ruleCount(+this.value)">${[1,2,3,4,5].map(n=>`<option${n===d.sets.length?' selected':''}>${n}</option>`).join('')}</select>
-  <label for="r-t">Match time in minutes (optional)</label><input id="r-t" inputmode="numeric" placeholder="untimed" value="${d.min||''}">
+  <label for="r-t">Match time in minutes (optional)</label><input id="r-t" inputmode="numeric" placeholder="untimed" value="${d.min||''}"><label for="r-to">Timeouts per team per set</label><input id="r-to" inputmode="numeric" value="${d.to==null?2:d.to}"><label for="r-sb">Substitutions per team per set (0 hides the counter)</label><input id="r-sb" inputmode="numeric" value="${d.sub==null?8:d.sub}">
   <label style="display:flex;gap:8px;align-items:center;color:var(--fg);font-size:16px;margin-top:14px"><input id="r-ro" type="checkbox" style="width:22px;height:22px;flex:none" ${d.roster?'checked':''}>Limit the roster to 12 players + 1 or 2 liberos</label></div>
   ${d.sets.map((x,i)=>`<div class="card"><b>Set ${i+1}</b><div class="row" style="flex-wrap:nowrap;margin-top:4px;align-items:flex-start"><div style="flex:1;min-width:0"><label for="r-w${i}">Points to win</label><input id="r-w${i}" inputmode="numeric" value="${x.win||''}"></div><div style="flex:1;min-width:0"><label for="r-h${i}">Hard limit</label><input id="r-h${i}" inputmode="numeric" placeholder="none" value="${x.hard||''}"></div></div></div>`).join('')}
   <div class="mut">Points to win: the team also needs a 2-point lead. Hard limit: the first team to reach it wins, even without a 2-point lead; leave empty for no limit. Match time: one countdown for the whole match. When it runs out, the team with more points wins the set in progress and the match is over. Leave empty for an untimed match.</div>
@@ -365,7 +416,7 @@ function serveStats(){
   const tr=r=>{const t=tot(r);return`<tr><td>${esc(r.name)}</td>${SC.map(x=>`<td>${r.c[x.k]||0}</td>`).join('')}<td>${t}</td><td>${pc((r.c['+']||0)+(r.c['++']||0),t)}</td><td>${pc(r.c['--']||0,t)}</td></tr>`};
   h+=`<div class="card"><div class="row" style="gap:10px;align-items:flex-start"><div style="flex:1;min-width:140px"><label for="sf-o">Opponent</label><select id="sf-o" onchange="S.sf.opp=this.value;render()"><option value="">All opponents</option>${opps.map(o=>`<option value="${esc(o)}"${F.opp===o?' selected':''}>${esc(o)}</option>`).join('')}</select></div><div style="flex:1;min-width:120px"><label for="sf-f">From</label><input id="sf-f" type="date" value="${esc(F.from)}" onchange="S.sf.from=this.value;render()"></div><div style="flex:1;min-width:120px"><label for="sf-t">To</label><input id="sf-t" type="date" value="${esc(F.to)}" onchange="S.sf.to=this.value;render()"></div></div>${F.opp||F.from||F.to?'<div style="margin-top:10px"><button onclick="S.sf={opp:\'\',from:\'\',to:\'\'};render()">Clear filters</button></div>':''}</div>`;
   if(!rows.length)return h+`<div class="card"><div class="mut">No graded serves match these filters.</div></div>`;
-  return h+`<div class="mut">${ms.length} match${ms.length===1?'':'es'}, ${tot(all)} graded serves. Good = ${esc(SC[3].k)} and ${esc(SC[4].k)}, Err = ${esc(SC[0].k)}.</div><div class="card sc"><table><tr><th>Player</th>${SC.map(x=>`<th>${esc(x.k)}</th>`).join('')}<th>All</th><th>Good</th><th>Err</th></tr>${rows.map(tr).join('')}<tr style="font-weight:600">${tr(all).slice(4)}</table></div>`}
+  return h+`<div class="mut">${ms.length} match${ms.length===1?'':'es'}, ${tot(all)} graded serves. Good = ${G(SC[3].k)} and ${G(SC[4].k)}, Err = ${G(SC[0].k)}.</div><div class="card sc"><table><tr><th>Player</th>${SC.map(x=>`<th>${G(x.k)}</th>`).join('')}<th>All</th><th>Good</th><th>Err</th></tr>${rows.map(tr).join('')}<tr style="font-weight:600">${tr(all).slice(4)}</table></div>`}
 
 function statsView(){
   const R={};
@@ -383,7 +434,7 @@ function statsView(){
   <div class="mut" style="margin-top:8px">Errors given: ${r.given}. Share of points from attack: ${r.pf?Math.round(r.kill/r.pf*100):0}%, from serve: ${r.pf?Math.round(r.ace/r.pf*100):0}%.</div></div>`});
   return h}
 
-const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 18</div>';
+const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 21</div>';
 function render(){
   const m=S.cur&&get(S.cur);
   document.getElementById('app').innerHTML=(m?matchView(m):S.tab==='stats'?statsView():S.tab==='settings'?settingsView():S.tab==='teams'?teamsView():listView())+VER;
