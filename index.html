@@ -35,7 +35,7 @@ label{display:block;font-size:14px;color:var(--mut);margin:10px 0 4px}
 select{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);font:inherit;color:inherit}
 input,textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
 nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
-nav button{flex:1;border:0;border-radius:0;background:none;min-height:52px;font-weight:600;font-size:13px;padding:0 2px;color:var(--mut)}
+nav button{flex:1;border:0;border-radius:0;background:none;min-height:52px;font-weight:600;color:var(--mut)}
 nav button[aria-current=page]{color:var(--home);box-shadow:inset 0 3px 0 var(--home)}
 .m{display:block;width:100%;text-align:left;margin:8px 0;padding:12px 14px}
 .m b{font-size:17px}
@@ -60,7 +60,7 @@ th:first-child,td:first-child{text-align:left}
 </head>
 <body>
 <main id="app"></main>
-<nav aria-label="Sections"><button id="t-teams" onclick="go('teams')">Teams</button><button id="t-opps" onclick="go('opps')">Opponents</button><button id="t-matches" onclick="go('matches')">Matches</button><button id="t-stats" onclick="go('stats')">Stats</button><button id="t-settings" onclick="go('settings')">Settings</button></nav>
+<nav aria-label="Sections"><button id="t-teams" onclick="go('teams')">Teams</button><button id="t-matches" onclick="go('matches')">Matches</button><button id="t-stats" onclick="go('stats')">Stats</button><button id="t-settings" onclick="go('settings')">Settings</button></nav>
 <script>
 const K='vb-scout-v1';
 const T=[['kill','Attack kill'],['ace','Ace'],['block','Block'],['err','Opp. error']];
@@ -108,13 +108,14 @@ function resetScale(sk){sk=sk||'serve';if(sk==='serve'){SC=JSON.parse(JSON.strin
 function serve(g){const m=get(S.cur);if(m.done)return;const cl=curLU(m,m.n);if(!cl.serving||!cl.pos[0])return;const L=m.log.length,sl=m.sl=m.sl||[],ls=sl[sl.length-1];if(ls&&ls.s===m.n&&ls.at===L)return;
   sl.push({s:m.n,pid:cl.pos[0],g,at:L,q:(m.q=(m.q||0)+1)});
   if(g==='--')m.log.push({t:'a',type:'err',s:m.n,a:1});else if(g==='++')m.log.push({t:'h',type:'ace',s:m.n,a:1});
+  if(g==='--'||g==='++')rallyDone(m,cl.serving);
   save();render()}
 function undo(){const m=get(S.cur),L=m.log.length,sl=m.sl=m.sl||[],ls=sl[sl.length-1],sb=m.sb=m.sb||[],K=m.log.filter(e=>e.s===m.n).length;
   let lb=null;for(let i=sb.length-1;i>=0;i--)if(sb[i].s===m.n){lb=sb[i];break}
-  const gp=!!(ls&&ls.s===m.n&&ls.at===L),sp=!!(lb&&lb.k===K);
-  if(sp&&(!gp||(lb.q||0)>(ls.q||0)))sb.splice(sb.indexOf(lb),1);
+  const gp=!!(ls&&ls.s===m.n&&ls.at===L),sp=!!(lb&&lb.k===K),popPoint=()=>{const p=m.log[L-1];if(!p||p.s!==m.n)return;m.log.pop();if(p.a&&ls&&ls.at===L-1)sl.pop()};
+  if(sp&&(!gp||(lb.q||0)>(ls.q||0))){if(lb.au){for(let i=sb.length-1;i>=0;i--)if(sb[i].s===m.n&&sb[i].au&&sb[i].k===K)sb.splice(i,1);if(K>0)popPoint()}else sb.splice(sb.indexOf(lb),1)}
   else if(gp)sl.pop();
-  else{const p=m.log[L-1];if(!p||p.s!==m.n)return;m.log.pop();if(p.a&&ls&&ls.at===L-1)sl.pop()}
+  else popPoint();
   save();render()}
 const subsUsed=(m,si)=>(m.sb||[]).filter(x=>x.s===si&&!x.lib).length;
 const pnum=(m,pid)=>{const e=m.lu.h.find(x=>x.pid===pid);return e?(e.num?'#'+esc(e.num):esc(e.name)):'?'};
@@ -126,6 +127,23 @@ function subIn(pid){const m=get(S.cur);if(m.done||!S.sb||!S.sb.out)return;const 
   if(!lib&&subsUsed(m,m.n)>=ruleSub(ruleOf(m))){alert('All substitutions for this set are used.');return}
   const[x,y]=sc(m,m.n);(m.sb=m.sb||[]).push({s:m.n,k:m.log.filter(e=>e.s===m.n).length,out:S.sb.out,in:pid,lib:lib?1:0,sc:[x,y],q:(m.q=(m.q||0)+1)});
   S.sb=null;save();render()}
+const libsOf=m=>m.lu.h.filter(x=>x.role==='Libero').sort(byNum);
+const alOf=m=>Object.assign({on:false,role:'Middle blocker',lib:''},m.al||{});
+function setAL(k,v){const m=get(S.cur);m.al=alOf(m);m.al[k]=k==='on'?!!v:v;save();render()}
+function pushSub(m,out,inn,au){const eo=m.lu.h.find(x=>x.pid===out),ei=m.lu.h.find(x=>x.pid===inn),lib=!!((eo&&eo.role==='Libero')||(ei&&ei.role==='Libero')),[x,y]=sc(m,m.n);
+  const e={s:m.n,k:m.log.filter(e=>e.s===m.n).length,out,in:inn,lib:lib?1:0,sc:[x,y],q:(m.q=(m.q||0)+1)};if(au)e.au=1;(m.sb=m.sb||[]).push(e)}
+function autoLib(m){const al=alOf(m);if(!al.on)return;const libs=libsOf(m);if(!libs.length)return;const lib=libs.find(x=>x.pid===al.lib)||libs[0];
+  for(let pass=0;pass<2;pass++){const cl=curLU(m,m.n),pos=cl.pos,li=pos.indexOf(lib.pid);
+    if(li>=0){if((li>=1&&li<=3)||(li===0&&cl.serving)){const w=(cl.was[lib.pid]||[]).slice(-1)[0];let back=w&&!pos.includes(w)&&m.lu.h.some(x=>x.pid===w)?w:null;
+      if(!back){const c=m.lu.h.find(x=>x.role===al.role&&!pos.includes(x.pid));back=c&&c.pid}
+      if(back)pushSub(m,lib.pid,back,true)}}
+    else{const i=(cl.serving?[4,5]:[0,4,5]).find(i=>{const e=m.lu.h.find(x=>x.pid===pos[i]);return e&&e.role===al.role});if(i!==undefined)pushSub(m,pos[i],lib.pid,true)}}}
+function rallyDone(m,prevServing){if(prevServing!==curLU(m,m.n).serving)autoLib(m)}
+function libOut(){const m=get(S.cur),cl=curLU(m,m.n),L=libsOf(m),on=cl.pos.find(id=>L.some(x=>x.pid===id)),w=on&&(cl.was[on]||[]).slice(-1)[0];if(m.done||!on||!w||cl.pos.includes(w))return;pushSub(m,on,w,false);save();render()}
+function libSetup(m){const L=libsOf(m);if(!L.length)return'';const al=alOf(m),sel=L.find(x=>x.pid===al.lib)||L[0];
+  return`<h2 style="margin-top:8px">Libero</h2><div class="card"><div class="row sp"><b>Auto swap libero</b><div class="seg" role="group" aria-label="Auto libero">${[[true,'On'],[false,'Off']].map(([v,l])=>`<button aria-pressed="${al.on===v}" onclick="setAL('on',${v})">${l}</button>`).join('')}</div></div><label for="al-r">Libero replaces</label><select id="al-r" onchange="setAL('role',this.value)">${ROLES.filter(r=>r!=='Libero').map(r=>`<option${al.role===r?' selected':''}>${r}</option>`).join('')}</select>${L.length>1?`<label for="al-l">Libero</label><select id="al-l" onchange="setAL('lib',this.value)">${L.map(x=>`<option value="${x.pid}"${x.pid===sel.pid?' selected':''}>${x.num?'#'+esc(x.num)+' ':''}${esc(x.name)}</option>`).join('')}</select>`:''}<div class="mut" style="margin-top:8px">The libero comes on for the chosen role when that player is in the back row, and goes off when the rotation brings the slot to the front row. The server is not replaced while your team is serving. Libero swaps do not count as substitutions. On the Scout page you can change any swap by hand.</div></div>`}
+function libCard(m){const L=libsOf(m);if(!L.length||m.done)return'';const al=alOf(m),cl=curLU(m,m.n),on=cl.pos.find(id=>L.some(x=>x.pid===id)),back=on&&(cl.was[on]||[]).slice(-1)[0];
+  return`<div class="card"><div class="row sp"><b>Libero</b><div class="seg" role="group" aria-label="Auto libero">${[[true,'Auto on'],[false,'Auto off']].map(([v,l])=>`<button aria-pressed="${al.on===v}" onclick="setAL('on',${v})">${l}</button>`).join('')}</div></div><div class="mut" style="margin:6px 0">${al.on?'Swaps for '+esc(al.role)+'. ':''}${on?pnum(m,on)+' is on court.':'The libero is off court.'} Libero swaps are not counted as substitutions.</div>${on&&back&&!cl.pos.includes(back)?`<button onclick="libOut()">Libero off, ${pnum(m,back)} back on</button>`:''}</div>`}
 function subCard(m){const lim=ruleSub(ruleOf(m));if(!lim)return'';
   const used=subsUsed(m,m.n),mine=(m.sb||[]).filter(x=>x.s===m.n),cl=curLU(m,m.n),all=m.lu.h;
   let h=`<div class="card"><div class="row sp"><b>Substitutions, ${esc(m.home)}</b><span><span class="num" style="font-size:28px">${used}</span> <span class="mut">of ${lim}</span></span></div>`;
@@ -178,7 +196,7 @@ setInterval(()=>{const el=document.getElementById('tmr');if(!el||!S.cur)return;c
 const byNum=(a,b)=>(parseInt(a.num,10)||999)-(parseInt(b.num,10)||999)||a.name.localeCompare(b.name);
 const teamByName=n=>S.t.find(t=>t.name.toLowerCase()===n.toLowerCase());
 function ensureTeam(n){let t=teamByName(n);if(!t){t={id:'t'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name:n,mine:false};S.t.push(t);saveT()}return t}
-const snap=t=>S.p.filter(p=>p.teamId===t.id).map(p=>({pid:p.id,name:p.name,num:p.num,role:p.role}));
+const snap=t=>S.p.filter(p=>p.teamId===t.id&&!p.arch).map(p=>({pid:p.id,name:p.name,num:p.num,role:p.role}));
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const get=id=>S.m.find(m=>m.id===id);
 const sc=(m,i)=>{let h=0,a=0;m.log.forEach(e=>{if(e.s===i){e.t==='h'?h++:a++}});return[h,a]};
@@ -197,7 +215,7 @@ function addMatch(){
   const A=ensureTeam(n);
   const m={id:Date.now().toString(36),home:my.name,away:A.name,hid:my.id,aid:A.id,lu:{h:L.map(p=>({pid:p.id,name:p.name,num:p.num,role:p.role})),a:[]},fmt,rule:copy(getRule(fmt)),event:'',date:v('f-d')||new Date().toISOString().slice(0,10),n:0,done:false,log:[],notes:'',st:{}};
   S.m.unshift(m);save();S.form=false;open_(m.id)}
-function point(t,type){const m=get(S.cur);if(m.done)return;m.log.push({t,type,s:m.n});save();render()}
+function point(t,type){const m=get(S.cur);if(m.done)return;const sv0=curLU(m,m.n).serving;m.log.push({t,type,s:m.n});rallyDone(m,sv0);save();render()}
 const autoServe=(m,si)=>{m.sv=m.sv||{};if(si>0&&si<ruleOf(m).sets.length-1&&!m.sv[si]&&m.sv[si-1])m.sv[si]=m.sv[si-1]==='h'?'a':'h'};
 function endSet(){const m=get(S.cur);if(m.n<ruleOf(m).sets.length-1){m.n++;autoServe(m,m.n)}S.sb=null;S.mt='set';S.setv=null;S.pick=null;S.pv='init';save();render();scrollTo(0,0)}
 function finish(){const m=get(S.cur);m.done=!m.done;save();render()}
@@ -207,12 +225,13 @@ function savePlayer(){
   const v=id=>document.getElementById(id).value.trim();
   const name=v('p-n');if(!name){alert('Enter the player’s name.');return}
   const num=v('p-#');
-  if(num!==''&&S.p.some(p=>p.teamId===S.team&&p.num===num&&p.id!==S.edit)&&!confirm('Another player already wears #'+num+'. Save anyway?'))return;
+  if(num!==''&&S.p.some(p=>p.teamId===S.team&&!p.arch&&p.num===num&&p.id!==S.edit)&&!confirm('Another player already wears #'+num+'. Save anyway?'))return;
   const d={name,num,role:v('p-r')};
   if(S.edit&&S.edit!=='new'){Object.assign(S.p.find(p=>p.id===S.edit),d)}else{S.p.push({id:Date.now().toString(36),teamId:S.team,...d})}
   saveP();S.edit=null;render()}
 function editPlayer(id){S.edit=id;render();const el=document.getElementById('p-n');if(el)el.focus()}
-function delPlayer(id){const p=S.p.find(p=>p.id===id);if(confirm('Remove '+p.name+' from the roster? Past matches keep their own copy.')){S.p=S.p.filter(p=>p.id!==id);saveP();S.edit=null;render()}}
+function archivePlayer(id,on){const p=S.p.find(p=>p.id===id);if(!p)return;if(on)p.arch=true;else delete p.arch;saveP();S.edit=null;render()}
+function delPlayer(id){const p=S.p.find(p=>p.id===id);if(confirm('Remove '+p.name+' from the roster for good? Past matches keep their own copy, but their stats are then grouped by name only. Archive instead to keep their stats.')){S.p=S.p.filter(p=>p.id!==id);saveP();S.edit=null;render()}}
 function addTeam(){const n=document.getElementById('tm-n').value.trim();if(!n){alert('Enter a team name.');return}
   if(teamByName(n)){alert('That team already exists.');return}
   const mine=S.tab==='teams';if(mine)S.t.forEach(t=>t.mine=false);
@@ -239,7 +258,7 @@ function luGuest(s){const m=get(S.cur),n=(prompt('Player name')||'').trim();if(!
 function setDate(v){const m=get(S.cur);if(v)m.date=v;save();render()}
 function setFmt(v){const m=get(S.cur);m.fmt=v;m.rule=copy(getRule(v));save();render()}
 function luRow(s,x,i,lead,rm){return`<div class="row" style="margin-top:8px;flex-wrap:nowrap">${lead}<input aria-label="Shirt number for ${esc(x.name)}" style="width:60px" inputmode="numeric" maxlength="3" value="${esc(x.num)}" onchange="luSet('${s}',${i},'num',this.value)"><select aria-label="Role for ${esc(x.name)}" style="width:auto;max-width:42%" onchange="luSet('${s}',${i},'role',this.value)"><option value="">None</option>${ROLES.map(r=>`<option${x.role===r?' selected':''}>${r}</option>`).join('')}</select>${rm?`<button aria-label="Remove ${esc(x.name)}" onclick="luDel('${s}',${i})">✕</button>`:''}</div>`}
-function luHtml(m,s){const L=m.lu[s],id=s==='h'?m.hid:m.aid,fv=ruleOf(m).roster,c=cnt(L),ro=S.p.filter(p=>p.teamId===id).sort((a,b)=>(parseInt(a.num,10)||999)-(parseInt(b.num,10)||999)||a.name.localeCompare(b.name));
+function luHtml(m,s){const L=m.lu[s],id=s==='h'?m.hid:m.aid,fv=ruleOf(m).roster,c=cnt(L),ro=S.p.filter(p=>p.teamId===id&&(!p.arch||L.some(x=>x.pid===p.id))).sort((a,b)=>(parseInt(a.num,10)||999)-(parseInt(b.num,10)||999)||a.name.localeCompare(b.name));
   const st=fv?`${c.pl} of 12 players, ${c.lib} of 2 liberos${c.lib<1?'. Add at least 1 libero.':''}`:`${L.length} attending`;
   let h=`<div style="border-top:1px solid var(--line);margin-top:12px;padding-top:10px"><div class="row sp"><b>${esc(s==='h'?m.home:m.away)}</b><span class="mut" ${over(m,L)||(fv&&c.lib<1)?'style="color:var(--bad)"':''}>${st}</span></div>`;
   ro.forEach(p=>{const i=L.findIndex(x=>x.pid===p.id);const lead=`<label style="display:flex;gap:8px;align-items:center;color:var(--fg);font-size:16px;margin:0;flex:1;min-width:0"><input type="checkbox" style="width:22px;height:22px;flex:none" ${i>=0?'checked':''} onchange="luToggle('${s}','${p.id}',this.checked)"><span style="overflow-wrap:anywhere">${esc(p.name)}</span></label>`;
@@ -254,10 +273,10 @@ const ANG={3:0,2:60,1:120,6:180,5:240,4:300};
 const RL={'Setter':'S','Opposite':'O','Middle blocker':'M','Outside hitter':'H','Libero':'L','Defensive specialist':'D'};
 const curSet=m=>S.setv==null||S.setv>m.n?m.n:S.setv;
 const setReady=(m,si)=>(m.st[si]||[]).filter(id=>id&&m.lu.h.some(x=>x.pid===id)).length===6&&!!(m.sv||{})[si];
-function startSet(){const m=get(S.cur);{const ev=sysEval(m,(m.st[m.n]||[]).map(id=>m.lu.h.some(x=>x.pid===id)?id:null));if(ev.state==='bad'&&!confirm('The line-up does not match the '+m.sys+' system. Start the set anyway?'))return}if(ruleMin(ruleOf(m))&&!tmOf(m)){m.tm={acc:0,run:Date.now()};save()}S.mt='scout';S.pv='init';S.pick=null;render();scrollTo(0,0)}
+function startSet(){const m=get(S.cur);{const ev=sysEval(m,(m.st[m.n]||[]).map(id=>m.lu.h.some(x=>x.pid===id)?id:null));if(ev.state==='bad'&&!confirm('The line-up does not match the '+m.sys+' system. Start the set anyway?'))return}if(ruleMin(ruleOf(m))&&!tmOf(m)){m.tm={acc:0,run:Date.now()};save()}if(alOf(m).on&&!m.log.some(e=>e.s===m.n)&&!(m.sb||[]).some(x=>x.s===m.n)){autoLib(m);save()}S.mt='scout';S.pv='init';S.pick=null;render();scrollTo(0,0)}
 function curLU(m,si){let pos=[0,1,2,3,4,5].map(i=>(m.st[si]||[])[i]||null),sl=[0,1,2,3,4,5],sv=(m.sv||{})[si]==='h',dots={},was={},pend=false,k=0;
   const sbs=(m.sb||[]).filter(x=>x.s===si),add=(id,c)=>{if(id)(dots[id]=dots[id]||[]).push(c)};
-  const ap=n=>sbs.filter(x=>x.k===n).forEach(x=>{const j=pos.indexOf(x.out);if(j<0)return;pos[j]=x.in;was[x.in]=[...(was[x.out]||[]),x.out];
+  const ap=n=>sbs.filter(x=>x.k===n).forEach(x=>{const j=pos.indexOf(x.out);if(j<0)return;pos[j]=x.in;was[x.in]=(was[x.out]&&was[x.out].slice(-1)[0]===x.in)?was[x.out].slice(0,-1):[...(was[x.out]||[]),x.out];
     if(j===0&&pend&&dots[x.out]&&dots[x.out].length)add(x.in,dots[x.out].pop())});
   ap(0);
   if((m.sv||{})[si])add(pos[0],sv?'g':'r');
@@ -320,7 +339,7 @@ function setView(m){
   let h='';
   if(m.n>0)h+=`<div style="margin-bottom:8px">${Array.from({length:m.n+1},(_,i)=>`<button class="chip" style="min-height:36px;${i===si?'background:var(--home);color:var(--onc);border-color:var(--home)':''}" aria-pressed="${i===si}" onclick="setSetView(${i})">Set ${i+1}</button>`).join('')}</div>`;
   if(si<m.n)return h+pastSetView(m,si);
-  if(si===m.n)h+=reopenBtn(m);
+  if(si===m.n)h+=reopenBtn(m)+libSetup(m);
   h+=`<h2 style="margin-top:8px">First serve, set ${si+1}</h2><div class="mut" style="margin-bottom:6px">${esc(m.home)} will:</div><div class="seg" role="group" aria-label="First serve">${[['h','Serve'],['a','Receive']].map(([k,n])=>`<button style="min-height:54px;overflow-wrap:anywhere" aria-pressed="${sv===k}" onclick="setServe('${k}')">${esc(n)}</button>`).join('')}</div>${sv?`<div style="margin-top:6px">${esc(sv==='h'?m.home:m.away)} serves, ${esc(sv==='h'?m.away:m.home)} receives.</div>${si>0?(si===ruleOf(m).sets.length-1?'<div class="mut">Deciding set: a new toss decides who serves first.</div>':'<div class="mut">Set automatically: the first serve alternates each set. Change it if needed.</div>'):''}`:`<div style="color:var(--bad);margin-top:6px">${si>0&&si===ruleOf(m).sets.length-1?'Deciding set: a new toss decides who serves first. ':'Not set yet. '}Choose serve or receive for your team.</div>`}
   <h2>Team system</h2><div class="seg" role="group" aria-label="Team system" style="margin-bottom:6px">${['6-2','5-1','4-2','none'].map(k=>`<button aria-pressed="${(m.sys||'none')===k}" onclick="setSys('${k}')">${k==='none'?'None':k}</button>`).join('')}</div><div class="mut">Applies to the whole match.</div>
   <h2>Starting line-up, set ${si+1}</h2>`;
@@ -344,7 +363,7 @@ function listView(){
   let h=`<div class="row sp"><h1>Matches</h1>${my?`<button class="pri" onclick="S.form=!S.form;render()">${S.form?'Cancel':'New match'}</button>`:''}</div>`;
   if(!my)h+=`<div class="card"><b>Set up your team first.</b><div class="mut">Matches use your team and its players. Add it on the Teams tab.</div><div style="margin-top:12px"><button class="pri" onclick="go('teams')">Go to Teams</button></div></div>`;
   if(S.form&&my){
-    const ps=S.p.filter(p=>p.teamId===my.id).sort(byNum);
+    const ps=S.p.filter(p=>p.teamId===my.id&&!p.arch).sort(byNum);
     h+=`<div class="card"><datalist id="tl">${S.t.filter(t=>!t.mine).map(t=>`<option value="${esc(t.name)}">`).join('')}</datalist>
     <label for="f-a">Opponent</label><input id="f-a" list="tl" autocomplete="off">
     <label for="f-f">Tournament rules</label><select id="f-f" onchange="nrStatus()">${allRules().map(r=>`<option value="${r.id}">${esc(r.name)}</option>`).join('')}</select><div class="mut" id="f-rt" style="margin-top:6px"></div>
@@ -362,7 +381,7 @@ const MDK='vb-scout-mode-v1',ADVK=['block','pass','set','attack'];
 let scoutMode='simple';try{if(localStorage.getItem(MDK)==='adv')scoutMode='adv'}catch(e){}
 function setMode(k){scoutMode=k==='adv'?'adv':'simple';try{localStorage.setItem(MDK,scoutMode)}catch(e){}render()}
 function modeToggle(){return`<div class="seg" role="group" aria-label="Scouting mode" style="margin:8px 0">${[['simple','Simple'],['adv','Medium']].map(([k,l])=>`<button aria-pressed="${scoutMode===k}" onclick="setMode('${k}')">${l}</button>`).join('')}</div>`}
-function advAct(sk){const m=get(S.cur);if(m.done||!ADVK.includes(sk))return;m.log.push({t:'a',type:sk==='pass'?'ace':'err',s:m.n,x:sk});save();render()}
+function advAct(sk){const m=get(S.cur);if(m.done||!ADVK.includes(sk))return;const sv0=curLU(m,m.n).serving;m.log.push({t:'a',type:sk==='pass'?'ace':'err',s:m.n,x:sk});rallyDone(m,sv0);save();render()}
 function advRow(m){return`<div class="pts a" style="grid-template-columns:repeat(4,1fr);margin-top:8px"><div class="mut" style="grid-column:1/-1">Point lost by ${esc(m.home)}, by action</div>${ADVK.map(sk=>`<button style="padding:6px 2px;min-height:64px;font-size:15px" aria-label="${SKN[sk]}, ${esc(SKX[sk][0].n)}" onclick="advAct('${sk}')"><span style="display:block">${SKN[sk]}</span><span class="mut" style="display:block;font-size:12px">${G('--')} ${esc(SKX[sk][0].n)}</span></button>`).join('')}</div>`}
 function lostTable(m){const c=ADVK.map(sk=>m.log.filter(e=>e.x===sk).length),tot=c.reduce((a,b)=>a+b,0);if(!tot&&scoutMode!=='adv')return'';
   return`<h2>Points lost by action</h2><div class="card sc"><table><tr><th></th>${ADVK.map(sk=>`<th>${SKN[sk]}</th>`).join('')}</tr><tr><td>${esc(m.home)}</td>${c.map(n=>`<td>${n}</td>`).join('')}</tr></table></div>`}
@@ -383,7 +402,7 @@ function matchView(m){
   if(sw&&!m.done){const wn=sw[0]==='h'?m.home:m.away,pr=[...Array(m.n).keys()].filter(i=>{const[a,b]=sc(m,i);return sw[0]==='h'?a>b:b>a}).length+1;
     h+=`<div class="banner"><b>${esc(wn)}</b> has won set ${m.n+1}${sw[1]==='time'?' on time, with the most points. Time is up, so the match is over: finish the match to lock the result.':'. '+(pr>=need?'That wins the match. Finish the match to lock the result.':!last?'End the set to start the next one.':'Finish the match to lock the result.')}</div>`}
   else if(!m.done&&tup)h+=`<div class="banner">Time is up and the score is level. The next point wins the set.</div>`;
-  h+=toBoxes(m)+subCard(m)+scoutPie(m)+serveCard(m);
+  h+=toBoxes(m)+libCard(m)+subCard(m)+scoutPie(m)+serveCard(m);
   if(!m.done){
     h+=modeToggle();
     h+=`<div class="pts h" style="margin-bottom:8px;grid-template-columns:1fr 1fr 1fr"><div class="mut" style="grid-column:1/-1">Point for ${esc(m.home)}</div>${TH.map(([k,l])=>`<button onclick="point('h','${k}')">${l}</button>`).join('')}</div>
@@ -398,23 +417,24 @@ function matchView(m){
 function teamsView(){
   if(S.team){
     const t=S.t.find(x=>x.id===S.team),ed=S.edit&&S.edit!=='new'?S.p.find(p=>p.id===S.edit):null;
-    const L=S.p.filter(p=>p.teamId===t.id).sort((a,b)=>(parseInt(a.num,10)||999)-(parseInt(b.num,10)||999)||a.name.localeCompare(b.name));
+    const srt=(a,b)=>(parseInt(a.num,10)||999)-(parseInt(b.num,10)||999)||a.name.localeCompare(b.name),L=S.p.filter(p=>p.teamId===t.id&&!p.arch).sort(srt),AR=S.p.filter(p=>p.teamId===t.id&&p.arch).sort(srt);
     let h=`<div class="row sp"><button onclick="S.team=null;S.edit=null;render()">Back</button><div class="row"><button onclick="toggleMine()">${t.mine?'Not my team':'Set as my team'}</button><button onclick="renameTeam()">Rename</button><button class="del" onclick="delTeam()">Delete</button></div></div>
     <div class="row sp" style="margin-top:10px"><h1>${esc(t.name)}</h1>${S.edit?'':'<button class="pri" onclick="editPlayer(\'new\')">Add player</button>'}</div>
     <div class="mut">${t.mine?'Your team. ':''}These are default numbers and roles. Each new match gets a copy you can change without touching this roster.</div>`;
     if(S.edit)h+=`<div class="card"><label for="p-n">Name</label><input id="p-n" autocomplete="off" value="${esc(ed?ed.name:'')}"><label for="p-#">Shirt number</label><input id="p-#" inputmode="numeric" maxlength="3" autocomplete="off" value="${esc(ed?ed.num:'')}"><label for="p-r">Preferred role</label><select id="p-r"><option value="">None</option>${ROLES.map(r=>`<option${ed&&ed.role===r?' selected':''}>${r}</option>`).join('')}</select>
-    <div class="row" style="margin-top:14px"><button class="pri" onclick="savePlayer()">Save player</button><button onclick="S.edit=null;render()">Cancel</button>${ed?`<button class="del" onclick="delPlayer('${ed.id}')">Remove</button>`:''}</div></div>`;
-    if(!L.length&&!S.edit)h+=`<div class="card"><b>No players yet.</b><div class="mut">Add each player with a shirt number and preferred role.</div></div>`;
+    <div class="row" style="margin-top:14px"><button class="pri" onclick="savePlayer()">Save player</button><button onclick="S.edit=null;render()">Cancel</button>${ed?`<button onclick="archivePlayer('${ed.id}',${ed.arch?'false':'true'})">${ed.arch?'Restore':'Archive'}</button><button class="del" onclick="delPlayer('${ed.id}')">Remove</button>`:''}</div>${ed&&!ed.arch?'<div class="mut" style="margin-top:8px">Archive hides a player who has left, keeps their stats and frees the shirt number.</div>':''}</div>`;
+    if(!L.length&&!AR.length&&!S.edit)h+=`<div class="card"><b>No players yet.</b><div class="mut">Add each player with a shirt number and preferred role.</div></div>`;
     L.forEach(p=>{h+=`<button class="m" onclick="editPlayer('${p.id}')"><div class="row"><span class="num" style="font-size:34px;min-width:52px">${p.num?'#'+esc(p.num):'–'}</span><div><b>${esc(p.name)}</b><div class="mut">${p.role?esc(p.role):'None'}</div></div></div></button>`});
+    if(AR.length)h+=`<details class="card"${S.aopen?' open':''} ontoggle="S.aopen=this.open"><summary><b>Archived players (${AR.length})</b></summary><div class="mut" style="margin:6px 0">Hidden from new matches and line-ups. Their stats are kept. Tap a player to restore or remove.</div>${AR.map(p=>`<button class="m" onclick="editPlayer('${p.id}')"><div class="row"><span class="num" style="font-size:28px;min-width:52px">${p.num?'#'+esc(p.num):'–'}</span><div><b>${esc(p.name)}</b><div class="mut">${p.role?esc(p.role):'None'}</div></div></div></button>`).join('')}</details>`;
     return h}
   const opp=S.tab==='opps',my=S.t.find(t=>t.mine);
-  let h=`<div class="row sp"><h1>${opp?'Opponents':'Teams'}</h1>${opp||!my?`<button class="pri" onclick="S.tform=!S.tform;render()">${S.tform?'Cancel':opp?'Add opponent':'Add my team'}</button>`:''}</div>`;
+  let h=`<div class="row sp"><h1>Teams</h1>${opp||!my?`<button class="pri" onclick="S.tform=!S.tform;render()">${S.tform?'Cancel':opp?'Add opponent':'Add my team'}</button>`:''}</div><div class="seg" role="group" aria-label="My team or opponents" style="margin:10px 0">${[['teams','My team'],['opps','Opponents']].map(([k,l])=>`<button aria-pressed="${S.tab===k}" onclick="go('${k}')">${l}</button>`).join('')}</div>`;
   if(S.tform)h+=`<div class="card"><label for="tm-n">${opp?'Opponent name':'Team name'}</label><input id="tm-n" autocomplete="off"><div style="margin-top:14px"><button class="pri" onclick="addTeam()">Save team</button></div></div>`;
-  if(!opp&&!S.t.length&&!S.tform)h+=`<div class="card"><b>Start with your own team.</b><div class="mut">Save it once with its players, then pick it for every match. Opponents are saved automatically when you create a match, and you can manage them on the Opponents tab.</div></div>`;
-  if(!opp&&S.t.length&&!my&&!S.tform)h+=`<div class="card"><b>No team is marked as yours.</b><div class="mut">Add your team here, or open a team on the Opponents tab and choose “Set as my team”.</div></div>`;
+  if(!opp&&!S.t.length&&!S.tform)h+=`<div class="card"><b>Start with your own team.</b><div class="mut">Save it once with its players, then pick it for every match. Opponents are saved automatically when you create a match, and you can manage them under Opponents on this page.</div></div>`;
+  if(!opp&&S.t.length&&!my&&!S.tform)h+=`<div class="card"><b>No team is marked as yours.</b><div class="mut">Add your team here, or open a team under Opponents and choose “Set as my team”.</div></div>`;
   if(opp&&!S.t.some(t=>!t.mine)&&!S.tform)h+=`<div class="card"><b>No opponents yet.</b><div class="mut">Opponents are saved when you create a match. You can also add one here and give it a roster.</div></div>`;
-  S.t.filter(t=>opp?!t.mine:t.mine).sort((a,b)=>a.name.localeCompare(b.name)).forEach(t=>{const n=S.p.filter(p=>p.teamId===t.id).length;
-    h+=`<button class="m" onclick="openTeam('${t.id}')"><div class="row sp"><b>${esc(t.name)}</b><span class="mut">${n} player${n===1?'':'s'}</span></div></button>`});
+  S.t.filter(t=>opp?!t.mine:t.mine).sort((a,b)=>a.name.localeCompare(b.name)).forEach(t=>{const n=S.p.filter(p=>p.teamId===t.id&&!p.arch).length,na=S.p.filter(p=>p.teamId===t.id&&p.arch).length;
+    h+=`<button class="m" onclick="openTeam('${t.id}')"><div class="row sp"><b>${esc(t.name)}</b><span class="mut">${n} player${n===1?'':'s'}${na?', '+na+' archived':''}</span></div></button>`});
   return h}
 
 function buildBackup(){return{app:'volleyscout',v:22,exported:new Date().toISOString(),data:{matches:S.m,players:S.p,teams:S.t,rules:S.r,scale:SC.map(x=>({n:x.n,d:x.d})),skills:SKX}}}
@@ -518,11 +538,11 @@ function statsView(){
   <div class="mut" style="margin-top:8px">Errors given: ${r.given}. Share of points from attack: ${r.pf?Math.round(r.kill/r.pf*100):0}%, from serve: ${r.pf?Math.round(r.ace/r.pf*100):0}%.</div></div>`});
   return h}
 
-const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 32</div>';
+const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 35</div>';
 function render(){
   const m=S.cur&&get(S.cur);
   document.getElementById('app').innerHTML=(m?matchView(m):S.tab==='stats'?statsView():S.tab==='settings'?settingsView():S.tab==='teams'||S.tab==='opps'?teamsView():listView())+VER;
-  ['matches','teams','opps','stats','settings'].forEach(t=>{const b=document.getElementById('t-'+t);if(S.tab===t&&!m)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});nrStatus()}
+  ['matches','teams','stats','settings'].forEach(t=>{const b=document.getElementById('t-'+t);if((S.tab===t||(t==='teams'&&S.tab==='opps'))&&!m)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});nrStatus()}
 render();
 if("serviceWorker" in navigator){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}
 </script>
