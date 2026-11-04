@@ -70,7 +70,7 @@ th:first-child,td:first-child{text-align:left}
 <script>
 const K='vb-scout-v1';
 const T=[['kill','Attack kill'],['ace','Ace'],['block','Block'],['err','Opp. error']];
-const TH=T.filter(x=>x[0]!=='ace');
+const TH=T.filter(x=>x[0]!=='ace'),TA=T.map(([k,l])=>k==='err'?[k,'My team error']:[k,l]);
 const G=k=>k==='--'?'<span class="dd" role="img" aria-label="minus minus"><i></i><i></i></span>':esc(k);
 const PK='vb-scout-players-v1',TK='vb-scout-teams-v1';
 const ROLES=['Setter','Outside hitter','Opposite','Middle blocker','Libero','Defensive specialist'];
@@ -129,7 +129,7 @@ function undo(){const m=get(S.cur),L=m.log.length,sl=m.sl=m.sl||[],ls=sl[sl.leng
   save();render()}
 const subsUsed=(m,si)=>(m.sb||[]).filter(x=>x.s===si&&!x.lib).length;
 const pnum=(m,pid)=>{const e=m.lu.h.find(x=>x.pid===pid);return e?(e.num?'#'+esc(e.num):esc(e.name)):'?'};
-function subOpen(on){S.sb=on?{out:null}:null;render()}
+function subOpen(on){S.sb=on?{out:null}:null;S.pm=on?'sub':null;render()}
 function subOut(pid){if(S.sb){S.sb.out=pid;render()}}
 const pnp=(m,pid)=>{const e=m.lu.h.find(x=>x.pid===pid);return e?(e.num?'#'+e.num:e.name):'?'};
 function subState(m,si){const rep={},repBy={},done=new Set();
@@ -143,7 +143,7 @@ function subCheck(m,si,A,B){const st=subState(m,si);
 function subIn(pid){const m=get(S.cur);if(m.done||!S.sb||!S.sb.out)return;const cl=curLU(m,m.n);
   if(!cl.pos.includes(S.sb.out)||cl.pos.includes(pid))return;const r=S.sb.role||'';
   if(!libSwap(m,S.sb.out,pid,r)){const msg=subCheck(m,m.n,S.sb.out,pid);if(msg){alert(msg);return}if(subsUsed(m,m.n)>=ruleSub(ruleOf(m))){alert('All substitutions for this set are used.');return}}
-  pushSub(m,S.sb.out,pid,false,r);S.sb=null;save();render()}
+  pushSub(m,S.sb.out,pid,false,r);S.sb=null;S.pm=null;save();render()}
 const libsOf=m=>m.lu.h.filter(x=>x.role==='Libero').sort(byNum);
 const alOf=m=>Object.assign({on:false,role:'Middle blocker',lib:''},m.al||{});
 function setAL(k,v){const m=get(S.cur);m.al=alOf(m);m.al[k]=k==='on'?!!v:v;save();render()}
@@ -158,10 +158,22 @@ function autoLib(m){const al=alOf(m);if(!al.on)return;const libs=libsOf(m);if(!l
     else{const i=(cl.serving?[4,5]:[0,4,5]).find(i=>{const e=m.lu.h.find(x=>x.pid===pos[i]);return e&&(cl.rl[pos[i]]||e.role)===al.role});if(i!==undefined)pushSub(m,pos[i],lib.pid,true)}}}
 function rallyDone(m,prevServing){if(prevServing!==curLU(m,m.n).serving)autoLib(m)}
 function libOut(){const m=get(S.cur),cl=curLU(m,m.n),L=libsOf(m),on=cl.pos.find(id=>L.some(x=>x.pid===id)),w=on&&(cl.was[on]||[]).slice(-1)[0];if(m.done||!on||!w||cl.pos.includes(w))return;pushSub(m,on,w,false);save();render()}
-function libSetup(m){const L=libsOf(m);if(!L.length)return'';const al=alOf(m),sel=L.find(x=>x.pid===al.lib)||L[0];
-  return`<h2 style="margin-top:8px">Libero</h2><div class="card"><div class="row sp"><b>Auto swap libero</b><div class="seg" role="group" aria-label="Auto libero">${[[true,'On'],[false,'Off']].map(([v,l])=>`<button aria-pressed="${al.on===v}" onclick="setAL('on',${v})">${l}</button>`).join('')}</div></div><label for="al-r">Libero replaces</label><select id="al-r" onchange="setAL('role',this.value)">${ROLES.filter(r=>r!=='Libero').map(r=>`<option${al.role===r?' selected':''}>${r}</option>`).join('')}</select>${L.length>1?`<label for="al-l">Libero</label><select id="al-l" onchange="setAL('lib',this.value)">${L.map(x=>`<option value="${x.pid}"${x.pid===sel.pid?' selected':''}>${x.num?'#'+esc(x.num)+' ':''}${esc(x.name)}</option>`).join('')}</select>`:''}<div class="mut" style="margin-top:8px">The libero comes on for the chosen role when that player is in the back row, and goes off when the rotation brings the slot to the front row. The server is not replaced while your team is serving. Libero swaps do not count as substitutions. On the Scout page you can change any swap by hand.</div></div>`}
+function libSetup(m,lk){const L=libsOf(m);if(!L.length)return'';const al=alOf(m),sel=L.find(x=>x.pid===al.lib)||L[0];
+  return`<h2 style="margin-top:8px">Libero</h2><div class="card"><div class="row sp"><b>Auto swap libero</b><div class="seg" role="group" aria-label="Auto libero">${[[true,'On'],[false,'Off']].map(([v,l])=>`<button aria-pressed="${al.on===v}" onclick="setAL('on',${v})"${lk?' disabled':''}>${l}</button>`).join('')}</div></div><label for="al-r">Libero replaces</label><select id="al-r"${lk?' disabled':''} onchange="setAL('role',this.value)">${ROLES.filter(r=>r!=='Libero').map(r=>`<option${al.role===r?' selected':''}>${r}</option>`).join('')}</select>${L.length>1?`<label for="al-l">Libero</label><select id="al-l"${lk?' disabled':''} onchange="setAL('lib',this.value)">${L.map(x=>`<option value="${x.pid}"${x.pid===sel.pid?' selected':''}>${x.num?'#'+esc(x.num)+' ':''}${esc(x.name)}</option>`).join('')}</select>`:''}<div class="mut" style="margin-top:8px">The libero comes on for the chosen role when that player is in the back row, and goes off when the rotation brings the slot to the front row. The server is not replaced while your team is serving. Libero swaps do not count as substitutions. On the Scout page you can change any swap by hand.</div></div>`}
 function libCard(m){const L=libsOf(m);if(!L.length||m.done)return'';const al=alOf(m),cl=curLU(m,m.n),on=cl.pos.find(id=>L.some(x=>x.pid===id)),back=on&&(cl.was[on]||[]).slice(-1)[0];
   return`<div class="card"><div class="row sp"><b>Libero</b><div class="seg" role="group" aria-label="Auto libero">${[[true,'Auto on'],[false,'Auto off']].map(([v,l])=>`<button aria-pressed="${al.on===v}" onclick="setAL('on',${v})">${l}</button>`).join('')}</div></div><div class="mut" style="margin:6px 0">${al.on?'Swaps for '+esc(al.role)+'. ':''}${on?pnum(m,on)+' is on court.':'The libero is off court.'} Libero swaps are not counted as substitutions.</div>${on&&back&&!cl.pos.includes(back)?`<button onclick="libOut()">Libero off, ${pnum(m,back)} back on</button>`:''}</div>`}
+const IC_L='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M9.5 7v10h5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+IC_S='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>',
+IC_V='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+function togglePM(k){const m=get(S.cur);if(S.pm===k){S.pm=null;if(k==='sub')S.sb=null}else{if(S.pm==='sub')S.sb=null;S.pm=k;if(k==='sub'&&!m.done)S.sb={out:null}}render()}
+const panelBox=h=>h.replace('<div class="card">','<div style="margin-top:10px;border-top:1px solid var(--line);padding-top:10px">');
+function pieBox(m){const L=libsOf(m),lim=ruleSub(ruleOf(m)),al=alOf(m),pm=S.pm,cur=S.pv==='cur',used=subsUsed(m,m.n),showL=L.length&&!m.done;
+  const ib=(k,ic,lab,txt,on)=>`<button aria-label="${lab}" aria-expanded="${pm===k}" aria-haspopup="true" onclick="togglePM('${k}')" style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:58px;min-height:56px;padding:4px 6px${pm===k?';border:2px solid var(--fg)':''}${on?';color:var(--home)':''}">${ic}<span style="font-size:11px;line-height:1">${txt}</span></button>`;
+  let h=`<div class="card"><div class="row sp" style="align-items:flex-start"><b>Line-up, set ${m.n+1}</b><div class="row" style="gap:6px">${showL?ib('lib',IC_L,'Libero auto swap, now '+(al.on?'on':'off'),'Auto '+(al.on?'on':'off'),al.on):''}${lim?ib('sub',IC_S,'Substitutions, '+used+' of '+lim+' used','Subs '+used+'/'+lim):''}${ib('view',IC_V,'Pie view, now '+(cur?'current position':'initial line-up'),cur?'Current':'Initial')}</div></div>`;
+  if(pm==='lib'&&showL)h+=panelBox(libCard(m));
+  else if(pm==='sub'&&lim)h+=panelBox(subCard(m));
+  else if(pm==='view')h+=`<div style="margin-top:10px;border-top:1px solid var(--line);padding-top:10px"><div class="seg" role="group" aria-label="Line-up view">${[['init','Initial line-up'],['cur','Current position']].map(([k,l])=>`<button aria-pressed="${(cur?'cur':'init')===k}" onclick="S.pv='${k}';S.pm=null;render()">${l}</button>`).join('')}</div></div>`;
+  return h+scoutPie(m)+'</div>'}
 function subCard(m){const lim=ruleSub(ruleOf(m));if(!lim)return'';
   const used=subsUsed(m,m.n),mine=(m.sb||[]).filter(x=>x.s===m.n),cl=curLU(m,m.n),all=m.lu.h,st=subState(m,m.n),effR=id=>cl.rl[id]||((all.find(x=>x.pid===id)||{}).role);
   let h=`<div class="card"><div class="row sp"><b>Substitutions, ${esc(m.home)}</b><span><span class="num" style="font-size:28px">${used}</span> <span class="mut">of ${lim}</span></span></div>`;
@@ -172,10 +184,11 @@ function subCard(m){const lim=ruleSub(ruleOf(m));if(!lim)return'';
   if(!S.sb.out)return h+`<div style="margin-top:10px"><b>Who goes out?</b></div>${cl.pos.map((id,i)=>{if(!id)return'';const lk=st.done.has(id)&&effR(id)!=='Libero',nt=lk?'Already returned, cannot be substituted again this set':(st.rep[id]!==undefined&&effR(id)!=='Libero'?'Only '+pnum(m,st.rep[id])+' can replace':'');return`<button class="m" style="margin:6px 0" ${lk?'disabled':''} onclick="subOut('${id}')"><b>P${i+1}</b> ${pnum(m,id)} ${esc((all.find(x=>x.pid===id)||{}).name||'')}${nt?'<div class="mut" style="font-size:12px">'+nt+'</div>':''}</button>`}).join('')}${cancel}</div>`;
   const eo=all.find(x=>x.pid===S.sb.out),bench=all.filter(x=>!cl.pos.includes(x.pid)).sort(byNum);
   return h+`<div style="margin-top:10px"><b>Who comes in for ${pnum(m,S.sb.out)} ${esc(eo?eo.name:'')}?</b></div><label for="sb-r">Plays as</label><select id="sb-r" onchange="S.sb.role=this.value;render()"><option value="">Their own role</option>${ROLES.map(r=>`<option${S.sb.role===r?' selected':''}>${r}</option>`).join('')}</select>${st.rep[S.sb.out]!==undefined&&effR(S.sb.out)!=='Libero'?'<div class="mut" style="margin-top:6px">'+pnum(m,S.sb.out)+' can only be replaced by '+pnum(m,st.rep[S.sb.out])+', the player they replaced.</div>':''}${bench.map(x=>{const lib=libSwap(m,S.sb.out,x.pid,S.sb.role||''),bad=lib?'':subCheck(m,m.n,S.sb.out,x.pid),dis=(full&&!lib)||!!bad,why=!lib&&st.repBy[x.pid]!==undefined&&st.repBy[x.pid]!==S.sb.out?'Can only return for '+pnum(m,st.repBy[x.pid]):'';return`<button class="m" style="margin:6px 0" ${dis?'disabled':''} onclick="subIn('${x.pid}')"><b>${x.num?'#'+esc(x.num):'–'}</b> ${esc(x.name)}${x.role?', <span class="mut">'+esc(x.role)+'</span>':''}${why?'<div class="mut" style="font-size:12px">'+why+'</div>':''}</button>`}).join('')||'<div class="mut" style="margin-top:6px">No one on the bench. Tick more players on the Roster tab.</div>'}<div class="row" style="margin-top:8px"><button onclick="S.sb.out=null;render()">Back</button><button onclick="subOpen(false)">Cancel</button></div></div>`}
-function serveCard(m){const cl=curLU(m,m.n);if(m.done)return'';const adv=scoutMode==='adv';if(!cl.serving||!cl.pos[0])return`<div class="card">${lvlHead('Scouting')}${adv?actRow():''}</div>`;
+function homePts(m){return`<div class="pts h" style="margin-top:14px;grid-template-columns:1fr 1fr 1fr"><div class="mut" style="grid-column:1/-1">Point for ${esc(m.home)}</div>${TH.map(([k,l])=>`<button onclick="point('h','${k}')">${l}</button>`).join('')}</div>`}
+function serveCard(m){const cl=curLU(m,m.n);if(m.done)return'';const adv=scoutMode==='adv';if(!cl.serving||!cl.pos[0])return`<div class="card">${lvlHead('Scouting')}${adv?actRow():''}${homePts(m)}</div>`;
   const L=m.log.length,sl=m.sl||[],ls=sl[sl.length-1],rated=ls&&ls.s===m.n&&ls.at===L,e=m.lu.h.find(x=>x.pid===cl.pos[0]),who=e?(e.num?'#'+esc(e.num)+' ':'')+esc(e.name):'';
-  if(rated){const g=SC.find(x=>x.k===ls.g);return`<div class="card">${lvlHead('Serve'+(who?': '+who:''))}<div class="mut">Graded <b>${G(ls.g)}</b>${g?' ('+esc(g.n)+')':''}. Now record how the rally ended.</div>${adv?actRow():''}</div>`}
-  return`<div class="card">${lvlHead('Serve'+(who?': '+who:''))}<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px">${SC.map(x=>`<button aria-label="${esc(x.k)} ${esc(x.n)}: ${esc(x.d)}" style="min-height:64px;padding:6px 2px;line-height:1.1${x.k==='--'?';border-color:var(--bad)':x.k==='++'?';border-color:var(--good)':''}" onclick="serve('${x.k}')"><span class="num" style="font-size:26px;display:block">${G(x.k)}</span><span style="font-size:11px">${esc(x.n)}</span></button>`).join('')}</div><details style="margin-top:8px"><summary class="mut" style="cursor:pointer">What do the grades mean?</summary>${SC.map(x=>`<div class="mut" style="margin-top:4px"><b>${G(x.k)}</b> ${esc(x.d)}</div>`).join('')}</details>${adv?actRow():''}</div>`}
+  if(rated){const g=SC.find(x=>x.k===ls.g);return`<div class="card">${lvlHead('Serve'+(who?': '+who:''))}<div class="mut">Graded <b>${G(ls.g)}</b>${g?' ('+esc(g.n)+')':''}. Now record how the rally ended.</div>${adv?actRow():''}${homePts(m)}</div>`}
+  return`<div class="card">${lvlHead('Serve'+(who?': '+who:''))}<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px">${SC.map(x=>`<button aria-label="${esc(x.k)} ${esc(x.n)}: ${esc(x.d)}" style="min-height:64px;padding:6px 2px;line-height:1.1${x.k==='--'?';border-color:var(--bad)':x.k==='++'?';border-color:var(--good)':''}" onclick="serve('${x.k}')"><span class="num" style="font-size:26px;display:block">${G(x.k)}</span><span style="font-size:11px">${esc(x.n)}</span></button>`).join('')}</div><details style="margin-top:8px"><summary class="mut" style="cursor:pointer">What do the grades mean?</summary>${SC.map(x=>`<div class="mut" style="margin-top:4px"><b>${G(x.k)}</b> ${esc(x.d)}</div>`).join('')}</details>${adv?actRow():''}${homePts(m)}</div>`}
 function serveTable(m){const sl=m.sl||[];if(!sl.length)return'';const by={};sl.forEach(e=>{const r=by[e.pid]=by[e.pid]||{};r[e.g]=(r[e.g]||0)+1});
   const rows=Object.keys(by).map(pid=>{const e=m.lu.h.find(x=>x.pid===pid),r=by[pid],t=SC.reduce((a,x)=>a+(r[x.k]||0),0);return`<tr><td>${e?(e.num?'#'+esc(e.num)+' ':'')+esc(e.name):'Player'}</td>${SC.map(x=>`<td>${r[x.k]||0}</td>`).join('')}<td>${t}</td></tr>`}).join('');
   return`<h2>Serve grades</h2><div class="card sc"><table><tr><th></th>${SC.map(x=>`<th>${G(x.k)}</th>`).join('')}<th>All</th></tr>${rows}</table></div>`}
@@ -220,7 +233,7 @@ const get=id=>S.m.find(m=>m.id===id);
 const sc=(m,i)=>{let h=0,a=0;m.log.forEach(e=>{if(e.s===i){e.t==='h'?h++:a++}});return[h,a]};
 const target=(m)=>m.n>=4?15:25;
 function go(t){S.tab=t;S.cur=null;S.form=false;S.edit=null;S.team=null;S.tform=false;S.rd=null;render()}
-function open_(id){S.cur=id;S.mt=get(id).log.length?'scout':'set';S.pick=null;S.sb=null;S.lm=false;S.setv=null;S.pv='init';render();scrollTo(0,0)}
+function open_(id){S.cur=id;S.mt=get(id).log.length?'scout':'set';S.pick=null;S.sb=null;S.lm=false;S.pm=null;S.setv=null;S.pv='init';render();scrollTo(0,0)}
 function nrSel(){return[...document.querySelectorAll('.nr:checked')].map(e=>S.p.find(p=>p.id===e.value))}
 function nrStatus(){const el=document.getElementById('nr-st'),f=document.getElementById('f-f');if(!el||!f)return;
   const L=nrSel(),rl=getRule(f.value),fv=rl.roster,c=cnt(L);const rt=document.getElementById('f-rt');if(rt)rt.textContent=ruleText(rl);el.textContent=fv?`${c.pl} of 12 players, ${c.lib} of 2 liberos`:`${L.length} attending`;el.style.color=over({rule:rl},L)?'var(--bad)':''}
@@ -235,7 +248,7 @@ function addMatch(){
   S.m.unshift(m);save();S.form=false;S.nf=null;open_(m.id)}
 function point(t,type){const m=get(S.cur);if(m.done)return;const sv0=curLU(m,m.n).serving;m.log.push({t,type,s:m.n});rallyDone(m,sv0);save();render()}
 const autoServe=(m,si)=>{m.sv=m.sv||{};if(si>0&&si<ruleOf(m).sets.length-1&&!m.sv[si]&&m.sv[si-1])m.sv[si]=m.sv[si-1]==='h'?'a':'h'};
-function endSet(){const m=get(S.cur);if(m.n<ruleOf(m).sets.length-1){m.n++;autoServe(m,m.n)}S.sb=null;S.mt='set';S.setv=null;S.pick=null;S.pv='init';save();render();scrollTo(0,0)}
+function endSet(){const m=get(S.cur);if(m.n<ruleOf(m).sets.length-1){m.n++;autoServe(m,m.n)}S.sb=null;S.pm=null;S.mt='set';S.setv=null;S.pick=null;S.pv='init';save();render();scrollTo(0,0)}
 function finish(){const m=get(S.cur);m.done=!m.done;save();render()}
 function note(v){get(S.cur).notes=v;save()}
 function del(id){if(confirm('Delete this match and its data?')){S.m=S.m.filter(m=>m.id!==id);S.cur=null;save();render()}}
@@ -297,7 +310,7 @@ const ANG={3:0,2:60,1:120,6:180,5:240,4:300};
 const RL={'Setter':'S','Opposite':'O','Middle blocker':'M','Outside hitter':'H','Libero':'L','Defensive specialist':'D'};
 const curSet=m=>S.setv==null||S.setv>m.n?m.n:S.setv;
 const setReady=(m,si)=>(m.st[si]||[]).filter(id=>id&&m.lu.h.some(x=>x.pid===id)).length===6&&!!(m.sv||{})[si];
-function startSet(){const m=get(S.cur);{const ev=sysEval(m,(m.st[m.n]||[]).map(id=>m.lu.h.some(x=>x.pid===id)?id:null));if(ev.state==='bad'&&!confirm('The line-up does not match the '+m.sys+' system. Start the set anyway?'))return}if(ruleMin(ruleOf(m))&&!tmOf(m)){m.tm={acc:0,run:Date.now()};save()}if(alOf(m).on&&!m.log.some(e=>e.s===m.n)&&!(m.sb||[]).some(x=>x.s===m.n)){autoLib(m);save()}S.mt='scout';S.pv='init';S.pick=null;render();scrollTo(0,0)}
+function startSet(){const m=get(S.cur);{const ev=sysEval(m,(m.st[m.n]||[]).map(id=>m.lu.h.some(x=>x.pid===id)?id:null));if(ev.state==='bad'&&!confirm('The line-up does not match the '+m.sys+' system. Start the set anyway?'))return}if(ruleMin(ruleOf(m))&&!tmOf(m)){m.tm={acc:0,run:Date.now()};save()}m.ss=m.ss||{};m.ss[m.n]=true;if(alOf(m).on&&!m.log.some(e=>e.s===m.n)&&!(m.sb||[]).some(x=>x.s===m.n)){autoLib(m)}save();S.mt='scout';S.pv='init';S.pick=null;render();scrollTo(0,0)}
 function curLU(m,si){let pos=[0,1,2,3,4,5].map(i=>(m.st[si]||[])[i]||null),sl=[0,1,2,3,4,5],sv=(m.sv||{})[si]==='h',dots={},was={},rl={},pend=false,k=0;
   const sbs=(m.sb||[]).filter(x=>x.s===si),add=(id,c)=>{if(id)(dots[id]=dots[id]||[]).push(c)};
   const ap=n=>sbs.filter(x=>x.k===n).forEach(x=>{const j=pos.indexOf(x.out);if(j<0)return;pos[j]=x.in;was[x.in]=(was[x.out]&&was[x.out].slice(-1)[0]===x.in)?was[x.out].slice(0,-1):[...(was[x.out]||[]),x.out];if(x.r)rl[x.in]=x.r;else delete rl[x.in];delete rl[x.out];
@@ -311,15 +324,17 @@ function curLU(m,si){let pos=[0,1,2,3,4,5].map(i=>(m.st[si]||[])[i]||null),sl=[0
   return{pos,serving:sv,dots,was,rl,init}}
 function scoutPie(m){const si=m.n,all=m.lu.h,ok=a=>a.map(id=>all.some(x=>x.pid===id)?id:null),cl=curLU(m,si),cur=S.pv==='cur';
   const arr=cur?ok(cl.pos):ok(cl.init),sv=cur?(cl.serving?'h':'a'):(m.sv||{})[si],sp=all.find(x=>x.pid===cl.pos[0]);
-  return`<div class="seg" role="group" aria-label="Line-up view" style="margin:12px 0 6px">${[['init','Initial line-up'],['cur','Current']].map(([k,l])=>`<button aria-pressed="${(cur?'cur':'init')===k}" onclick="S.pv='${k}';render()">${l}</button>`).join('')}</div><div style="max-width:280px;margin:0 auto">${pie(m,arr,{pid:cl.pos[0],st:cl.serving?'serving':'receiving'},true,cl.dots,cl.was,cl.rl)}</div><div class="mut" style="text-align:center" aria-live="polite">${cur?(cl.serving?esc(m.home)+' serving'+(sp?': '+(sp.num?'#'+esc(sp.num)+' ':'')+esc(sp.name):''):esc(m.away)+' serving')+'. Rotates when your team wins the serve back.':'Starting positions for set '+(si+1)+'.'}</div><div class="mut" style="text-align:center;font-size:13px">Dots by each slice: green means that player started a service, red means the set started on reception.</div>`}
-function setSys(k){get(S.cur).sys=k;save();render()}
-function setServe(k){const m=get(S.cur);(m.sv=m.sv||{})[curSet(m)]=k;save();render()}
-function pickPos(p){S.pick=S.pick===p?null:p;render()}
+  return`<div style="max-width:280px;margin:0 auto">${pie(m,arr,{pid:cl.pos[0],st:cl.serving?'serving':'receiving'},true,cl.dots,cl.was,cl.rl)}</div><div class="mut" style="text-align:center" aria-live="polite">${cur?(cl.serving?esc(m.home)+' serving'+(sp?': '+(sp.num?'#'+esc(sp.num)+' ':'')+esc(sp.name):''):esc(m.away)+' serving')+'. Rotates when your team wins the serve back.':'Starting positions for set '+(si+1)+'.'}</div><div class="mut" style="text-align:center;font-size:13px">Dots by each slice: green means that player started a service, red means the set started on reception.</div>`}
+const setStarted=(m,si)=>si<m.n||!!(m.ss&&m.ss[si])||setBusy(m,si);
+function setSys(k){const m=get(S.cur);if(setStarted(m,curSet(m)))return;m.sys=k;save();render()}
+function setServe(k){const m=get(S.cur);if(setStarted(m,curSet(m)))return;(m.sv=m.sv||{})[curSet(m)]=k;save();render()}
+function pickPos(p){const m=get(S.cur);if(setStarted(m,curSet(m)))return;S.pick=S.pick===p?null:p;render()}
 function setSetView(i){S.setv=i;S.pick=null;render()}
-function setPos(p,pid){const m=get(S.cur),si=curSet(m),a=m.st[si]=m.st[si]||[null,null,null,null,null,null];a[p-1]=pid||null;save();
+function setPos(p,pid){const m=get(S.cur),si=curSet(m);if(setStarted(m,si))return;const a=m.st[si]=m.st[si]||[null,null,null,null,null,null];a[p-1]=pid||null;save();
   const nx=[1,2,3,4,5,6].find(q=>!a[q-1]);S.pick=pid&&nx?nx:null;render()}
-function copyPrev(){const m=get(S.cur),si=curSet(m);m.st[si]=[...(m.st[si-1]||[])];save();S.pick=null;render()}
-function clearSet(){const m=get(S.cur);m.st[curSet(m)]=[null,null,null,null,null,null];save();S.pick=null;render()}
+function copyPrev(){const m=get(S.cur),si=curSet(m);if(setStarted(m,si))return;m.st[si]=[...(m.st[si-1]||[])];save();S.pick=null;render()}
+function rotLU(d){const m=get(S.cur),si=curSet(m);if(setStarted(m,si))return;const a=(m.st[si]||[]).slice(0,6);while(a.length<6)a.push(null);m.st[si]=d>0?[a[1],a[2],a[3],a[4],a[5],a[0]]:[a[5],a[0],a[1],a[2],a[3],a[4]];save();render()}
+function clearSet(){const m=get(S.cur);if(setStarted(m,curSet(m)))return;m.st[curSet(m)]=[null,null,null,null,null,null];save();S.pick=null;render()}
 function pie(m,cur,hl,ro,dots,was,rl){
   const R=140,C=150,pt=(a,r)=>{const t=a*Math.PI/180;return[(C+r*Math.sin(t)).toFixed(1),(C-r*Math.cos(t)).toFixed(1)]};
   const g=[1,2,3,4,5,6].sort((a,b)=>(a===S.pick)-(b===S.pick)).map(p=>{
@@ -363,19 +378,21 @@ function setView(m){
   let h='';
   if(m.n>0)h+=`<div style="margin-bottom:8px">${Array.from({length:m.n+1},(_,i)=>`<button class="chip" style="min-height:36px;${i===si?'background:var(--home);color:var(--onc);border-color:var(--home)':''}" aria-pressed="${i===si}" onclick="setSetView(${i})">Set ${i+1}</button>`).join('')}</div>`;
   if(si<m.n)return h+pastSetView(m,si);
-  if(si===m.n)h+=reopenBtn(m)+libSetup(m);
-  h+=`<h2 style="margin-top:8px">First serve, set ${si+1}</h2><div class="mut" style="margin-bottom:6px">${esc(m.home)} will:</div><div class="seg" role="group" aria-label="First serve">${[['h','Serve'],['a','Receive']].map(([k,n])=>`<button style="min-height:54px;overflow-wrap:anywhere" aria-pressed="${sv===k}" onclick="setServe('${k}')">${esc(n)}</button>`).join('')}</div>${sv?`<div style="margin-top:6px">${esc(sv==='h'?m.home:m.away)} serves, ${esc(sv==='h'?m.away:m.home)} receives.</div>${si>0?(si===ruleOf(m).sets.length-1?'<div class="mut">Deciding set: a new toss decides who serves first.</div>':'<div class="mut">Set automatically: the first serve alternates each set. Change it if needed.</div>'):''}`:`<div style="color:var(--bad);margin-top:6px">${si>0&&si===ruleOf(m).sets.length-1?'Deciding set: a new toss decides who serves first. ':'Not set yet. '}Choose serve or receive for your team.</div>`}
-  <h2>Team system</h2><div class="seg" role="group" aria-label="Team system" style="margin-bottom:6px">${['6-2','5-1','4-2','none'].map(k=>`<button aria-pressed="${(m.sys||'none')===k}" onclick="setSys('${k}')">${k==='none'?'None':k}</button>`).join('')}</div><div class="mut">Applies to the whole match.</div>
+  const locked=si===m.n&&setStarted(m,si);
+  if(si===m.n)h+=reopenBtn(m)+(locked?`<div class="card"><b>Set ${si+1} has started.</b><div class="mut">The set-up on this tab can no longer be changed. Use the Scout tab for substitutions and the libero.</div><div style="margin-top:10px"><button class="pri" onclick="S.mt='scout';render()">Back to scouting</button></div></div>`:'')+libSetup(m,locked);
+  h+=`<h2 style="margin-top:8px">First serve, set ${si+1}</h2><div class="mut" style="margin-bottom:6px">${esc(m.home)} will:</div><div class="seg" role="group" aria-label="First serve">${[['h','Serve'],['a','Receive']].map(([k,n])=>`<button style="min-height:54px;overflow-wrap:anywhere" aria-pressed="${sv===k}" onclick="setServe('${k}')"${locked?' disabled':''}>${esc(n)}</button>`).join('')}</div>${sv?`<div style="margin-top:6px">${esc(sv==='h'?m.home:m.away)} serves, ${esc(sv==='h'?m.away:m.home)} receives.</div>${si>0?(si===ruleOf(m).sets.length-1?'<div class="mut">Deciding set: a new toss decides who serves first.</div>':'<div class="mut">Set automatically: the first serve alternates each set. Change it if needed.</div>'):''}`:`<div style="color:var(--bad);margin-top:6px">${si>0&&si===ruleOf(m).sets.length-1?'Deciding set: a new toss decides who serves first. ':'Not set yet. '}Choose serve or receive for your team.</div>`}
+  <h2>Team system</h2><div class="seg" role="group" aria-label="Team system" style="margin-bottom:6px">${['6-2','5-1','4-2','none'].map(k=>`<button aria-pressed="${(m.sys||'none')===k}" onclick="setSys('${k}')"${locked?' disabled':''}>${k==='none'?'None':k}</button>`).join('')}</div><div class="mut">Applies to the whole match.</div>
   <h2>Starting line-up, set ${si+1}</h2>`;
   if(!all.length)return h+`<div class="card"><b>No players in this match yet.</b><div class="mut">Choose who is attending on the Roster tab first.</div><div style="margin-top:12px"><button class="pri" onclick="S.mt='roster';render()">Go to Roster</button></div></div>`;
-  h+=`<div class="mut">Tap a slice, then pick the player from the list on the right. Numbers run clockwise in rotation order: 1 serves, 2 to 4 are front row (4 is front left), 5 to 6 are back row.</div>
-  <div style="display:flex;gap:10px;align-items:flex-start;margin-top:10px"><div style="flex:1 1 0;min-width:0"><div class="mut" style="text-align:center">Net</div>${pie(m,ok,{pid:ok[0],st:sv==='h'?'serving':sv==='a'?'receiving':''})}<div class="mut" style="text-align:center">Back of the court</div></div>${S.pick||filled<6?sideList(m,ok,all):''}</div>
+  h+=`<div class="mut">${locked?'Starting line-up, locked.':'Tap a slice, then pick the player from the list on the right.'} Numbers run clockwise in rotation order: 1 serves, 2 to 4 are front row (4 is front left), 5 to 6 are back row.</div>
+  <div style="display:flex;gap:10px;align-items:flex-start;margin-top:10px"><div style="flex:1 1 0;min-width:0"><div class="mut" style="text-align:center">Net</div>${pie(m,ok,{pid:ok[0],st:sv==='h'?'serving':sv==='a'?'receiving':''},locked)}<div class="mut" style="text-align:center">Back of the court</div></div>${!locked&&(S.pick||filled<6)?sideList(m,ok,all):''}</div>
+  ${locked?'':`  <div class="row" style="margin-top:10px"><button style="flex:1" onclick="rotLU(-1)" ${filled&&!setBusy(m,si)?'':'disabled'} aria-label="Rotate the line-up one position anticlockwise">↺ Rotate anticlockwise</button><button style="flex:1" onclick="rotLU(1)" ${filled&&!setBusy(m,si)?'':'disabled'} aria-label="Rotate the line-up one position clockwise">↻ Rotate clockwise</button></div>
+  <div class="row" style="margin-top:8px;flex-wrap:wrap">${si>0&&(m.st[si-1]||[]).some(Boolean)?`<button onclick="copyPrev()">Copy line-up from set ${si}</button>`:''}${filled?'<button class="del" onclick="clearSet()">Clear line-up</button>':''}</div>`}
   <div class="mut" style="text-align:center;font-size:13px">S setter, O opposite, M middle, H outside hitter, L libero, D defensive specialist</div>
   <div class="mut" style="text-align:center;margin:6px 0" aria-live="polite">${filled} of 6 positions filled${filled===6?', line-up complete':''}</div>
   <div class="mut" style="text-align:center">${sv==='h'?esc(m.home)+' serves first: the player in P1 serves.':sv==='a'?esc(m.away)+' serves first.':'Choose who serves first.'}</div>${sysCheck(m,ok)}`;
-  h+=`<div class="card">${[1,2,3,4,5,6].map(p=>{const e=all.find(x=>x.pid===ok[p-1]);return`<div class="row" style="padding:3px 0"><span class="mut" style="width:28px">P${p}</span>${e?`<b>${e.num?'#'+esc(e.num):'–'}</b> ${esc(e.name)}${e.role?`<span class="mut">, ${esc(e.role)}</span>`:''}`:'<span class="mut">Empty</span>'}${p===1&&sv==='h'?'<span class="chip" style="margin-left:6px">Serving</span>':p===1&&sv==='a'?'<span class="chip" style="margin-left:6px">Receiving</span>':''}</div>`}).join('')}</div>
-  <div class="row">${si>0&&(m.st[si-1]||[]).some(Boolean)?`<button onclick="copyPrev()">Copy line-up from set ${si}</button>`:''}${filled?'<button class="del" onclick="clearSet()">Clear line-up</button>':''}</div>`;
-  if(si===m.n){const need=[filled<6?`${6-filled} position${filled===5?'':'s'} still empty`:'',sv?'':'serve or receive not chosen'].filter(Boolean).join(', ');
+  h+=`<div class="card">${[1,2,3,4,5,6].map(p=>{const e=all.find(x=>x.pid===ok[p-1]);return`<div class="row" style="padding:3px 0"><span class="mut" style="width:28px">P${p}</span>${e?`<b>${e.num?'#'+esc(e.num):'–'}</b> ${esc(e.name)}${e.role?`<span class="mut">, ${esc(e.role)}</span>`:''}`:'<span class="mut">Empty</span>'}${p===1&&sv==='h'?'<span class="chip" style="margin-left:6px">Serving</span>':p===1&&sv==='a'?'<span class="chip" style="margin-left:6px">Receiving</span>':''}</div>`}).join('')}</div>`;
+  if(si===m.n&&!locked){const need=[filled<6?`${6-filled} position${filled===5?'':'s'} still empty`:'',sv?'':'serve or receive not chosen'].filter(Boolean).join(', ');
     h+=`<div style="margin-top:16px">${!need?`<button class="pri" style="width:100%;min-height:56px;font-size:18px" onclick="startSet()">Start set ${si+1}</button>`:`<button disabled style="width:100%;min-height:56px;font-size:18px">Start set ${si+1}</button><div class="mut" style="margin-top:6px">To start: ${need}.</div>`}</div>`}
   return h}
 function tabsHtml(m){return`<div class="seg" role="tablist" style="margin:12px 0">${[['roster','Roster'],['set','Set '+(m.n+1)],['scout','Scout']].map(([k,l])=>`<button role="tab" aria-selected="${S.mt===k}" onclick="S.mt='${k}';S.pick=null;render()">${l}</button>`).join('')}</div>`}
@@ -438,10 +455,9 @@ function matchView(m){
   if(sw&&!m.done){const wn=sw[0]==='h'?m.home:m.away,pr=[...Array(m.n).keys()].filter(i=>{const[a,b]=sc(m,i);return sw[0]==='h'?a>b:b>a}).length+1;
     h+=`<div class="banner"><b>${esc(wn)}</b> has won set ${m.n+1}${sw[1]==='time'?' on time, with the most points. Time is up, so the match is over: finish the match to lock the result.':'. '+(pr>=need?'That wins the match. Finish the match to lock the result.':!last?'End the set to start the next one.':'Finish the match to lock the result.')}</div>`}
   else if(!m.done&&tup)h+=`<div class="banner">Time is up and the score is level. The next point wins the set.</div>`;
-  h+=toBoxes(m)+libCard(m)+subCard(m)+scoutPie(m)+serveCard(m);
+  h+=toBoxes(m)+pieBox(m)+serveCard(m);
   if(!m.done){
-    h+=`<div class="pts h" style="margin-bottom:8px;grid-template-columns:1fr 1fr 1fr"><div class="mut" style="grid-column:1/-1">Point for ${esc(m.home)}</div>${TH.map(([k,l])=>`<button onclick="point('h','${k}')">${l}</button>`).join('')}</div>
-    <div class="pts a"><div class="mut" style="grid-column:1/-1">Point for ${esc(m.away)}</div>${T.map(([k,l])=>`<button onclick="point('a','${k}')">${l}</button>`).join('')}</div>
+    h+=`<div class="pts a"><div class="mut" style="grid-column:1/-1">Point for ${esc(m.away)}</div>${TA.map(([k,l])=>`<button onclick="point('a','${k}')">${l}</button>`).join('')}</div>
     <div class="row" style="margin-top:12px"><button onclick="undo()" ${m.log.length||(m.sl||[]).some(e=>e.s===m.n)||(m.sb||[]).some(e=>e.s===m.n)||(m.ag||[]).some(e=>e.s===m.n)?'':'disabled'}>Undo last point</button>${!last&&!tup?`<button onclick="endSet()">End set ${m.n+1}</button>`:''}<button class="pri" onclick="finish()">Finish match</button></div>`}
   else h+=`<div class="row"><button onclick="finish()">Reopen match</button></div>`;
   h+=`<h2>Set scores</h2><div>${Array.from({length:m.n+1},(_,i)=>{const[a,b]=sc(m,i);return i<m.n?`<button class="chip" style="min-height:36px" onclick="S.mt='set';S.setv=${i};S.pick=null;render()">Set ${i+1}: ${a}–${b}</button>`:`<span class="chip">Set ${i+1}: ${a}–${b}</span>`}).join('')}</div>${m.n>0?'<div class="mut">Tap a finished set to see how it ended.</div>':''}
@@ -574,7 +590,7 @@ function statsView(){
   <div class="mut" style="margin-top:8px">Errors given: ${r.given}. Share of points from attack: ${r.pf?Math.round(r.kill/r.pf*100):0}%, from serve: ${r.pf?Math.round(r.ace/r.pf*100):0}%.</div></div>`});
   return h}
 
-const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 44</div>';
+const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 48</div>';
 const FXK='vb-scout-fx-v1';let fx={flash:true,sound:true};try{const r=JSON.parse(localStorage.getItem(FXK)||'null');if(r&&typeof r==='object')fx=Object.assign(fx,r)}catch(e){}
 function setFx(k,v){fx[k]=!!v;try{localStorage.setItem(FXK,JSON.stringify(fx))}catch(e){}render()}
 let actx=null;
