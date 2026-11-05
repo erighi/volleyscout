@@ -56,6 +56,7 @@ nav button[aria-current=page]{color:var(--home);box-shadow:inset 0 3px 0 var(--h
 .seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}.seg button{flex:1;border:0;border-radius:0;background:var(--card);font-weight:600}.seg button[aria-selected=true],.seg button[aria-pressed=true]{background:var(--home);color:var(--onc)}
 .chip{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:14px;margin:2px 4px 2px 0}
 .banner{background:var(--card);border:2px solid var(--bad);border-radius:10px;padding:10px 12px;margin:8px 0}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:100}.dlg{background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:14px;padding:16px;max-width:380px;width:100%;box-shadow:0 10px 30px rgba(0,0,0,.4)}
 table{width:100%;border-collapse:collapse;font-size:15px}
 th,td{padding:6px 4px;text-align:right;border-bottom:1px solid var(--line)}
 th:first-child,td:first-child{text-align:left}
@@ -74,7 +75,7 @@ const TH=T.filter(x=>x[0]!=='ace'),TA=T.map(([k,l])=>k==='err'?[k,'My team error
 const G=k=>k==='--'?'<span class="dd" role="img" aria-label="minus minus"><i></i><i></i></span>':esc(k);
 const PK='vb-scout-players-v1',TK='vb-scout-teams-v1';
 const ROLES=['Setter','Outside hitter','Opposite','Middle blocker','Libero','Defensive specialist'];
-let S={m:[],p:[],t:[],r:[],rd:null,cur:null,tab:'teams',form:false,edit:null,team:null,tform:false};
+let S={pv:'cur',m:[],p:[],t:[],r:[],rd:null,cur:null,tab:'teams',form:false,edit:null,team:null,tform:false};
 try{const r=localStorage.getItem(K);if(r)S.m=JSON.parse(r)||[]}catch(e){}
 try{const r=localStorage.getItem(PK);if(r)S.p=JSON.parse(r)||[]}catch(e){}
 try{const r=localStorage.getItem(TK);if(r)S.t=JSON.parse(r)||[]}catch(e){}
@@ -130,7 +131,8 @@ function undo(){const m=get(S.cur),L=m.log.length,sl=m.sl=m.sl||[],ls=sl[sl.leng
 const subsUsed=(m,si)=>(m.sb||[]).filter(x=>x.s===si&&!x.lib).length;
 const pnum=(m,pid)=>{const e=m.lu.h.find(x=>x.pid===pid);return e?(e.num?'#'+esc(e.num):esc(e.name)):'?'};
 function subOpen(on){S.sb=on?{out:null}:null;S.pm=on?'sub':null;render()}
-function subPickPid(pid){const m=get(S.cur);if(!S.sb||m.done)return;const cl=curLU(m,m.n);if(!cl.pos.includes(pid))return;const st=subState(m,m.n),role=cl.rl[pid]||((m.lu.h.find(x=>x.pid===pid)||{}).role);if(st.done.has(pid)&&role!=='Libero')return;if(S.sb.out!==pid){S.sb.out=pid;S.sb.role=''}render()}
+function subPickPid(pid){const m=get(S.cur);if(!S.sb||m.done)return;const cl=curLU(m,m.n);if(!cl.pos.includes(pid))return;const st=subState(m,m.n),role=cl.rl[pid]||((m.lu.h.find(x=>x.pid===pid)||{}).role);if(st.done.has(pid)&&role!=='Libero')return;if(S.sb.out!==pid){S.sb.out=pid;delete S.sb.role}render()}
+function sbRole(m,out,inn){const v=S.sb&&S.sb.role;if(v==='own')return'';if(v)return v;const eo=m.lu.h.find(x=>x.pid===out),ei=m.lu.h.find(x=>x.pid===inn),ro=curLU(m,m.n).rl[out]||(eo&&eo.role)||'';return(ro==='Libero'||(ei&&ei.role==='Libero'))?'':ro}
 function subOut(pid){if(S.sb){S.sb.out=pid;render()}}
 const pnp=(m,pid)=>{const e=m.lu.h.find(x=>x.pid===pid);return e?(e.num?'#'+e.num:e.name):'?'};
 function subState(m,si){const rep={},repBy={},done=new Set();
@@ -142,7 +144,7 @@ function subCheck(m,si,A,B){const st=subState(m,si);
   if(st.repBy[B]!==undefined&&st.repBy[B]!==A)return pnp(m,B)+' was substituted and can only return for '+pnp(m,st.repBy[B])+'.';
   return''}
 function subIn(pid){const m=get(S.cur);if(m.done||!S.sb||!S.sb.out)return;const cl=curLU(m,m.n);
-  if(!cl.pos.includes(S.sb.out)||cl.pos.includes(pid))return;const r=S.sb.role||'';
+  if(!cl.pos.includes(S.sb.out)||cl.pos.includes(pid))return;const r=sbRole(m,S.sb.out,pid);
   if(!libSwap(m,S.sb.out,pid,r)){const msg=subCheck(m,m.n,S.sb.out,pid);if(msg){alert(msg);return}if(subsUsed(m,m.n)>=ruleSub(ruleOf(m))){alert('All substitutions for this set are used.');return}}
   pushSub(m,S.sb.out,pid,false,r);S.sb=null;S.pm=null;save();render()}
 const libsOf=m=>m.lu.h.filter(x=>x.role==='Libero').sort(byNum);
@@ -174,17 +176,18 @@ function pieBox(m){const L=libsOf(m),lim=ruleSub(ruleOf(m)),al=alOf(m),pm=S.pm,c
   if(pm==='lib'&&showL)h+=panelBox(libCard(m));
   else if(pm==='sub'&&lim)h+=panelBox(subCard(m));
   else if(pm==='view')h+=`<div style="margin-top:10px;border-top:1px solid var(--line);padding-top:10px"><div class="seg" role="group" aria-label="Line-up view">${[['init','Initial line-up'],['cur','Current position']].map(([k,l])=>`<button aria-pressed="${(cur?'cur':'init')===k}" onclick="S.pv='${k}';S.pm=null;render()">${l}</button>`).join('')}</div></div>`;
-  return h+scoutPie(m)+'</div>'}
+  return h+scoutPie(m)+(pm==='sub'&&lim&&S.sb&&!m.done&&subLog(m)?`<div style="margin-top:10px;border-top:1px solid var(--line);padding-top:10px"><b>Substitutions this set</b>${subLog(m)}</div>`:'')+'</div>'}
+const subLog=m=>{const mine=(m.sb||[]).filter(x=>x.s===m.n);return mine.map(x=>`<div class="mut" style="margin-top:4px">${pnum(m,x.in)} in for ${pnum(m,x.out)}${x.r?' as '+esc(x.r):''} at ${x.sc[0]}–${x.sc[1]}${x.lib?' (libero swap, not counted)':''}</div>`).join('')};
 function subCard(m){const lim=ruleSub(ruleOf(m));if(!lim)return'';
   const used=subsUsed(m,m.n),mine=(m.sb||[]).filter(x=>x.s===m.n),cl=curLU(m,m.n),all=m.lu.h,st=subState(m,m.n),effR=id=>cl.rl[id]||((all.find(x=>x.pid===id)||{}).role);
   let h=`<div class="card"><div class="row sp"><b>Substitutions, ${esc(m.home)}</b><span><span class="num" style="font-size:28px">${used}</span> <span class="mut">of ${lim}</span></span></div>`;
-  h+=mine.map(x=>`<div class="mut" style="margin-top:4px">${pnum(m,x.in)} in for ${pnum(m,x.out)}${x.r?' as '+esc(x.r):''} at ${x.sc[0]}–${x.sc[1]}${x.lib?' (libero swap, not counted)':''}</div>`).join('');
+  if(!S.sb)h+=subLog(m);
   if(m.done)return h+'</div>';
   const full=used>=lim,cancel=`<div style="margin-top:8px"><button onclick="subOpen(false)">Cancel</button></div>`;
   if(!S.sb)return h+`<div style="margin-top:10px"><button onclick="subOpen(true)">Substitution</button></div>${full?'<div class="mut" style="margin-top:6px">Limit reached. Only libero swaps can still be recorded.</div>':''}</div>`;
   if(!S.sb.out)return h+`<div style="margin-top:10px"><b>Who goes out?</b></div><div class="mut" style="margin:6px 0">Tap the player to take off on the pie below. A player with a lock cannot be substituted again in this set.</div>${cl.pos.filter(id=>id&&st.rep[id]!==undefined&&effR(id)!=='Libero').map(id=>`<div class="mut" style="font-size:13px">${pnum(m,id)} can only be replaced by ${pnum(m,st.rep[id])}.</div>`).join('')}${cancel}</div>`;
   const eo=all.find(x=>x.pid===S.sb.out),bench=all.filter(x=>!cl.pos.includes(x.pid)).sort(byNum);
-  return h+`<div style="margin-top:10px"><b>Who comes in for ${pnum(m,S.sb.out)} ${esc(eo?eo.name:'')}?</b></div><div class="mut" style="font-size:13px">Tap another player on the pie to change who goes out.</div><label for="sb-r">Plays as</label><select id="sb-r" onchange="S.sb.role=this.value;render()"><option value="">Their own role</option>${ROLES.map(r=>`<option${S.sb.role===r?' selected':''}>${r}</option>`).join('')}</select>${st.rep[S.sb.out]!==undefined&&effR(S.sb.out)!=='Libero'?'<div class="mut" style="margin-top:6px">'+pnum(m,S.sb.out)+' can only be replaced by '+pnum(m,st.rep[S.sb.out])+', the player they replaced.</div>':''}${bench.map(x=>{const lib=libSwap(m,S.sb.out,x.pid,S.sb.role||''),bad=lib?'':subCheck(m,m.n,S.sb.out,x.pid),dis=(full&&!lib)||!!bad,why=!lib&&st.repBy[x.pid]!==undefined&&st.repBy[x.pid]!==S.sb.out?'Can only return for '+pnum(m,st.repBy[x.pid]):'';return`<button class="m" style="margin:6px 0" ${dis?'disabled':''} onclick="subIn('${x.pid}')"><b>${x.num?'#'+esc(x.num):'–'}</b> ${esc(x.name)}${x.role?', <span class="mut">'+esc(x.role)+'</span>':''}${why?'<div class="mut" style="font-size:12px">'+why+'</div>':''}</button>`}).join('')||'<div class="mut" style="margin-top:6px">No one on the bench. Tick more players on the Roster tab.</div>'}<div class="row" style="margin-top:8px"><button onclick="S.sb.out=null;render()">Back</button><button onclick="subOpen(false)">Cancel</button></div></div>`}
+  return h+`<div style="margin-top:10px"><b>Who comes in for ${pnum(m,S.sb.out)} ${esc(eo?eo.name:'')}?</b></div><div class="mut" style="font-size:13px">Tap another player on the pie to change who goes out.</div><label for="sb-r">Plays as</label><select id="sb-r" onchange="S.sb.role=this.value||undefined;render()">${(()=>{const ro=effR(S.sb.out)||'';return ro&&ro!=='Libero'?`<option value="">Same as ${pnum(m,S.sb.out)} (${esc(ro)})</option><option value="own"${S.sb.role==='own'?' selected':''}>Their own role</option>`:'<option value="">Their own role</option>'})()}${ROLES.map(r=>`<option${S.sb.role===r?' selected':''}>${r}</option>`).join('')}</select>${st.rep[S.sb.out]!==undefined&&effR(S.sb.out)!=='Libero'?'<div class="mut" style="margin-top:6px">'+pnum(m,S.sb.out)+' can only be replaced by '+pnum(m,st.rep[S.sb.out])+', the player they replaced.</div>':''}${bench.map(x=>{const lib=libSwap(m,S.sb.out,x.pid,sbRole(m,S.sb.out,x.pid)),bad=lib?'':subCheck(m,m.n,S.sb.out,x.pid),dis=(full&&!lib)||!!bad,why=!lib&&st.repBy[x.pid]!==undefined&&st.repBy[x.pid]!==S.sb.out?'Can only return for '+pnum(m,st.repBy[x.pid]):'';return`<button class="m" style="margin:6px 0" ${dis?'disabled':''} onclick="subIn('${x.pid}')"><b>${x.num?'#'+esc(x.num):'–'}</b> ${esc(x.name)}${x.role?', <span class="mut">'+esc(x.role)+'</span>':''}${why?'<div class="mut" style="font-size:12px">'+why+'</div>':''}</button>`}).join('')||'<div class="mut" style="margin-top:6px">No one on the bench. Tick more players on the Roster tab.</div>'}<div class="row" style="margin-top:8px"><button onclick="S.sb.out=null;render()">Back</button><button onclick="subOpen(false)">Cancel</button></div></div>`}
 function homePts(m){const L=scoutMode==='adv'?TH.filter(x=>x[0]!=='kill'):TH;return`<div class="pts h" style="margin-top:14px;grid-template-columns:repeat(${L.length},1fr)"><div class="mut" style="grid-column:1/-1">Point for ${esc(m.home)}</div>${L.map(([k,l])=>`<button onclick="point('h','${k}')">${l}</button>`).join('')}</div>`}
 function serveCard(m){const cl=curLU(m,m.n);if(m.done)return'';const adv=scoutMode==='adv';if(!cl.serving||!cl.pos[0])return`<div class="card">${lvlHead('Scouting')}${adv?actRow():''}${homePts(m)}</div>`;
   const L=m.log.length,sl=m.sl||[],ls=sl[sl.length-1],rated=ls&&ls.s===m.n&&ls.at===L,e=m.lu.h.find(x=>x.pid===cl.pos[0]),who=e?(e.num?'#'+esc(e.num)+' ':'')+esc(e.name):'';
@@ -234,7 +237,7 @@ const get=id=>S.m.find(m=>m.id===id);
 const sc=(m,i)=>{let h=0,a=0;m.log.forEach(e=>{if(e.s===i){e.t==='h'?h++:a++}});return[h,a]};
 const target=(m)=>m.n>=4?15:25;
 function go(t){S.tab=t;S.cur=null;S.form=false;S.edit=null;S.team=null;S.tform=false;S.rd=null;render()}
-function open_(id){S.cur=id;S.mt=get(id).log.length?'scout':'set';S.pick=null;S.sb=null;S.lm=false;S.pm=null;S.setv=null;S.pv='init';render();scrollTo(0,0)}
+function open_(id){S.cur=id;S.mt=get(id).log.length?'scout':'set';S.pick=null;S.sb=null;S.lm=false;S.pm=null;S.setv=null;S.pv='cur';render();scrollTo(0,0)}
 function nrSel(){return[...document.querySelectorAll('.nr:checked')].map(e=>S.p.find(p=>p.id===e.value))}
 function nrStatus(){const el=document.getElementById('nr-st'),f=document.getElementById('f-f');if(!el||!f)return;
   const L=nrSel(),rl=getRule(f.value),fv=rl.roster,c=cnt(L);const rt=document.getElementById('f-rt');if(rt)rt.textContent=ruleText(rl);el.textContent=fv?`${c.pl} of 12 players, ${c.lib} of 2 liberos`:`${L.length} attending`;el.style.color=over({rule:rl},L)?'var(--bad)':''}
@@ -244,14 +247,17 @@ function addMatch(){
   if(myTeams().some(t=>t.name.toLowerCase()===n.toLowerCase())){alert('The opponent must be a different team.');return}
   const L=nrSel(),fmt=v('f-f'),msg=over({rule:getRule(fmt)},L);
   if(msg){alert(msg+' Untick some players or switch to Local tournament.');return}
-  let tid='';{const ts=v('f-tn');if(ts==='__new'){const tn=v('f-tnn');if(!tn){alert('Enter the tournament name.');return}tid=newTn(tn).id}else tid=ts||''}
+  let tid='';{const ts=v('f-tn');if(ts==='__new'){const tn=v('f-tnn');if(!tn){alert('Enter the tournament name.');return}tid=newTn(tn,fmt).id}else tid=ts||''}
   const A=ensureTeam(n);
   const m={id:Date.now().toString(36),home:my.name,away:A.name,hid:my.id,aid:A.id,lu:{h:L.map(p=>({pid:p.id,name:p.name,num:p.num,role:p.role})),a:[]},fmt,rule:copy(getRule(fmt)),event:'',date:v('f-d')||new Date().toISOString().slice(0,10),n:0,done:false,log:[],notes:'',st:{},al:{on:true,role:'Middle blocker',lib:''}};
   if(tid)m.tid=tid;
   S.m.unshift(m);save();S.form=false;S.nf=null;S.ntn=null;open_(m.id)}
 function point(t,type){const m=get(S.cur);if(m.done)return;const sv0=curLU(m,m.n).serving;m.log.push({t,type,s:m.n});rallyDone(m,sv0);save();render()}
 const autoServe=(m,si)=>{m.sv=m.sv||{};if(si>0&&si<ruleOf(m).sets.length-1&&!m.sv[si]&&m.sv[si-1])m.sv[si]=m.sv[si-1]==='h'?'a':'h'};
-function endSet(){const m=get(S.cur);if(m.n<ruleOf(m).sets.length-1){m.n++;autoServe(m,m.n)}S.sb=null;S.pm=null;S.mt='set';S.setv=null;S.pick=null;S.pv='init';save();render();scrollTo(0,0)}
+function setPd(){const m=get(S.cur);if(!m)return;S.pd=m.id+':'+m.n;render()}
+function endPopup(m,wn,sw,x,y,won){const n=m.n+1,time=sw[1]==='time',txt=time?`Time is up. ${esc(wn)} has the most points (${x}–${y}) and wins set ${n}, so the match is over.`:`${esc(wn)} has won set ${n} (${x}–${y}).${won?' That wins the match.':''}`;
+  return`<div class="ov"><div class="dlg" role="alertdialog" aria-modal="true" aria-labelledby="pd-t" aria-describedby="pd-d"><b id="pd-t" style="font-size:18px">${won?'Match over':'Set '+n+' over'}</b><div id="pd-d" style="margin-top:8px">${txt}</div><div class="row" style="margin-top:14px;gap:8px;flex-wrap:nowrap"><button class="pri" style="flex:1" onclick="${won?'finish()':'endSet()'}">${won?'Finish match':'End set '+n}</button><button style="flex:1" onclick="setPd()">Continue</button></div></div></div>`}
+function endSet(){const m=get(S.cur);if(m.n<ruleOf(m).sets.length-1){m.n++;autoServe(m,m.n)}S.sb=null;S.pm=null;S.mt='set';S.setv=null;S.pick=null;S.pv='cur';save();render();scrollTo(0,0)}
 function finish(){const m=get(S.cur);m.done=!m.done;save();render()}
 function note(v){get(S.cur).notes=v;save()}
 function del(id){if(confirm('Delete this match and its data?')){S.m=S.m.filter(m=>m.id!==id);S.cur=null;save();render()}}
@@ -282,38 +288,38 @@ function renameTeam(){const t=S.t.find(t=>t.id===S.team);const n=prompt('Team na
 function delTeam(){const t=S.t.find(t=>t.id===S.team);if(confirm('Delete '+t.name+' and its roster? Matches already logged keep their data.')){S.p=S.p.filter(p=>{if(!inTeam(p,t.id))return true;const rest=[p.teamId,...(p.also||[])].filter(i=>i!==t.id);if(!rest.length)return false;p.teamId=rest[0];p.also=rest.slice(1);return true});S.t=S.t.filter(x=>x.id!==t.id);S.team=null;saveP();saveT();render()}}
 const cnt=L=>{const lib=L.filter(x=>x.role==='Libero').length;return{lib,pl:L.length-lib}};
 const over=(m,L)=>{if(!ruleOf(m).roster)return'';const c=cnt(L);return c.pl>12?'The roster limit is 12 players plus liberos.':c.lib>2?'The roster limit is 2 liberos.':''};
-function luSet(s,i,f,v){const m=get(S.cur),L=m.lu[s],t=L.map(x=>({...x}));t[i][f]=v.trim();
+function luSet(s,i,f,v){const m=get(S.cur),L=m.lu[s],t=L.map(x=>({...x}));if(matchBusy(m))return;t[i][f]=v.trim();
   if(f==='role'&&over(m,t)){alert(over(m,t));render();return}
   L[i][f]=v.trim();save();render()}
 function unplace(m,pid){Object.values(m.st||{}).forEach(a=>a.forEach((x,i)=>{if(x===pid)a[i]=null}))}
-function luDel(s,i){const m=get(S.cur);unplace(m,m.lu[s][i].pid);m.lu[s].splice(i,1);save();render()}
-function luToggle(s,pid,on){const m=get(S.cur),L=m.lu[s];
+function luDel(s,i){const m=get(S.cur);if(matchBusy(m))return;unplace(m,m.lu[s][i].pid);m.lu[s].splice(i,1);save();render()}
+function luToggle(s,pid,on){const m=get(S.cur),L=m.lu[s];if(matchBusy(m)){render();return}
   if(on){const p=S.p.find(p=>p.id===pid),t=[...L,{role:p.role}];if(over(m,t)){alert(over(m,t)+' Remove someone first or change a role.');render();return}
     L.push({pid:p.id,name:p.name,num:p.num,role:p.role})}
   else{unplace(m,pid);m.lu[s]=L.filter(x=>x.pid!==pid)}
   save();render()}
-function luGuest(s){const m=get(S.cur),n=(prompt('Player name')||'').trim();if(!n)return;const num=(prompt('Shirt number (optional)')||'').trim();
+function luGuest(s){const m=get(S.cur);if(matchBusy(m))return;const n=(prompt('Player name')||'').trim();if(!n)return;const num=(prompt('Shirt number (optional)')||'').trim();
   const t=[...m.lu[s],{role:''}];if(over(m,t)){alert(over(m,t));return}
   m.lu[s].push({pid:'g'+Date.now().toString(36),name:n,num,role:''});save();render()}
 function setDate(v){const m=get(S.cur);if(v)m.date=v;save();render()}
 function setFmt(v){const m=get(S.cur);m.fmt=v;m.rule=copy(getRule(v));save();render()}
-function luRow(s,x,i,lead,rm){return`<div class="row" style="margin-top:8px;flex-wrap:nowrap">${lead}<input aria-label="Shirt number for ${esc(x.name)}" style="width:60px" inputmode="numeric" maxlength="3" value="${esc(x.num)}" onchange="luSet('${s}',${i},'num',this.value)"><select aria-label="Role for ${esc(x.name)}" style="width:auto;max-width:42%" onchange="luSet('${s}',${i},'role',this.value)"><option value="">None</option>${ROLES.map(r=>`<option${x.role===r?' selected':''}>${r}</option>`).join('')}</select>${rm?`<button aria-label="Remove ${esc(x.name)}" onclick="luDel('${s}',${i})">✕</button>`:''}</div>`}
-function luHtml(m,s){const L=m.lu[s],id=s==='h'?m.hid:m.aid,fv=ruleOf(m).roster,c=cnt(L),ro=S.p.filter(p=>inTeam(p,id)&&(!p.arch||L.some(x=>x.pid===p.id))).sort((a,b)=>(parseInt(a.num,10)||999)-(parseInt(b.num,10)||999)||a.name.localeCompare(b.name));
+function luRow(s,x,i,lead,rm,lk){return`<div class="row" style="margin-top:8px;flex-wrap:nowrap">${lead}<input aria-label="Shirt number for ${esc(x.name)}" style="width:60px" inputmode="numeric" maxlength="3" value="${esc(x.num)}" onchange="luSet('${s}',${i},'num',this.value)"${lk?' disabled':''}><select aria-label="Role for ${esc(x.name)}" style="width:auto;max-width:42%" onchange="luSet('${s}',${i},'role',this.value)"${lk?' disabled':''}><option value="">None</option>${ROLES.map(r=>`<option${x.role===r?' selected':''}>${r}</option>`).join('')}</select>${rm?`<button aria-label="Remove ${esc(x.name)}" onclick="luDel('${s}',${i})"${lk?' disabled':''}>✕</button>`:''}</div>`}
+function luHtml(m,s){const lk=matchBusy(m),L=m.lu[s],id=s==='h'?m.hid:m.aid,fv=ruleOf(m).roster,c=cnt(L),ro=S.p.filter(p=>inTeam(p,id)&&(!p.arch||L.some(x=>x.pid===p.id))).sort((a,b)=>(parseInt(a.num,10)||999)-(parseInt(b.num,10)||999)||a.name.localeCompare(b.name));
   const st=fv?`${c.pl} of 12 players, ${c.lib} of 2 liberos${c.lib<1?'. Add at least 1 libero.':''}`:`${L.length} attending`;
   let h=`<div style="border-top:1px solid var(--line);margin-top:12px;padding-top:10px"><div class="row sp"><b>${esc(s==='h'?m.home:m.away)}</b><span class="mut" ${over(m,L)||(fv&&c.lib<1)?'style="color:var(--bad)"':''}>${st}</span></div>`;
-  ro.forEach(p=>{const i=L.findIndex(x=>x.pid===p.id);const lead=`<label style="display:flex;gap:8px;align-items:center;color:var(--fg);font-size:16px;margin:0;flex:1;min-width:0"><input type="checkbox" style="width:22px;height:22px;flex:none" ${i>=0?'checked':''} onchange="luToggle('${s}','${p.id}',this.checked)"><span style="overflow-wrap:anywhere">${esc(p.name)}</span></label>`;
-    h+=i>=0?luRow(s,L[i],i,lead):`<div class="row" style="margin-top:8px">${lead}<span class="mut">${p.num?'#'+esc(p.num):''}</span></div>`});
-  L.forEach((x,i)=>{if(!ro.some(p=>p.id===x.pid))h+=luRow(s,x,i,`<span style="flex:1;min-width:0;overflow-wrap:anywhere">${esc(x.name)}</span>`,true)});
+  ro.forEach(p=>{const i=L.findIndex(x=>x.pid===p.id);const lead=`<label style="display:flex;gap:8px;align-items:center;color:var(--fg);font-size:16px;margin:0;flex:1;min-width:0"><input type="checkbox" style="width:22px;height:22px;flex:none" ${i>=0?'checked':''}${lk?' disabled':''} onchange="luToggle('${s}','${p.id}',this.checked)"><span style="overflow-wrap:anywhere">${esc(p.name)}</span></label>`;
+    h+=i>=0?luRow(s,L[i],i,lead,false,lk):`<div class="row" style="margin-top:8px">${lead}<span class="mut">${p.num?'#'+esc(p.num):''}</span></div>`});
+  L.forEach((x,i)=>{if(!ro.some(p=>p.id===x.pid))h+=luRow(s,x,i,`<span style="flex:1;min-width:0;overflow-wrap:anywhere">${esc(x.name)}</span>`,true,lk)});
   if(!ro.length&&!L.length)h+=`<div class="mut" style="margin-top:6px">No saved players for this team yet.</div>`;
-  return h+`<button style="margin-top:10px" onclick="luGuest('${s}')">Add a player not on the roster</button></div>`}
+  return h+`<button style="margin-top:10px" onclick="luGuest('${s}')"${lk?' disabled':''}>Add a player not on the roster</button></div>`}
 function rosterView(m){
   const opts=allRules().map(r=>`<option value="${r.id}"${ruleOf(m).id===r.id?' selected':''}>${esc(r.name)}</option>`).join('');
-  return`<label for="md">Match date</label><input id="md" type="date" value="${esc(m.date)}" onchange="setDate(this.value)"><label for="mt">Tournament</label><select id="mt" onchange="setTn(this.value)">${tnOpts(m.tid||'')}<option value="__new">New tournament…</option></select><label for="mf">Tournament rules</label><select id="mf" onchange="setFmt(this.value)">${opts}</select><div class="mut" style="margin-top:6px">${esc(ruleText(ruleOf(m)))}. Tick the players attending. Number and role changes apply to this match only.</div><h2>Players attending</h2>${luHtml(m,'h')}`}
+  return`<label for="md">Match date</label><input id="md" type="date" value="${esc(m.date)}" onchange="setDate(this.value)"><label for="mt">Tournament</label><select id="mt" onchange="setTn(this.value)">${tnOpts(m.tid||'')}<option value="__new">New tournament…</option></select><label for="mf">Tournament rules</label><select id="mf" onchange="setFmt(this.value)">${opts}</select><div class="mut" style="margin-top:6px">${esc(ruleText(ruleOf(m)))}.${matchBusy(m)?'':' Tick the players attending. Number and role changes apply to this match only.'}</div>${matchBusy(m)?'<div class="card" style="margin-top:10px"><b>Roster is locked.</b><div class="mut">The first action has been recorded, so the players, shirt numbers and roles can no longer be changed.</div></div>':''}<h2>Players attending</h2>${luHtml(m,'h')}`}
 const ANG={3:0,2:60,1:120,6:180,5:240,4:300};
 const RL={'Setter':'S','Opposite':'O','Middle blocker':'M','Outside hitter':'H','Libero':'L','Defensive specialist':'D'};
 const curSet=m=>S.setv==null||S.setv>m.n?m.n:S.setv;
 const setReady=(m,si)=>(m.st[si]||[]).filter(id=>id&&m.lu.h.some(x=>x.pid===id)).length===6&&!!(m.sv||{})[si];
-function startSet(){const m=get(S.cur);{const ev=sysEval(m,(m.st[m.n]||[]).map(id=>m.lu.h.some(x=>x.pid===id)?id:null));if(ev.state==='bad'&&!confirm('The line-up does not match the '+m.sys+' system. Start the set anyway?'))return}if(ruleMin(ruleOf(m))&&!tmOf(m)){m.tm={acc:0,run:Date.now()};save()}m.ss=m.ss||{};m.ss[m.n]=true;if(alOf(m).on&&!m.log.some(e=>e.s===m.n)&&!(m.sb||[]).some(x=>x.s===m.n)){autoLib(m)}save();S.mt='scout';S.pv='init';S.pick=null;render();scrollTo(0,0)}
+function startSet(){const m=get(S.cur);{const ev=sysEval(m,(m.st[m.n]||[]).map(id=>m.lu.h.some(x=>x.pid===id)?id:null));if(ev.state==='bad'&&!confirm('The line-up does not match the '+m.sys+' system. Start the set anyway?'))return}if(ruleMin(ruleOf(m))&&!tmOf(m)){m.tm={acc:0,run:Date.now()};save()}m.ss=m.ss||{};m.ss[m.n]=true;if(alOf(m).on&&!m.log.some(e=>e.s===m.n)&&!(m.sb||[]).some(x=>x.s===m.n)){autoLib(m)}save();S.mt='scout';S.pv='cur';S.pick=null;render();scrollTo(0,0)}
 function curLU(m,si){let pos=[0,1,2,3,4,5].map(i=>(m.st[si]||[])[i]||null),sl=[0,1,2,3,4,5],sv=(m.sv||{})[si]==='h',dots={},was={},rl={},pend=false,k=0;
   const sbs=(m.sb||[]).filter(x=>x.s===si),add=(id,c)=>{if(id)(dots[id]=dots[id]||[]).push(c)};
   const ap=n=>sbs.filter(x=>x.k===n).forEach(x=>{const j=pos.indexOf(x.out);if(j<0)return;pos[j]=x.in;was[x.in]=(was[x.out]&&was[x.out].slice(-1)[0]===x.in)?was[x.out].slice(0,-1):[...(was[x.out]||[]),x.out];if(x.r)rl[x.in]=x.r;else delete rl[x.in];delete rl[x.out];
@@ -335,7 +341,7 @@ function setSys(k){const m=get(S.cur);if(setStarted(m,curSet(m)))return;m.sys=k;
 function setServe(k){const m=get(S.cur);if(setStarted(m,curSet(m)))return;(m.sv=m.sv||{})[curSet(m)]=k;reAuto(m,curSet(m));save();render()}
 function pickPos(p){const m=get(S.cur);if(setStarted(m,curSet(m)))return;S.pick=S.pick===p?null:p;render()}
 function setSetView(i){S.setv=i;S.pick=null;render()}
-function setPos(p,pid){const m=get(S.cur),si=curSet(m);if(setStarted(m,si))return;const a=m.st[si]=m.st[si]||[null,null,null,null,null,null];a[p-1]=pid||null;reAuto(m,si);save();
+function setPos(p,pid){const m=get(S.cur),si=curSet(m);if(setStarted(m,si))return;const a=m.st[si]=m.st[si]||[null,null,null,null,null,null];a[p-1]=pid||null;if(pid)autoFill(m,si);reAuto(m,si);save();
   const nx=[1,2,3,4,5,6].find(q=>!a[q-1]);S.pick=pid&&nx?nx:null;render()}
 function copyPrev(){const m=get(S.cur),si=curSet(m);if(setStarted(m,si))return;m.st[si]=[...(m.st[si-1]||[])];reAuto(m,si);save();S.pick=null;render()}
 function rotLU(d){const m=get(S.cur),si=curSet(m);if(setStarted(m,si))return;const a=(m.st[si]||[]).slice(0,6);while(a.length<6)a.push(null);m.st[si]=d>0?[a[1],a[2],a[3],a[4],a[5],a[0]]:[a[5],a[0],a[1],a[2],a[3],a[4]];reAuto(m,si);save();render()}
@@ -355,6 +361,17 @@ const SYSP={'5-1':['S','H','M','O','H','M'],'6-2':['X','H','M','X','H','M'],'4-2
 const RC={'Setter':'S','Outside hitter':'H','Middle blocker':'M','Opposite':'O'};
 const RN={S:'Setter',H:'Outside hitter',M:'Middle blocker',O:'Opposite',X:'Setter or Opposite'};
 const slotOk=(slot,c)=>slot==='X'?(c==='S'||c==='O'):slot===c;
+function sysSlots(m,a){const pat=SYSP[m.sys];if(!pat)return null;
+  const rs=[0,1,2,3,4,5].map(i=>{const e=m.lu.h.find(x=>x.pid===a[i]);return e&&RC[e.role]?RC[e.role]:null});let rots=[];
+  for(let r=0;r<6;r++)if(rs.every((c,i)=>!c||slotOk(pat[(i+r)%6],c)))rots.push(r);
+  return rots.length?{pat,rots}:null}
+const sysFit=(sl,i,role)=>{const c=RC[role];return !!c&&sl.rots.some(r=>slotOk(sl.pat[(i+r)%6],c))};
+function autoFill(m,si){const a=m.st[si];if(!a||!SYSP[m.sys])return;
+  for(let g=0;g<6;g++){const sl=sysSlots(m,a);if(!sl)return;
+    const placed=new Set(a.filter(Boolean)),pool=m.lu.h.filter(x=>!placed.has(x.pid)),
+      one=[0,1,2,3,4,5].filter(i=>!a[i]).map(i=>({i,c:pool.filter(x=>sysFit(sl,i,x.role))})).filter(o=>o.c.length===1),cnt={};
+    one.forEach(o=>{cnt[o.c[0].pid]=(cnt[o.c[0].pid]||0)+1});
+    const pk=one.find(o=>cnt[o.c[0].pid]===1);if(!pk)return;a[pk.i]=pk.c[0].pid}}
 function sysEval(m,ok){const pat=SYSP[m.sys];if(!pat)return{state:'off'};
   const es=ok.map(id=>m.lu.h.find(x=>x.pid===id)||null);if(es.some(e=>!e))return{state:'incomplete'};
   const rs=es.map(e=>RC[e.role]||'?');let best=null;
@@ -366,7 +383,7 @@ function sysCheck(m,ok){const ev=sysEval(m,ok);if(ev.state==='off')return'';
   const rule=m.sys==='5-1'?'setter, outside hitter, middle blocker, opposite, outside hitter, middle blocker':'setter, outside hitter, middle blocker, setter, outside hitter, middle blocker';
   return`<div class="card" style="border-color:var(--bad);border-width:2px"><b>Line-up does not match the ${esc(m.sys)} system.</b>${ev.bad.map(b=>{const e=ev.es[b.i];return`<div style="margin-top:4px">P${b.i+1} ${e.num?'#'+esc(e.num)+' ':''}${esc(e.name)}: ${e.role?esc(e.role):'no role set'}, expected ${RN[b.exp].toLowerCase()}.</div>`}).join('')}<div class="mut" style="margin-top:8px">Going anticlockwise round the pie (P1, P2, P3 to P6) the roles repeat ${rule}, from any starting position. So the middle blockers sit opposite each other, the outside hitters sit opposite each other, and ${m.sys==='5-1'?'the setter sits opposite the opposite':'the two setters sit opposite each other'}. Fix the roles on the Roster tab or move the players.</div></div>`}
 const setBusy=(m,si)=>m.log.some(e=>e.s===si)||(m.sb||[]).some(e=>e.s===si&&!e.au)||(m.sl||[]).some(e=>e.s===si)||(m.ag||[]).some(e=>e.s===si)||(m.to||[]).some(e=>e.s===si);
-function reopenSet(){const m=get(S.cur);if(m.n<1||m.done||setBusy(m,m.n))return;m.n--;S.setv=null;S.pick=null;S.sb=null;S.pv='init';S.mt='scout';save();render();scrollTo(0,0)}
+function reopenSet(){const m=get(S.cur);if(m.n<1||m.done||setBusy(m,m.n))return;m.n--;S.setv=null;S.pick=null;S.sb=null;S.pv='cur';S.mt='scout';save();render();scrollTo(0,0)}
 function reopenBtn(m){if(m.n<1||m.done||setBusy(m,m.n))return'';return`<div class="card"><b>Closed set ${m.n} by mistake?</b><div class="mut">Reopen it to carry on scoring. The set ${m.n+1} setup is kept.</div><div style="margin-top:10px"><button onclick="reopenSet()">Reopen set ${m.n}</button></div></div>`}
 function pastSetView(m,si){const[x,y]=sc(m,si),cl=curLU(m,si),all=m.lu.h,ok=a=>a.map(id=>all.some(z=>z.pid===id)?id:null),pos=ok(cl.pos),won=x>y?m.home:y>x?m.away:null;
   const tos=(m.to||[]).filter(e=>e.s===si),sbs=(m.sb||[]).filter(e=>e.s===si),used=subsUsed(m,si);
@@ -376,8 +393,8 @@ function pastSetView(m,si){const[x,y]=sc(m,si),cl=curLU(m,si),all=m.lu.h,ok=a=>a
   if(si===m.n-1)h+=reopenBtn(m)||`<div class="mut">Set ${m.n+1} already has activity, so set ${si+1} can no longer be reopened.</div>`;
   return h}
 function listPick(pid){const m=get(S.cur),si=curSet(m),a=m.st[si]=m.st[si]||[null,null,null,null,null,null],p=S.pick||[1,2,3,4,5,6].find(q=>!a[q-1]);if(p)setPos(p,pid)}
-function sideList(m,ok,all){const p=S.pick,nx=[1,2,3,4,5,6].find(q=>!ok[q-1]),tgt=p||nx,placed=ok.filter((id,i)=>id&&i!==(tgt||0)-1),av=all.filter(x=>!placed.includes(x.pid)).sort(byNum);
-  return`<div id="pl-list" style="flex:0 0 44%;min-width:0;max-height:70vh;overflow-y:auto"><div class="row sp" style="margin-bottom:4px"><b>${p?'P'+p:'Players'}</b>${p&&ok[p-1]?`<button class="del" style="min-height:32px;padding:0 8px" onclick="setPos(${p},null)">Clear</button>`:''}</div><div class="mut" style="font-size:13px;margin-bottom:4px">${tgt?'For position '+tgt:''}</div>${av.map(x=>`<button class="m" style="margin:4px 0;padding:8px 10px;min-height:44px;font-size:15px${x.pid===ok[tgt-1]?';border-color:var(--home);border-width:2px':''}" onclick="listPick('${x.pid}')"><b>${x.num?'#'+esc(x.num):'–'}</b> ${esc(x.name)}${x.role?`<div class="mut" style="font-size:12px">${esc(x.role)}</div>`:''}</button>`).join('')||'<div class="mut">Everyone attending is already placed.</div>'}</div>`}
+function sideList(m,ok,all){const p=S.pick,nx=[1,2,3,4,5,6].find(q=>!ok[q-1]),tgt=p||nx,placed=ok.filter((id,i)=>id&&i!==(tgt||0)-1),av0=all.filter(x=>!placed.includes(x.pid)).sort(byNum),sl=tgt?sysSlots(m,ok.map((id,i)=>i===tgt-1?null:id)):null,fit=x=>!!(sl&&sysFit(sl,tgt-1,x.role)),nf=sl?av0.filter(fit).length:0,av=nf?[...av0.filter(fit),...av0.filter(x=>!fit(x))]:av0,hd=nf>0&&nf<av.length;
+  return`<div id="pl-list" style="flex:0 0 44%;min-width:0;max-height:70vh;overflow-y:auto"><div class="row sp" style="margin-bottom:4px"><b>${p?'P'+p:'Players'}</b>${p&&ok[p-1]?`<button class="del" style="min-height:32px;padding:0 8px" onclick="setPos(${p},null)">Clear</button>`:''}</div><div class="mut" style="font-size:13px;margin-bottom:4px">${tgt?'For position '+tgt:''}</div>${av.map((x,i)=>(hd&&i===0?`<div class="mut" style="font-size:12px;margin:6px 0 2px">Suits P${tgt}, ${esc(m.sys)} system</div>`:'')+(hd&&i===nf?'<div class="mut" style="font-size:12px;margin:8px 0 2px">Other players</div>':'')+`<button class="m" style="margin:4px 0;padding:8px 10px;min-height:44px;font-size:15px${x.pid===ok[tgt-1]?';border-color:var(--home);border-width:2px':''}" onclick="listPick('${x.pid}')"><b>${x.num?'#'+esc(x.num):'–'}</b> ${esc(x.name)}${x.role?`<div class="mut" style="font-size:12px">${esc(x.role)}</div>`:''}</button>`).join('')||'<div class="mut">Everyone attending is already placed.</div>'}</div>`}
 function setView(m){
   const si0=curSet(m);if(si0===m.n&&autoServe(m,si0),m.sv&&m.sv[si0])save();
   const si=curSet(m),cur=m.st[si]=m.st[si]||[null,null,null,null,null,null],all=m.lu.h,sv=(m.sv=m.sv||{})[si];
@@ -393,7 +410,7 @@ function setView(m){
   if(!all.length)return h+`<div class="card"><b>No players in this match yet.</b><div class="mut">Choose who is attending on the Roster tab first.</div><div style="margin-top:12px"><button class="pri" onclick="S.mt='roster';render()">Go to Roster</button></div></div>`;
   h+=`<div class="mut">${locked?'Starting line-up, locked.':'Tap a slice, then pick the player from the list on the right.'} Numbers run clockwise in rotation order: 1 serves, 2 to 4 are front row (4 is front left), 5 to 6 are back row.</div>
   <div style="display:flex;gap:10px;align-items:flex-start;margin-top:10px"><div style="flex:1 1 0;min-width:0"><div class="mut" style="text-align:center">Net</div>${pie(m,ok,{pid:ok[0],st:sv==='h'?'serving':sv==='a'?'receiving':''},locked)}<div class="mut" style="text-align:center">Back of the court</div></div>${!locked&&(S.pick||filled<6)?sideList(m,ok,all):''}</div>
-  ${locked?'':`  <div class="row" style="margin-top:10px"><button style="flex:1" onclick="rotLU(-1)" ${filled&&!setBusy(m,si)?'':'disabled'} aria-label="Rotate the line-up one position anticlockwise">↺ Rotate anticlockwise</button><button style="flex:1" onclick="rotLU(1)" ${filled&&!setBusy(m,si)?'':'disabled'} aria-label="Rotate the line-up one position clockwise">↻ Rotate clockwise</button></div>
+  ${locked?'':`  <div class="row" style="margin-top:10px"><button style="flex:1" onclick="rotLU(1)" ${filled&&!setBusy(m,si)?'':'disabled'} aria-label="Rotate the line-up one position clockwise">↻ Rotate clockwise</button><button style="flex:1" onclick="rotLU(-1)" ${filled&&!setBusy(m,si)?'':'disabled'} aria-label="Rotate the line-up one position anticlockwise">↺ Rotate anticlockwise</button></div>
   <div class="row" style="margin-top:8px;flex-wrap:wrap">${si>0&&(m.st[si-1]||[]).some(Boolean)?`<button onclick="copyPrev()">Copy line-up from set ${si}</button>`:''}${filled?'<button class="del" onclick="clearSet()">Clear line-up</button>':''}</div>`}
   <div class="mut" style="text-align:center;font-size:13px">S setter, O opposite, M middle, H outside hitter, L libero, D defensive specialist</div>
   <div class="mut" style="text-align:center;margin:6px 0" aria-live="polite">${filled} of 6 positions filled${filled===6?', line-up complete':''}</div>
@@ -409,26 +426,32 @@ function setsWon(m){let h=0,a=0;for(let i=0;i<=m.n;i++){const[x,y]=sc(m,i);if(i<
 const TNK='vb-scout-tournaments-v1';
 try{S.tn=JSON.parse(localStorage.getItem(TNK)||'[]');if(!Array.isArray(S.tn))S.tn=[]}catch(e){S.tn=[]}
 function saveTn(){try{localStorage.setItem(TNK,JSON.stringify(S.tn))}catch(e){}}
-const newTn=name=>{let t=S.tn.find(x=>x.name.toLowerCase()===name.toLowerCase());if(!t){t={id:'t'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name};S.tn.push(t);saveTn()}return t};
-function addTn(){const n=document.getElementById('tn-n').value.trim();if(!n){alert('Enter a tournament name.');return}if(S.tn.some(t=>t.name.toLowerCase()===n.toLowerCase())){alert('That tournament already exists.');return}newTn(n);S.tnform=false;render()}
+const newTn=(name,fmt)=>{let t=S.tn.find(x=>x.name.toLowerCase()===name.toLowerCase());if(!t){t={id:'t'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name};if(fmt&&allRules().some(r=>r.id===fmt))t.fmt=fmt;S.tn.push(t);saveTn()}return t};
+const matchBusy=m=>!!m.done||(m.log||[]).length>0||(m.sb||[]).some(e=>!e.au)||(m.sl||[]).length>0||(m.ag||[]).length>0||(m.to||[]).length>0;
+const tnFmt=id=>{const t=S.tn.find(x=>x.id===id);return t&&t.fmt&&allRules().some(r=>r.id===t.fmt)?t.fmt:''};
+function tnPick(v){document.getElementById('f-tnn').style.display=v==='__new'?'block':'none';const f=tnFmt(v),el=document.getElementById('f-f');if(f&&el){el.value=f}nrStatus()}
+function setTnFmt(id,v){const t=S.tn.find(x=>x.id===id);if(!t)return;const old=tnFmt(id);if(v)t.fmt=v;else delete t.fmt;
+  if(v&&old&&v!==old)S.m.forEach(m=>{if(m.tid===id&&!matchBusy(m)&&ruleOf(m).id===old){m.fmt=v;m.rule=copy(getRule(v))}});
+  save();saveTn();render()}
+function addTn(){const n=document.getElementById('tn-n').value.trim();if(!n){alert('Enter a tournament name.');return}if(S.tn.some(t=>t.name.toLowerCase()===n.toLowerCase())){alert('That tournament already exists.');return}newTn(n,(document.getElementById('tn-f')||{}).value);S.tnform=false;render()}
 function tnAddMatch(id){S.ntn=id;S.nf=null;S.form=true;S.tnform=false;render();scrollTo(0,0)}
 function renameTn(id){const t=S.tn.find(x=>x.id===id);if(!t)return;const n=prompt('Tournament name',t.name);if(n===null)return;const v=n.trim();if(!v)return;if(S.tn.some(x=>x.id!==id&&x.name.toLowerCase()===v.toLowerCase())){alert('That tournament already exists.');return}t.name=v;saveTn();render()}
 function delTn(id){const t=S.tn.find(x=>x.id===id);if(!t)return;if(!confirm('Delete the tournament “'+t.name+'”? Its matches stay and move to “No tournament”.'))return;S.m.forEach(m=>{if(m.tid===id)delete m.tid});S.tn=S.tn.filter(x=>x.id!==id);save();saveTn();render()}
-function setTn(v){const m=get(S.cur);if(v==='__new'){const n=(prompt('New tournament name','')||'').trim();if(!n){render();return}m.tid=newTn(n).id}else if(v)m.tid=v;else delete m.tid;save();render()}
+function setTn(v){const m=get(S.cur);if(v==='__new'){const n=(prompt('New tournament name','')||'').trim();if(!n){render();return}m.tid=newTn(n,ruleOf(m).id).id}else if(v){m.tid=v;const f=tnFmt(v);if(f&&!matchBusy(m)&&ruleOf(m).id!==f){m.fmt=f;m.rule=copy(getRule(f))}}else delete m.tid;save();render()}
 const tnOpts=sel=>`<option value="">No tournament</option>${S.tn.map(t=>`<option value="${t.id}"${sel===t.id?' selected':''}>${esc(t.name)}</option>`).join('')}`;
 function listView(){
   const my=myTeam();
   let h=`<div class="row sp"><h1>Matches</h1>${my?`<button class="pri" onclick="S.form=!S.form;render()">${S.form?'Cancel':'New match'}</button>`:''}</div>`;
   if(my&&!S.form)h+=`<div style="margin:0 0 10px"><button onclick="S.tnform=!S.tnform;render()">${S.tnform?'Cancel':'+ New tournament'}</button></div>`;
-  if(S.tnform&&my&&!S.form)h+=`<div class="card"><label for="tn-n">Tournament name</label><input id="tn-n" autocomplete="off"><div style="margin-top:14px"><button class="pri" onclick="addTn()">Save tournament</button></div></div>`;
+  if(S.tnform&&my&&!S.form)h+=`<div class="card"><label for="tn-n">Tournament name</label><input id="tn-n" autocomplete="off"><label for="tn-f">Default rules for its matches</label><select id="tn-f">${allRules().map(r=>`<option value="${r.id}">${esc(r.name)}</option>`).join('')}</select><div style="margin-top:14px"><button class="pri" onclick="addTn()">Save tournament</button></div></div>`;
   if(!my)h+=`<div class="card"><b>Set up your team first.</b><div class="mut">Matches use your team and its players. Add it on the Teams tab.</div><div style="margin-top:12px"><button class="pri" onclick="go('teams')">Go to Teams</button></div></div>`;
   if(S.form&&my){
     const mts=myTeams(),my2=mts.find(t=>t.id===S.nt)||my,ps=S.p.filter(p=>inTeam(p,my2.id)&&!p.arch).sort(byNum);
     h+=`<div class="card"><datalist id="tl">${S.t.filter(t=>!t.mine).map(t=>`<option value="${esc(t.name)}">`).join('')}</datalist>
     ${mts.length>1?`<label for="f-t">My team</label><select id="f-t" onchange="S.nt=this.value;S.nf={a:document.getElementById('f-a').value,f:document.getElementById('f-f').value,d:document.getElementById('f-d').value,tn:document.getElementById('f-tn').value};render()">${mts.map(t=>`<option value="${t.id}"${t.id===my2.id?' selected':''}>${esc(t.name)}</option>`).join('')}</select>`:''}
     <label for="f-a">Opponent</label><input id="f-a" list="tl" autocomplete="off" value="${esc((S.nf||{}).a||'')}">
-    <label for="f-tn">Tournament</label><select id="f-tn" onchange="document.getElementById('f-tnn').style.display=this.value==='__new'?'block':'none'">${tnOpts((S.nf||{}).tn||S.ntn||'')}<option value="__new"${(S.nf||{}).tn==='__new'?' selected':''}>New tournament…</option></select><input id="f-tnn" placeholder="Tournament name" autocomplete="off" style="display:${(S.nf||{}).tn==='__new'?'block':'none'};margin-top:6px">
-    <label for="f-f">Tournament rules</label><select id="f-f" onchange="nrStatus()">${allRules().map(r=>`<option value="${r.id}"${(S.nf||{}).f===r.id?' selected':''}>${esc(r.name)}</option>`).join('')}</select><div class="mut" id="f-rt" style="margin-top:6px"></div>
+    <label for="f-tn">Tournament</label><select id="f-tn" onchange="tnPick(this.value)">${tnOpts((S.nf||{}).tn||S.ntn||'')}<option value="__new"${(S.nf||{}).tn==='__new'?' selected':''}>New tournament…</option></select><input id="f-tnn" placeholder="Tournament name" autocomplete="off" style="display:${(S.nf||{}).tn==='__new'?'block':'none'};margin-top:6px">
+    <label for="f-f">Tournament rules</label><select id="f-f" onchange="nrStatus()">${allRules().map(r=>`<option value="${r.id}"${((S.nf||{}).f||tnFmt((S.nf||{}).tn||S.ntn||''))===r.id?' selected':''}>${esc(r.name)}</option>`).join('')}</select><div class="mut" id="f-rt" style="margin-top:6px"></div>
     <label for="f-d">Date</label><input id="f-d" type="date" value="${(S.nf||{}).d||new Date().toISOString().slice(0,10)}">
     <div class="row sp" style="margin-top:16px"><b>Who is playing (${esc(my2.name)})</b><span id="nr-st" class="mut"></span></div>
     ${ps.length?ps.map(p=>`<label style="display:flex;gap:8px;align-items:center;color:var(--fg);font-size:16px;margin:6px 0"><input type="checkbox" class="nr" value="${p.id}" style="width:22px;height:22px;flex:none" checked onchange="nrStatus()"><span>${p.num?'#'+esc(p.num)+' ':''}${esc(p.name)}${p.role?', '+esc(p.role):''}</span></label>`).join(''):`<div class="mut">Your team has no players yet. Add them on the Teams tab.</div>`}
@@ -438,7 +461,7 @@ function listView(){
   if(!S.tn.length)h+=byDate(S.m).map(mrow).join('');
   else{
     const rec=ms=>{const dn=ms.filter(m=>m.done),w=dn.filter(m=>{const[x,y]=setsWon(m);return x>y}).length;return dn.length?w+' won, '+(dn.length-w)+' lost':''};
-    const grp=(t,ms)=>{const id=t?t.id:'_none',open=(S.tnopen||{})[id]!==false,r=rec(ms);return`<details class="card"${open?' open':''} ontoggle="(S.tnopen=S.tnopen||{})['${id}']=this.open"><summary style="cursor:pointer"><b>${t?esc(t.name):'No tournament'}</b> <span class="mut">· ${ms.length} match${ms.length===1?'':'es'}${r?' · '+r:''}</span></summary>${t?`<div class="row" style="margin:8px 0;flex-wrap:wrap"><button onclick="tnAddMatch('${t.id}')">Add match</button><button onclick="renameTn('${t.id}')">Rename</button><button class="del" onclick="delTn('${t.id}')">Delete</button></div>`:''}${ms.length?byDate(ms).map(mrow).join(''):'<div class="mut" style="margin:6px 0">No matches yet.</div>'}</details>`};
+    const grp=(t,ms)=>{const id=t?t.id:'_none',open=(S.tnopen||{})[id]!==false,r=rec(ms);return`<details class="card"${open?' open':''} ontoggle="(S.tnopen=S.tnopen||{})['${id}']=this.open"><summary style="cursor:pointer"><b>${t?esc(t.name):'No tournament'}</b> <span class="mut">· ${ms.length} match${ms.length===1?'':'es'}${r?' · '+r:''}</span></summary>${t?`<div class="row" style="margin:8px 0;flex-wrap:wrap"><button onclick="tnAddMatch('${t.id}')">Add match</button><button onclick="renameTn('${t.id}')">Rename</button><button class="del" onclick="delTn('${t.id}')">Delete</button></div><label for="tf-${t.id}" style="margin:4px 0">Default rules</label><select id="tf-${t.id}" onchange="setTnFmt('${t.id}',this.value)"><option value="">Not set</option>${allRules().map(r=>`<option value="${r.id}"${t.fmt===r.id?' selected':''}>${esc(r.name)}</option>`).join('')}</select><div class="mut" style="margin:4px 0 8px;font-size:13px">New matches start with these rules. Changing them also switches matches not started yet that use the old default. Each match can still be changed on its Roster tab.</div>`:''}${ms.length?byDate(ms).map(mrow).join(''):'<div class="mut" style="margin:6px 0">No matches yet.</div>'}</details>`};
     const last=ms=>ms.reduce((x,m)=>m.date>x?m.date:x,'');
     const gs=S.tn.map(t=>({t,ms:S.m.filter(m=>m.tid===t.id)})).sort((a,b)=>last(b.ms).localeCompare(last(a.ms))||a.t.name.localeCompare(b.t.name)),none=S.m.filter(m=>!m.tid||!S.tn.some(t=>t.id===m.tid));
     h+=gs.map(g=>grp(g.t,g.ms)).join('')+(none.length?grp(null,none):'')}
@@ -476,6 +499,7 @@ function matchView(m){
   const[x,y]=sc(m,m.n),[sh,sa]=setsWon(m),tl=tally(m);
   const R=ruleOf(m),sw=setWin(m,m.n,x,y),last=m.n>=R.sets.length-1,need=Math.floor(R.sets.length/2)+1;
   const tm=tmOf(m),tmin=ruleMin(R),tup=!!(tmin&&tm&&timeLeft(m)<=0);
+  if(!(sw&&!m.done)&&S.pd===m.id+':'+m.n)S.pd=null;
   let h=`<div class="row sp"><button onclick="go('matches')">Back</button><button class="del" onclick="del('${m.id}')">Delete</button></div>
   <h1 style="margin-top:10px">${esc(m.home)} vs ${esc(m.away)}</h1>
   <div class="mut">${esc(m.date)}${m.event?', '+esc(m.event):''}, ${esc(R.name)}${m.sys&&m.sys!=='none'?', '+m.sys+' system':''}, set ${m.n+1}${m.done?', final':''} (sets ${sh}–${sa})</div>
@@ -486,7 +510,8 @@ function matchView(m){
   h+=`<div class="board" aria-live="polite"><div class="side h"><div class="nm">${esc(m.home)}</div><div class="num">${x}</div></div><div class="side a"><div class="nm">${esc(m.away)}</div><div class="num">${y}</div></div></div>`;
   if(tmin&&tm&&!m.done){const l=timeLeft(m);h+=`<div class="row sp" style="margin:8px 0"><span>Match time left <b id="tmr" class="num" style="font-size:28px" data-up="${l<=0?1:0}">${fmtT(l)}</b></span>${l>0?`<button onclick="toggleTimer()">${tm.run?'Pause':'Resume'}</button>`:''}</div>`}
   if(sw&&!m.done){const wn=sw[0]==='h'?m.home:m.away,pr=[...Array(m.n).keys()].filter(i=>{const[a,b]=sc(m,i);return sw[0]==='h'?a>b:b>a}).length+1;
-    h+=`<div class="banner"><b>${esc(wn)}</b> has won set ${m.n+1}${sw[1]==='time'?' on time, with the most points. Time is up, so the match is over: finish the match to lock the result.':'. '+(pr>=need?'That wins the match. Finish the match to lock the result.':!last?'End the set to start the next one.':'Finish the match to lock the result.')}</div>`}
+    h+=`<div class="banner"><b>${esc(wn)}</b> has won set ${m.n+1}${sw[1]==='time'?' on time, with the most points. Time is up, so the match is over: finish the match to lock the result.':'. '+(pr>=need?'That wins the match. Finish the match to lock the result.':!last?'End the set to start the next one.':'Finish the match to lock the result.')}</div>`;
+    if(S.pd!==m.id+':'+m.n)h+=endPopup(m,wn,sw,x,y,sw[1]==='time'||pr>=need||last)}
   else if(!m.done&&tup)h+=`<div class="banner">Time is up and the score is level. The next point wins the set.</div>`;
   h+=toBoxes(m)+pieBox(m)+serveCard(m);
   if(!m.done){
@@ -624,7 +649,7 @@ function statsView(){
   <div class="mut" style="margin-top:8px">Errors given: ${r.given}. Share of points from attack: ${r.pf?Math.round(r.kill/r.pf*100):0}%, from serve: ${r.pf?Math.round(r.ace/r.pf*100):0}%.</div></div>`});
   return h}
 
-const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 55</div>';
+const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 57</div>';
 const FXK='vb-scout-fx-v1';let fx={flash:true,sound:true};try{const r=JSON.parse(localStorage.getItem(FXK)||'null');if(r&&typeof r==='object')fx=Object.assign(fx,r)}catch(e){}
 function setFx(k,v){fx[k]=!!v;try{localStorage.setItem(FXK,JSON.stringify(fx))}catch(e){}render()}
 let actx=null;
