@@ -287,7 +287,7 @@ function addMatch(){
   if(myTeams().some(t=>t.name.toLowerCase()===n.toLowerCase())){alert('The opponent must be a different team.');return}
   const L=nrSel(),fmt=v('f-f'),msg=over({rule:getRule(fmt)},L);
   if(msg){alert(msg+' Untick some players or switch to Local tournament.');return}
-  let tid='';{const ts=v('f-tn');if(ts==='__new'){const tn=v('f-tnn');if(!tn){alert('Enter the tournament name.');return}tid=newTn(tn,fmt).id}else tid=ts||''}
+  let tid='';{const ts=v('f-tn');if(ts==='__new'){const tn=v('f-tnn');if(!tn){alert('Enter the tournament name.');return}tid=newTn(tn,fmt,[my.id]).id}else tid=ts||''}
   const A=ensureTeam(n);
   const m={id:Date.now().toString(36),home:my.name,away:A.name,hid:my.id,aid:A.id,lu:{h:L.map(p=>({pid:p.id,name:p.name,num:p.num,role:p.role})),a:[]},fmt,rule:copy(getRule(fmt)),event:'',date:v('f-d')||new Date().toISOString().slice(0,10),n:0,done:false,log:[],notes:'',st:{},al:{on:true,role:'Middle blocker',lib:''}};
   if(tid)m.tid=tid;
@@ -478,24 +478,30 @@ function setsWon(m){let h=0,a=0;for(let i=0;i<=m.n;i++){const[x,y]=sc(m,i);if(i<
 const TNK='vb-scout-tournaments-v1';
 try{S.tn=JSON.parse(localStorage.getItem(TNK)||'[]');if(!Array.isArray(S.tn))S.tn=[]}catch(e){S.tn=[]}
 function saveTn(){try{localStorage.setItem(TNK,JSON.stringify(S.tn))}catch(e){}}
-const newTn=(name,fmt)=>{let t=S.tn.find(x=>x.name.toLowerCase()===name.toLowerCase());if(!t){t={id:'t'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name};if(fmt&&allRules().some(r=>r.id===fmt))t.fmt=fmt;S.tn.push(t);saveTn()}return t};
+const newTn=(name,fmt,teams)=>{let t=S.tn.find(x=>x.name.toLowerCase()===name.toLowerCase());if(!t){t={id:'t'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name};if(fmt&&allRules().some(r=>r.id===fmt))t.fmt=fmt;if(Array.isArray(teams)){const ids=[...new Set(teams)].filter(id=>S.t.some(x=>x.id===id));if(ids.length)t.teams=ids}S.tn.push(t);saveTn()}return t};
+const tnTeams=t=>(t.teams||[]).filter(id=>S.t.some(x=>x.id===id));
+const tnTeamIds=(t,ms)=>{const ids=[...tnTeams(t)];ms.forEach(m=>{if(m.hid&&!ids.includes(m.hid)&&S.t.some(x=>x.id===m.hid))ids.push(m.hid)});const ix=id=>S.t.findIndex(x=>x.id===id);return ids.sort((a,b)=>ix(a)-ix(b))};
+function setTnTeam(id,tm,on){const t=S.tn.find(x=>x.id===id);if(!t)return;const all=S.m.filter(m=>m.tid===id),cur=tnTeamIds(t,all);t.teams=on?[...new Set([...cur,tm])]:cur.filter(x=>x!==tm||all.some(m=>m.hid===tm));saveTn();render()}
 const matchBusy=m=>!!m.done||(m.log||[]).length>0||(m.sb||[]).some(e=>!e.au)||(m.sl||[]).length>0||(m.ag||[]).length>0||(m.to||[]).length>0;
 const tnFmt=id=>{const t=S.tn.find(x=>x.id===id);return t&&t.fmt&&allRules().some(r=>r.id===t.fmt)?t.fmt:''};
-function tnPick(v){document.getElementById('f-tnn').style.display=v==='__new'?'block':'none';const f=tnFmt(v),el=document.getElementById('f-f');if(f&&el){el.value=f}nrStatus()}
+function tnPick(v){document.getElementById('f-tnn').style.display=v==='__new'?'block':'none';const f=tnFmt(v),el=document.getElementById('f-f');if(f&&el){el.value=f}
+  const t=S.tn.find(x=>x.id===v),ids=t?tnTeams(t):[],ft=document.getElementById('f-t');
+  if(ft&&ids.length&&!ids.includes(ft.value)){S.nt=ids[0];S.nf={a:document.getElementById('f-a').value,f:document.getElementById('f-f').value,d:document.getElementById('f-d').value,tn:v};render();return}
+  nrStatus()}
 function setTnFmt(id,v){const t=S.tn.find(x=>x.id===id);if(!t)return;const old=tnFmt(id);if(v)t.fmt=v;else delete t.fmt;
   if(v&&old&&v!==old)S.m.forEach(m=>{if(m.tid===id&&!matchBusy(m)&&ruleOf(m).id===old){m.fmt=v;m.rule=copy(getRule(v))}});
   save();saveTn();render()}
-function addTn(){const n=document.getElementById('tn-n').value.trim();if(!n){alert('Enter a tournament name.');return}if(S.tn.some(t=>t.name.toLowerCase()===n.toLowerCase())){alert('That tournament already exists.');return}newTn(n,(document.getElementById('tn-f')||{}).value);S.tnform=false;render()}
-function tnAddMatch(id){S.ntn=id;S.nf=null;S.form=true;S.tnform=false;render();scrollTo(0,0)}
+function addTn(){const n=document.getElementById('tn-n').value.trim();if(!n){alert('Enter a tournament name.');return}if(S.tn.some(t=>t.name.toLowerCase()===n.toLowerCase())){alert('That tournament already exists.');return}const mts=myTeams(),teams=mts.length>1?[...document.querySelectorAll('.tn-tm:checked')].map(e=>e.value):mts.map(t=>t.id);if(!teams.length){alert('Choose the teams taking part.');return}newTn(n,(document.getElementById('tn-f')||{}).value,teams);S.tnform=false;render()}
+function tnAddMatch(id,team){S.ntn=id;S.nf=null;if(team)S.nt=team;S.form=true;S.tnform=false;render();scrollTo(0,0)}
 function renameTn(id){const t=S.tn.find(x=>x.id===id);if(!t)return;const n=prompt('Tournament name',t.name);if(n===null)return;const v=n.trim();if(!v)return;if(S.tn.some(x=>x.id!==id&&x.name.toLowerCase()===v.toLowerCase())){alert('That tournament already exists.');return}t.name=v;saveTn();render()}
-function delTn(id){const t=S.tn.find(x=>x.id===id);if(!t)return;if(!confirm('Delete the tournament “'+t.name+'”? Its matches stay and move to “No tournament”.'))return;S.m.forEach(m=>{if(m.tid===id)delete m.tid});S.tn=S.tn.filter(x=>x.id!==id);save();saveTn();render()}
-function setTn(v){const m=get(S.cur);if(v==='__new'){const n=(prompt('New tournament name','')||'').trim();if(!n){render();return}m.tid=newTn(n,ruleOf(m).id).id}else if(v){m.tid=v;const f=tnFmt(v);if(f&&!matchBusy(m)&&ruleOf(m).id!==f){m.fmt=f;m.rule=copy(getRule(f))}}else delete m.tid;save();render()}
+function delTn(id){const t=S.tn.find(x=>x.id===id);if(!t)return;{const k=tnTeamIds(t,S.m.filter(m=>m.tid===id)).length;if(!confirm('Delete the tournament “'+t.name+'”'+(k>1?' for all its '+k+' teams':'')+'? Its matches stay and move to “No tournament”.'))return}S.m.forEach(m=>{if(m.tid===id)delete m.tid});S.tn=S.tn.filter(x=>x.id!==id);save();saveTn();render()}
+function setTn(v){const m=get(S.cur);if(v==='__new'){const n=(prompt('New tournament name','')||'').trim();if(!n){render();return}m.tid=newTn(n,ruleOf(m).id,m.hid?[m.hid]:undefined).id}else if(v){m.tid=v;const f=tnFmt(v);if(f&&!matchBusy(m)&&ruleOf(m).id!==f){m.fmt=f;m.rule=copy(getRule(f))}}else delete m.tid;save();render()}
 const tnOpts=sel=>`<option value="">No tournament</option>${S.tn.map(t=>`<option value="${t.id}"${sel===t.id?' selected':''}>${esc(t.name)}</option>`).join('')}`;
 function listView(){
   const my=myTeam(),mts0=myTeams(),mf=mts0.some(t=>t.id===S.mteam)?S.mteam:'';
   let h=`<div class="row sp"><h1>Matches</h1>${my?`<button class="pri" onclick="S.form=!S.form;render()">${S.form?'Cancel':'New match'}</button>`:''}</div>`;
   if(my&&!S.form)h+=`<div style="margin:0 0 10px"><button onclick="S.tnform=!S.tnform;render()">${S.tnform?'Cancel':'+ New tournament'}</button></div>`;
-  if(S.tnform&&my&&!S.form)h+=`<div class="card"><label for="tn-n">Tournament name</label><input id="tn-n" autocomplete="off"><label for="tn-f">Default rules for its matches</label><select id="tn-f">${allRules().map(r=>`<option value="${r.id}">${esc(r.name)}</option>`).join('')}</select><div style="margin-top:14px"><button class="pri" onclick="addTn()">Save tournament</button></div></div>`;
+  if(S.tnform&&my&&!S.form)h+=`<div class="card"><label for="tn-n">Tournament name</label><input id="tn-n" autocomplete="off"><label for="tn-f">Default rules for its matches</label><select id="tn-f">${allRules().map(r=>`<option value="${r.id}">${esc(r.name)}</option>`).join('')}</select>${mts0.length>1?`<div role="group" aria-label="Teams taking part" style="margin-top:14px"><div style="font-weight:600">Teams taking part</div>${mts0.map(t=>`<label style="display:flex;gap:8px;align-items:center;color:var(--fg);font-size:16px;margin:6px 0"><input type="checkbox" class="tn-tm" value="${t.id}" style="width:22px;height:22px;flex:none"${t.id===mf?' checked':''}><span>${esc(t.name)}</span></label>`).join('')}<div class="mut" style="font-size:13px">If two of your teams take part, the tournament shows one box for each.</div></div>`:''}<div style="margin-top:14px"><button class="pri" onclick="addTn()">Save tournament</button></div></div>`;
   if(my&&!S.form&&mts0.length>1)h+=`<div style="margin:0 0 10px"><label for="mf-t">Show matches for</label><select id="mf-t" onchange="S.mteam=this.value;render()"><option value="">All my teams</option>${mts0.map(t=>`<option value="${t.id}"${t.id===mf?' selected':''}>${esc(t.name)}</option>`).join('')}</select></div>`;
   if(!my)h+=`<div class="card"><b>Set up your team first.</b><div class="mut">Matches use your team and its players. Add it on the Teams tab.</div><div style="margin-top:12px"><button class="pri" onclick="go('teams')">Go to Teams</button></div></div>`;
   if(S.form&&my){
@@ -515,10 +521,18 @@ function listView(){
   if(!S.tn.length)h+=byDate(vis).map(mrow).join('');
   else{
     const rec=ms=>{const dn=ms.filter(m=>m.done),w=dn.filter(m=>{const[x,y]=setsWon(m);return x>y}).length;return dn.length?w+' won, '+(dn.length-w)+' lost':''};
-    const grp=(t,ms)=>{const id=t?t.id:'_none',open=(S.tnopen||{})[id]!==false,r=rec(ms);return`<details class="card"${open?' open':''} ontoggle="(S.tnopen=S.tnopen||{})['${id}']=this.open"><summary style="cursor:pointer"><b>${t?esc(t.name):'No tournament'}</b>${ms.length?` <span style="color:var(--home);font-weight:600">· ${esc([...new Set(ms.map(mTeam))].join(', '))}</span>`:''} <span class="mut">· ${ms.length} match${ms.length===1?'':'es'}${r?' · '+r:''}</span></summary>${t?`<div class="row" style="margin:8px 0;flex-wrap:wrap"><button onclick="tnAddMatch('${t.id}')">Add match</button><button onclick="renameTn('${t.id}')">Rename</button><button class="del" onclick="delTn('${t.id}')">Delete</button></div><label for="tf-${t.id}" style="margin:4px 0">Default rules</label><select id="tf-${t.id}" onchange="setTnFmt('${t.id}',this.value)"><option value="">Not set</option>${allRules().map(r=>`<option value="${r.id}"${t.fmt===r.id?' selected':''}>${esc(r.name)}</option>`).join('')}</select><div class="mut" style="margin:4px 0 8px;font-size:13px">New matches start with these rules. Changing them also switches matches not started yet that use the old default. Each match can still be changed on its Roster tab.</div>`:''}${ms.length?byDate(ms).map(mrow).join(''):'<div class="mut" style="margin:6px 0">No matches yet.</div>'}</details>`};
+    const tmName=id=>(S.t.find(x=>x.id===id)||{}).name||'';
+    const tmChecks=t=>{const all=S.m.filter(m=>m.tid===t.id),ids=tnTeamIds(t,all);return`<div role="group" aria-label="Teams taking part" style="margin-top:10px"><div style="font-weight:600">Teams taking part</div>${mts0.map(x=>{const has=all.some(m=>m.hid===x.id);return`<label style="display:flex;gap:8px;align-items:center;color:var(--fg);font-size:16px;margin:6px 0"><input type="checkbox" style="width:22px;height:22px;flex:none"${ids.includes(x.id)?' checked':''}${has?' disabled':''} onchange="setTnTeam('${t.id}','${x.id}',this.checked)"><span>${esc(x.name)}${has?' <span class="mut">(has matches)</span>':''}</span></label>`}).join('')}<div class="mut" style="font-size:13px">Each team taking part gets its own box.</div></div>`};
+    const grp=(t,team,ms)=>{const key=(t?t.id:'_none')+':'+(team||'_'),open=(S.tnopen||{})[key]!==false,r=rec(ms),names=team?[tmName(team)]:[...new Set(ms.map(mTeam))];
+      const settings=t?`<details style="margin:8px 0"${(S.tnopen||{})[key+':s']?' open':''} ontoggle="(S.tnopen=S.tnopen||{})['${key}:s']=this.open"><summary class="mut" style="cursor:pointer">Tournament settings</summary><div class="row" style="margin:8px 0;flex-wrap:wrap"><button onclick="renameTn('${t.id}')">Rename</button><button class="del" onclick="delTn('${t.id}')">Delete</button></div><label for="tf-${key}" style="margin:4px 0">Default rules</label><select id="tf-${key}" onchange="setTnFmt('${t.id}',this.value)"><option value="">Not set</option>${allRules().map(r=>`<option value="${r.id}"${t.fmt===r.id?' selected':''}>${esc(r.name)}</option>`).join('')}</select><div class="mut" style="margin:4px 0 8px;font-size:13px">New matches start with these rules. Changing them also switches matches not started yet that use the old default. Each match can still be changed on its Roster tab.</div>${mts0.length>1?tmChecks(t):''}</details>`:'';
+      return`<details class="card"${open?' open':''} ontoggle="(S.tnopen=S.tnopen||{})['${key}']=this.open"><summary style="cursor:pointer"><b>${t?esc(t.name):'No tournament'}</b>${names.length?` <span style="color:var(--home);font-weight:600">· ${esc(names.join(', '))}</span>`:''} <span class="mut">· ${ms.length} match${ms.length===1?'':'es'}${r?' · '+r:''}</span></summary>${t?`<div class="row" style="margin:8px 0"><button onclick="tnAddMatch('${t.id}'${team?`,'${team}'`:''})">Add match${team&&mts0.length>1?' for '+esc(tmName(team)):''}</button></div>`:''}${settings}${ms.length?byDate(ms).map(mrow).join(''):'<div class="mut" style="margin:6px 0">No matches yet.</div>'}</details>`};
     const last=ms=>ms.reduce((x,m)=>m.date>x?m.date:x,'');
-    const gs=S.tn.map(t=>({t,ms:vis.filter(m=>m.tid===t.id)})).filter(g=>!mf||g.ms.length||!S.m.some(m=>m.tid===g.t.id)).sort((a,b)=>last(b.ms).localeCompare(last(a.ms))||a.t.name.localeCompare(b.t.name)),none=vis.filter(m=>!m.tid||!S.tn.some(t=>t.id===m.tid));
-    h+=gs.map(g=>grp(g.t,g.ms)).join('')+(none.length?grp(null,none):'')}
+    const gs=S.tn.map(t=>{const all=S.m.filter(m=>m.tid===t.id),ids=tnTeamIds(t,all);
+      let bx=ids.map(id=>({t,team:id,ms:vis.filter(m=>m.tid===t.id&&m.hid===id)}));const orph=vis.filter(m=>m.tid===t.id&&!ids.includes(m.hid));if(orph.length)bx.push({t,team:'',ms:orph});
+      if(!bx.length)bx=[{t,team:'',ms:[]}];
+      if(mf)bx=bx.filter(b=>b.team===mf||(!b.team&&(b.ms.length||!all.length)));
+      return{t,bx}}).filter(g=>g.bx.length).sort((a,b)=>last(b.bx.flatMap(x=>x.ms)).localeCompare(last(a.bx.flatMap(x=>x.ms)))||a.t.name.localeCompare(b.t.name)),none=vis.filter(m=>!m.tid||!S.tn.some(t=>t.id===m.tid));
+    h+=gs.map(g=>g.bx.map(x=>grp(x.t,x.team,x.ms)).join('')).join('')+(none.length?grp(null,'',none):'')}
   return h}
 
 const MDK='vb-scout-mode-v1',ADVK=['block','pass','set','attack'];
@@ -612,9 +626,10 @@ function applyBackup(d,mode){
   if(mode==='replace'){S.m=d.matches;S.p=d.players;S.t=d.teams;S.r=d.rules;S.tn=d.tournaments||[];
     if(d.scale){SC=d.scale.map((x,i)=>({k:SCDEF[i].k,n:x.n||SCDEF[i].n,d:x.d||SCDEF[i].d}));try{localStorage.setItem(SK,JSON.stringify(SC))}catch(e){}}
     if(d.skills){setSkx(d.skills);saveSkx()}}
-  else{const map={},tmap={};
-    (d.tournaments||[]).forEach(t=>{const l=S.tn.find(x=>x.name.toLowerCase()===String(t.name).toLowerCase());if(l)tmap[t.id]=l.id;else{const n=S.tn.some(x=>x.id===t.id)?{...t,id:'t'+Date.now().toString(36)+Math.random().toString(36).slice(2,5)}:{...t};S.tn.push(n);tmap[t.id]=n.id}});
+  else{const map={},tmap={},fresh=new Set();
+    (d.tournaments||[]).forEach(t=>{const l=S.tn.find(x=>x.name.toLowerCase()===String(t.name).toLowerCase());if(l)tmap[t.id]=l.id;else{const n=S.tn.some(x=>x.id===t.id)?{...t,id:'t'+Date.now().toString(36)+Math.random().toString(36).slice(2,5)}:{...t};S.tn.push(n);fresh.add(n.id);tmap[t.id]=n.id}});
     d.teams.forEach(t=>{const l=S.t.find(x=>x.name.toLowerCase()===String(t.name).toLowerCase());if(l)map[t.id]=l.id;else{const n={...t};S.t.push(n);map[t.id]=n.id}});
+    (d.tournaments||[]).forEach(t=>{const l=S.tn.find(x=>x.id===tmap[t.id]);if(!l||!t.teams)return;const ids=[...new Set([...(fresh.has(l.id)?[]:(l.teams||[])),...t.teams.map(i=>map[i]||i)])].filter(i=>S.t.some(x=>x.id===i));if(ids.length)l.teams=ids;else delete l.teams});
     d.players.forEach(p=>{if(S.p.some(x=>x.id===p.id))return;S.p.push({...p,teamId:map[p.teamId]||p.teamId,...(p.also&&p.also.length?{also:p.also.map(i=>map[i]||i)}:{}),...(p.tm?{tm:Object.fromEntries(Object.entries(p.tm).map(([k,x])=>[map[k]||k,x]))}:{})})});
     d.rules.forEach(r=>{if(!S.r.some(x=>x.id===r.id))S.r.push(r)});
     d.matches.forEach(m=>{if(S.m.some(x=>x.id===m.id))return;S.m.push({...m,hid:map[m.hid]||m.hid,aid:map[m.aid]||m.aid,...(m.tid?{tid:tmap[m.tid]||m.tid}:{})})})}
@@ -714,7 +729,7 @@ function statsView(){
   <div class="mut" style="margin-top:8px">Errors given: ${r.given}. Share of points from attack: ${r.pf?Math.round(r.kill/r.pf*100):0}%, from serve: ${r.pf?Math.round(r.ace/r.pf*100):0}%.</div></div>`});
   return h}
 
-const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 66</div>';
+const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 67</div>';
 const FXK='vb-scout-fx-v1';let fx={flash:true,sound:true};try{const r=JSON.parse(localStorage.getItem(FXK)||'null');if(r&&typeof r==='object')fx=Object.assign(fx,r)}catch(e){}
 function setFx(k,v){fx[k]=!!v;try{localStorage.setItem(FXK,JSON.stringify(fx))}catch(e){}render()}
 let actx=null;
