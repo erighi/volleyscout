@@ -92,6 +92,17 @@ const save=()=>{try{localStorage.setItem(K,JSON.stringify(S.m))}catch(e){}};
 if(S.p.some(p=>!p.teamId)){let t=S.t.find(x=>x.mine);if(!t){t={id:'t-mine',name:'My team',mine:true};S.t.push(t)}S.p.forEach(p=>{if(!p.teamId)p.teamId=t.id});saveT();saveP()}
 const myTeam=()=>S.t.find(t=>t.mine);
 const myTeams=()=>S.t.filter(t=>t.mine),inTeam=(p,id)=>p.teamId===id||(p.also||[]).includes(id);
+const pTm=(p,t)=>{const e=p.tm&&p.tm[t];return e?{num:e.num||'',role:e.role||''}:{num:p.num||'',role:p.role||''}};
+const pNum=(p,t)=>pTm(p,t).num,pRole=(p,t)=>pTm(p,t).role,tv=(p,t)=>({...p,num:pNum(p,t),role:pRole(p,t)});
+const prefsOf=p=>Array.isArray(p.prefs)?p.prefs:(p.role?[p.role]:[]);
+function freezeTm(p){p.tm=p.tm||{};[p.teamId,...(p.also||[])].forEach(t=>{if(!p.tm[t])p.tm[t]={num:p.num||'',role:p.role||''}})}
+function syncPrimary(p){const t=pTm(p,p.teamId);p.num=t.num;p.role=t.role}
+const ordn=i=>['1st','2nd','3rd'][i]||(i+1)+'th';
+function prefSlots(cur){return`<div id="pf-box">${[0,1,2,3,4,5].map(i=>`<div class="row" id="pf-row${i}" style="margin-top:6px;flex-wrap:nowrap;align-items:center${i>cur.length?';display:none':''}"><span class="mut" style="width:64px;flex:none">${ordn(i)}</span><select id="pf-s${i}" class="pf-r" aria-label="${ordn(i)} preferred role" style="flex:1" onchange="pfChg()"><option value="">${i?'None':'Choose a role'}</option>${ROLES.map(r=>`<option${cur[i]===r?' selected':''}>${r}</option>`).join('')}</select></div>`).join('')}</div>`}
+function pfChg(){const sel=[...document.querySelectorAll('.pf-r')];if(!sel.length)return;const vals=[];sel.forEach(e=>{if(e.value&&!vals.includes(e.value))vals.push(e.value)});
+  sel.forEach((e,i)=>{e.value=vals[i]||'';const row=document.getElementById('pf-row'+i);if(row)row.style.display=i<=vals.length?'':'none';[...e.options].forEach(o=>{o.disabled=!!o.value&&vals.includes(o.value)&&o.value!==vals[i]})});
+  const pr=document.getElementById('p-r'),o=pr&&pr.querySelector('option[value="__pref"]');if(o)o.textContent=vals[0]?'First preference ('+vals[0]+')':'First preference (none set)'}
+function roleOptsHtml(ed,tid){const pf=ed?prefsOf(ed):[],er=ed?pRole(ed,tid):'';return`<option value="__pref"${ed?'':' selected'}>${pf[0]?'First preference ('+esc(pf[0])+')':'First preference (none set)'}</option><option value=""${ed&&!er?' selected':''}>None</option>${ROLES.map(r=>`<option${ed&&er===r?' selected':''}>${r}</option>`).join('')}`}
 const SCDEF=[{k:'--',n:'Error',d:'Ball out or on the net. Point to the opponents'},{k:'-',n:'Easy',d:'Easy ball to pass. The opponent setter gets the perfect ball in their hands'},{k:'0',n:'Medium',d:'Ball received, but the opponent setter must move and some setting options are not available'},{k:'+',n:'Tough',d:'The service puts the opponent team in trouble and we get a free ball'},{k:'++',n:'Ace',d:'Ace. Point for us'}];
 const SK='vb-scout-scale-v1';
 let SC=JSON.parse(JSON.stringify(SCDEF));
@@ -135,17 +146,27 @@ function subPickPid(pid){const m=get(S.cur);if(!S.sb||m.done)return;const cl=cur
 function sbRole(m,out,inn){const v=S.sb&&S.sb.role;if(v==='own')return'';if(v)return v;const eo=m.lu.h.find(x=>x.pid===out),ei=m.lu.h.find(x=>x.pid===inn),ro=curLU(m,m.n).rl[out]||(eo&&eo.role)||'';return(ro==='Libero'||(ei&&ei.role==='Libero'))?'':ro}
 function subOut(pid){if(S.sb){S.sb.out=pid;render()}}
 const pnp=(m,pid)=>{const e=m.lu.h.find(x=>x.pid===pid);return e?(e.num?'#'+e.num:e.name):'?'};
-function subState(m,si){const rep={},repBy={},done=new Set();
-  (m.sb||[]).filter(x=>x.s===si&&!x.lib).forEach(x=>{if(rep[x.out]!==undefined&&x.in===rep[x.out]){delete repBy[x.in];delete rep[x.out];done.add(x.in)}else{repBy[x.out]=x.in;rep[x.in]=x.out}});
-  return{rep,repBy,done}}
+function subState(m,si){const rep={},repBy={},done=new Set(),spent=new Set(),lrep={},lrepBy={};
+  (m.sb||[]).filter(x=>x.s===si).forEach(x=>{
+    if(x.lib){if(lrep[x.out]!==undefined&&x.in===lrep[x.out]){delete lrepBy[x.in];delete lrep[x.out]}else{lrepBy[x.out]=x.in;lrep[x.in]=x.out}}
+    else if(rep[x.out]!==undefined&&x.in===rep[x.out]){delete repBy[x.in];delete rep[x.out];done.add(x.in);spent.add(x.out)}
+    else{repBy[x.out]=x.in;rep[x.in]=x.out}});
+  return{rep,repBy,done,spent,lrep,lrepBy}}
+const roleIn=(m,si,id)=>curLU(m,si).rl[id]||((m.lu.h.find(x=>x.pid===id)||{}).role)||'';
 function subCheck(m,si,A,B){const st=subState(m,si);
   if(st.done.has(A))return pnp(m,A)+' has already returned to the court and cannot be substituted again in this set.';
   if(st.rep[A]!==undefined&&B!==st.rep[A])return pnp(m,A)+' can only be replaced by '+pnp(m,st.rep[A])+', the player they replaced.';
   if(st.repBy[B]!==undefined&&st.repBy[B]!==A)return pnp(m,B)+' was substituted and can only return for '+pnp(m,st.repBy[B])+'.';
+  if(st.spent.has(B))return pnp(m,B)+' has already played as a substitute and cannot enter again in this set.';
+  if(st.lrepBy[B]!==undefined)return pnp(m,B)+' was replaced by the libero and can only return for the libero, '+pnp(m,st.lrepBy[B])+'.';
+  return''}
+function libCheck(m,si,A,B){const st=subState(m,si);
+  if(st.lrep[A]!==undefined&&B!==st.lrep[A])return pnp(m,A)+' can only be replaced by '+pnp(m,st.lrep[A])+', the player they replaced.';
+  if(roleIn(m,si,B)!=='Libero'&&st.lrepBy[B]!==undefined&&st.lrepBy[B]!==A)return pnp(m,B)+' was replaced by the libero and can only return for '+pnp(m,st.lrepBy[B])+'.';
   return''}
 function subIn(pid){const m=get(S.cur);if(m.done||!S.sb||!S.sb.out)return;const cl=curLU(m,m.n);
   if(!cl.pos.includes(S.sb.out)||cl.pos.includes(pid))return;const r=sbRole(m,S.sb.out,pid);
-  if(!libSwap(m,S.sb.out,pid,r)){const msg=subCheck(m,m.n,S.sb.out,pid);if(msg){alert(msg);return}if(subsUsed(m,m.n)>=ruleSub(ruleOf(m))){alert('All substitutions for this set are used.');return}}
+  if(!libSwap(m,S.sb.out,pid,r)){const msg=subCheck(m,m.n,S.sb.out,pid);if(msg){alert(msg);return}if(subsUsed(m,m.n)>=ruleSub(ruleOf(m))){alert('All substitutions for this set are used.');return}}else{const msg=libCheck(m,m.n,S.sb.out,pid);if(msg){alert(msg);return}}
   pushSub(m,S.sb.out,pid,false,r);S.sb=null;S.pm=null;save();render()}
 const libsOf=m=>m.lu.h.filter(x=>x.role==='Libero').sort(byNum);
 const alOf=m=>Object.assign({on:false,role:'Middle blocker',lib:''},m.al||{});
@@ -185,14 +206,17 @@ function subCard(m){const lim=ruleSub(ruleOf(m));if(!lim)return'';
   if(m.done)return h+'</div>';
   const full=used>=lim,cancel=`<div style="margin-top:8px"><button onclick="subOpen(false)">Cancel</button></div>`;
   if(!S.sb)return h+`<div style="margin-top:10px"><button onclick="subOpen(true)">Substitution</button></div>${full?'<div class="mut" style="margin-top:6px">Limit reached. Only libero swaps can still be recorded.</div>':''}</div>`;
-  if(!S.sb.out)return h+`<div style="margin-top:10px"><b>Who goes out?</b></div><div class="mut" style="margin:6px 0">Tap the player to take off on the pie below. A player with a lock cannot be substituted again in this set.</div>${cl.pos.filter(id=>id&&st.rep[id]!==undefined&&effR(id)!=='Libero').map(id=>`<div class="mut" style="font-size:13px">${pnum(m,id)} can only be replaced by ${pnum(m,st.rep[id])}.</div>`).join('')}${cancel}</div>`;
+  if(!S.sb.out)return h+`<div style="margin-top:10px"><b>Who goes out?</b></div><div class="mut" style="margin:6px 0">Tap the player to take off on the pie below. A player with a lock cannot be substituted again in this set.</div>${cl.pos.filter(id=>id&&((st.rep[id]!==undefined&&effR(id)!=='Libero')||(st.lrep[id]!==undefined&&effR(id)==='Libero'))).map(id=>`<div class="mut" style="font-size:13px">${pnum(m,id)} can only be replaced by ${pnum(m,effR(id)==='Libero'?st.lrep[id]:st.rep[id])}.</div>`).join('')}${cancel}</div>`;
   const eo=all.find(x=>x.pid===S.sb.out),bench=all.filter(x=>!cl.pos.includes(x.pid)).sort(byNum);
-  return h+`<div style="margin-top:10px"><b>Who comes in for ${pnum(m,S.sb.out)} ${esc(eo?eo.name:'')}?</b></div><div class="mut" style="font-size:13px">Tap another player on the pie to change who goes out.</div><label for="sb-r">Plays as</label><select id="sb-r" onchange="S.sb.role=this.value||undefined;render()">${(()=>{const ro=effR(S.sb.out)||'';return ro&&ro!=='Libero'?`<option value="">Same as ${pnum(m,S.sb.out)} (${esc(ro)})</option><option value="own"${S.sb.role==='own'?' selected':''}>Their own role</option>`:'<option value="">Their own role</option>'})()}${ROLES.map(r=>`<option${S.sb.role===r?' selected':''}>${r}</option>`).join('')}</select>${st.rep[S.sb.out]!==undefined&&effR(S.sb.out)!=='Libero'?'<div class="mut" style="margin-top:6px">'+pnum(m,S.sb.out)+' can only be replaced by '+pnum(m,st.rep[S.sb.out])+', the player they replaced.</div>':''}${bench.map(x=>{const lib=libSwap(m,S.sb.out,x.pid,sbRole(m,S.sb.out,x.pid)),bad=lib?'':subCheck(m,m.n,S.sb.out,x.pid),dis=(full&&!lib)||!!bad,why=!lib&&st.repBy[x.pid]!==undefined&&st.repBy[x.pid]!==S.sb.out?'Can only return for '+pnum(m,st.repBy[x.pid]):'';return`<button class="m" style="margin:6px 0" ${dis?'disabled':''} onclick="subIn('${x.pid}')"><b>${x.num?'#'+esc(x.num):'–'}</b> ${esc(x.name)}${x.role?', <span class="mut">'+esc(x.role)+'</span>':''}${why?'<div class="mut" style="font-size:12px">'+why+'</div>':''}</button>`}).join('')||'<div class="mut" style="margin-top:6px">No one on the bench. Tick more players on the Roster tab.</div>'}<div class="row" style="margin-top:8px"><button onclick="S.sb.out=null;render()">Back</button><button onclick="subOpen(false)">Cancel</button></div></div>`}
+  return h+`<div style="margin-top:10px"><b>Who comes in for ${pnum(m,S.sb.out)} ${esc(eo?eo.name:'')}?</b></div><div class="mut" style="font-size:13px">Tap another player on the pie to change who goes out.</div><label for="sb-r">Plays as</label><select id="sb-r" onchange="S.sb.role=this.value||undefined;render()">${(()=>{const ro=effR(S.sb.out)||'';return ro&&ro!=='Libero'?`<option value="">Same as ${pnum(m,S.sb.out)} (${esc(ro)})</option><option value="own"${S.sb.role==='own'?' selected':''}>Their own role</option>`:'<option value="">Their own role</option>'})()}${ROLES.map(r=>`<option${S.sb.role===r?' selected':''}>${r}</option>`).join('')}</select>${(effR(S.sb.out)==='Libero'?st.lrep[S.sb.out]:st.rep[S.sb.out])!==undefined?'<div class="mut" style="margin-top:6px">'+pnum(m,S.sb.out)+' can only be replaced by '+pnum(m,effR(S.sb.out)==='Libero'?st.lrep[S.sb.out]:st.rep[S.sb.out])+', the player they replaced.</div>':''}${bench.map(x=>{const lib=libSwap(m,S.sb.out,x.pid,sbRole(m,S.sb.out,x.pid)),bad=lib?libCheck(m,m.n,S.sb.out,x.pid):subCheck(m,m.n,S.sb.out,x.pid),dis=(full&&!lib)||!!bad,why=bad||((full&&!lib)?'No substitutions left':'');return`<button class="m" style="margin:6px 0" ${dis?'disabled':''} onclick="subIn('${x.pid}')"><b>${x.num?'#'+esc(x.num):'–'}</b> ${esc(x.name)}${x.role?', <span class="mut">'+esc(x.role)+'</span>':''}${why?'<div class="mut" style="font-size:12px">'+why+'</div>':''}</button>`}).join('')||'<div class="mut" style="margin-top:6px">No one on the bench. Tick more players on the Roster tab.</div>'}<div class="row" style="margin-top:8px"><button onclick="S.sb.out=null;render()">Back</button><button onclick="subOpen(false)">Cancel</button></div></div>`}
 function homePts(m){const L=scoutMode==='adv'?TH.filter(x=>x[0]!=='kill'):TH;return`<div class="pts h" style="margin-top:14px;grid-template-columns:repeat(${L.length},1fr)"><div class="mut" style="grid-column:1/-1">Point for ${esc(m.home)}</div>${L.map(([k,l])=>`<button onclick="point('h','${k}')">${l}</button>`).join('')}</div>`}
+const lockBtns=h=>h.replace(/<button /g,'<button disabled ');
+function serveGate(m){if(m.done)return false;const cl=curLU(m,m.n);if(!cl.serving||!cl.pos[0])return false;const sl=m.sl||[],ls=sl[sl.length-1];return!(ls&&ls.s===m.n&&ls.at===m.log.length)}
+const gateBtns=(m,h)=>serveGate(m)?lockBtns(h):h;
 function serveCard(m){const cl=curLU(m,m.n);if(m.done)return'';const adv=scoutMode==='adv';if(!cl.serving||!cl.pos[0])return`<div class="card">${lvlHead('Scouting')}${adv?actRow():''}${homePts(m)}</div>`;
   const L=m.log.length,sl=m.sl||[],ls=sl[sl.length-1],rated=ls&&ls.s===m.n&&ls.at===L,e=m.lu.h.find(x=>x.pid===cl.pos[0]),who=e?(e.num?'#'+esc(e.num)+' ':'')+esc(e.name):'';
   if(rated){const g=SC.find(x=>x.k===ls.g);return`<div class="card">${lvlHead('Serve'+(who?': '+who:''))}<div class="mut">Graded <b>${G(ls.g)}</b>${g?' ('+esc(g.n)+')':''}. Now record how the rally ended.</div>${adv?actRow():''}${homePts(m)}</div>`}
-  return`<div class="card">${lvlHead('Serve'+(who?': '+who:''))}<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px">${SC.map(x=>`<button aria-label="${esc(x.k)} ${esc(x.n)}: ${esc(x.d)}" style="min-height:64px;padding:6px 2px;line-height:1.1${x.k==='--'?';border-color:var(--bad)':x.k==='++'?';border-color:var(--good)':''}" onclick="serve('${x.k}')"><span class="num" style="font-size:26px;display:block">${G(x.k)}</span><span style="font-size:11px">${esc(x.n)}</span></button>`).join('')}</div><details style="margin-top:8px"><summary class="mut" style="cursor:pointer">What do the grades mean?</summary>${SC.map(x=>`<div class="mut" style="margin-top:4px"><b>${G(x.k)}</b> ${esc(x.d)}</div>`).join('')}</details>${adv?actRow():''}${homePts(m)}</div>`}
+  return`<div class="card">${lvlHead('Serve'+(who?': '+who:''))}<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px">${SC.map(x=>`<button aria-label="${esc(x.k)} ${esc(x.n)}: ${esc(x.d)}" style="min-height:64px;padding:6px 2px;line-height:1.1${x.k==='--'?';border-color:var(--bad)':x.k==='++'?';border-color:var(--good)':''}" onclick="serve('${x.k}')"><span class="num" style="font-size:26px;display:block">${G(x.k)}</span><span style="font-size:11px">${esc(x.n)}</span></button>`).join('')}</div><div class="mut" style="margin-top:8px">Grade the serve first. The other scouting buttons unlock after.</div><details style="margin-top:8px"><summary class="mut" style="cursor:pointer">What do the grades mean?</summary>${SC.map(x=>`<div class="mut" style="margin-top:4px"><b>${G(x.k)}</b> ${esc(x.d)}</div>`).join('')}</details>${adv?lockBtns(actRow()):''}${lockBtns(homePts(m))}</div>`}
 function serveTable(m){const sl=m.sl||[];if(!sl.length)return'';const by={};sl.forEach(e=>{const r=by[e.pid]=by[e.pid]||{};r[e.g]=(r[e.g]||0)+1});
   const rows=Object.keys(by).map(pid=>{const e=m.lu.h.find(x=>x.pid===pid),r=by[pid],t=SC.reduce((a,x)=>a+(r[x.k]||0),0);return`<tr><td>${e?(e.num?'#'+esc(e.num)+' ':'')+esc(e.name):'Player'}</td>${SC.map(x=>`<td>${r[x.k]||0}</td>`).join('')}<td>${t}</td></tr>`}).join('');
   return`<h2>Serve grades</h2><div class="card sc"><table><tr><th></th>${SC.map(x=>`<th>${G(x.k)}</th>`).join('')}<th>All</th></tr>${rows}</table></div>`}
@@ -231,14 +255,14 @@ setInterval(()=>{const el=document.getElementById('tmr');if(!el||!S.cur)return;c
 const byNum=(a,b)=>(parseInt(a.num,10)||999)-(parseInt(b.num,10)||999)||a.name.localeCompare(b.name);
 const teamByName=n=>S.t.find(t=>t.name.toLowerCase()===n.toLowerCase());
 function ensureTeam(n){let t=teamByName(n);if(!t){t={id:'t'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name:n,mine:false};S.t.push(t);saveT()}return t}
-const snap=t=>S.p.filter(p=>inTeam(p,t.id)&&!p.arch).map(p=>({pid:p.id,name:p.name,num:p.num,role:p.role}));
+const snap=t=>S.p.filter(p=>inTeam(p,t.id)&&!p.arch).map(p=>({pid:p.id,name:p.name,num:pNum(p,t.id),role:pRole(p,t.id)}));
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const get=id=>S.m.find(m=>m.id===id);
 const sc=(m,i)=>{let h=0,a=0;m.log.forEach(e=>{if(e.s===i){e.t==='h'?h++:a++}});return[h,a]};
 const target=(m)=>m.n>=4?15:25;
 function go(t){S.tab=t;S.cur=null;S.form=false;S.edit=null;S.team=null;S.tform=false;S.rd=null;render()}
 function open_(id){S.cur=id;S.mt=get(id).log.length?'scout':'set';S.pick=null;S.sb=null;S.lm=false;S.pm=null;S.setv=null;S.pv='cur';render();scrollTo(0,0)}
-function nrSel(){return[...document.querySelectorAll('.nr:checked')].map(e=>S.p.find(p=>p.id===e.value))}
+function nrSel(){const sel=document.getElementById('f-t'),tid=(sel&&sel.value)||(myTeam()||{}).id;return[...document.querySelectorAll('.nr:checked')].map(e=>tv(S.p.find(p=>p.id===e.value),tid))}
 function nrStatus(){const el=document.getElementById('nr-st'),f=document.getElementById('f-f');if(!el||!f)return;
   const L=nrSel(),rl=getRule(f.value),fv=rl.roster,c=cnt(L);const rt=document.getElementById('f-rt');if(rt)rt.textContent=ruleText(rl);el.textContent=fv?`${c.pl} of 12 players, ${c.lib} of 2 liberos`:`${L.length} attending`;el.style.color=over({rule:rl},L)?'var(--bad)':''}
 function addMatch(){
@@ -264,19 +288,20 @@ function del(id){if(confirm('Delete this match and its data?')){S.m=S.m.filter(m
 function savePlayer(){
   const v=id=>document.getElementById(id).value.trim();
   const name=v('p-n');if(!name){alert('Enter the player’s name.');return}
-  const num=v('p-#');
-  if(num!==''&&S.p.some(p=>inTeam(p,S.team)&&!p.arch&&p.num===num&&p.id!==S.edit)&&!confirm('Another player already wears #'+num+'. Save anyway?'))return;
-  const d={name,num,role:v('p-r')},chk=[...document.querySelectorAll('.pt-also:checked')].map(e=>e.value),cands=[...document.querySelectorAll('.pt-also')].map(e=>e.value);
-  if(S.edit&&S.edit!=='new'){const p=S.p.find(p=>p.id===S.edit);Object.assign(p,d);
+  const num=v('p-#'),prefs=[...document.querySelectorAll('.pf-r')].map(e=>e.value).filter((x,i,a)=>x&&a.indexOf(x)===i),rv=v('p-r'),role=rv==='__pref'?(prefs[0]||''):rv;
+  if(num!==''&&S.p.some(p=>inTeam(p,S.team)&&!p.arch&&pNum(p,S.team)===num&&p.id!==S.edit)&&!confirm('Another player already wears #'+num+' in this team. Save anyway?'))return;
+  const chk=[...document.querySelectorAll('.pt-also:checked')].map(e=>e.value),cands=[...document.querySelectorAll('.pt-also')].map(e=>e.value);
+  if(S.edit&&S.edit!=='new'){const p=S.p.find(p=>p.id===S.edit);freezeTm(p);p.name=name;p.prefs=prefs;
     const prev=[p.teamId,...(p.also||[])],M=[...new Set([S.team,...chk,...prev.filter(i=>i!==S.team&&!cands.includes(i))])];
-    p.teamId=M.includes(p.teamId)?p.teamId:M[0];p.also=M.filter(i=>i!==p.teamId);if(!p.also.length)delete p.also}
-  else{const np={id:Date.now().toString(36),teamId:S.team,...d};if(chk.length)np.also=chk;S.p.push(np)}
+    p.tm[S.team]={num,role};M.forEach(t=>{if(!prev.includes(t))p.tm[t]={num:'',role:prefs[0]||''}});prev.forEach(t=>{if(!M.includes(t))delete p.tm[t]});
+    p.teamId=M.includes(p.teamId)?p.teamId:M[0];p.also=M.filter(i=>i!==p.teamId);if(!p.also.length)delete p.also;syncPrimary(p)}
+  else{const np={id:Date.now().toString(36),teamId:S.team,name,prefs,tm:{[S.team]:{num,role}}};if(chk.length){np.also=chk;chk.forEach(t=>{np.tm[t]={num:'',role:prefs[0]||''}})}syncPrimary(np);S.p.push(np)}
   saveP();S.edit=null;render()}
-function shareIn(id){const p=S.p.find(p=>p.id===id);if(!p||inTeam(p,S.team))return;p.also=[...(p.also||[]),S.team];saveP();render()}
-function editPlayer(id){S.edit=id;render();const el=document.getElementById('p-n');if(el)el.focus()}
+function shareIn(id){const p=S.p.find(p=>p.id===id);if(!p||inTeam(p,S.team))return;freezeTm(p);p.also=[...(p.also||[]),S.team];p.tm[S.team]={num:'',role:prefsOf(p)[0]||''};saveP();render()}
+function editPlayer(id){S.edit=id;render();pfChg();const el=document.getElementById('p-n');if(el)el.focus()}
 function archivePlayer(id,on){const p=S.p.find(p=>p.id===id);if(!p)return;if(on)p.arch=true;else delete p.arch;saveP();S.edit=null;render()}
 function delPlayer(id){const p=S.p.find(p=>p.id===id),M=[p.teamId,...(p.also||[])];
-  if(M.length>1){if(confirm('Remove '+p.name+' from this team? They stay in their other teams with all their stats.')){const rest=M.filter(i=>i!==S.team);p.teamId=rest[0];p.also=rest.slice(1);if(!p.also.length)delete p.also;saveP();S.edit=null;render()}return}
+  if(M.length>1){if(confirm('Remove '+p.name+' from this team? They stay in their other teams with all their stats.')){const rest=M.filter(i=>i!==S.team);freezeTm(p);delete p.tm[S.team];p.teamId=rest[0];p.also=rest.slice(1);if(!p.also.length)delete p.also;syncPrimary(p);saveP();S.edit=null;render()}return}
   if(confirm('Remove '+p.name+' from the roster for good? Past matches keep their own copy, but their stats are then grouped by name only. Archive instead to keep their stats.')){S.p=S.p.filter(x=>x.id!==id);saveP();S.edit=null;render()}}
 function addTeam(){const n=document.getElementById('tm-n').value.trim();if(!n){alert('Enter a team name.');return}
   if(teamByName(n)){alert('That team already exists.');return}
@@ -285,7 +310,7 @@ function addTeam(){const n=document.getElementById('tm-n').value.trim();if(!n){a
 function openTeam(id){S.team=id;S.edit=null;render();scrollTo(0,0)}
 function toggleMine(){const t=S.t.find(t=>t.id===S.team);const on=!t.mine;t.mine=on;S.tab=on?'teams':'opps';saveT();render()}
 function renameTeam(){const t=S.t.find(t=>t.id===S.team);const n=prompt('Team name',t.name);if(n&&n.trim()){t.name=n.trim();saveT();render()}}
-function delTeam(){const t=S.t.find(t=>t.id===S.team);if(confirm('Delete '+t.name+' and its roster? Matches already logged keep their data.')){S.p=S.p.filter(p=>{if(!inTeam(p,t.id))return true;const rest=[p.teamId,...(p.also||[])].filter(i=>i!==t.id);if(!rest.length)return false;p.teamId=rest[0];p.also=rest.slice(1);return true});S.t=S.t.filter(x=>x.id!==t.id);S.team=null;saveP();saveT();render()}}
+function delTeam(){const t=S.t.find(t=>t.id===S.team);if(confirm('Delete '+t.name+' and its roster? Matches already logged keep their data.')){S.p=S.p.filter(p=>{if(!inTeam(p,t.id))return true;const rest=[p.teamId,...(p.also||[])].filter(i=>i!==t.id);if(!rest.length)return false;freezeTm(p);delete p.tm[t.id];p.teamId=rest[0];p.also=rest.slice(1);syncPrimary(p);return true});S.t=S.t.filter(x=>x.id!==t.id);S.team=null;saveP();saveT();render()}}
 const cnt=L=>{const lib=L.filter(x=>x.role==='Libero').length;return{lib,pl:L.length-lib}};
 const over=(m,L)=>{if(!ruleOf(m).roster)return'';const c=cnt(L);return c.pl>12?'The roster limit is 12 players plus liberos.':c.lib>2?'The roster limit is 2 liberos.':''};
 function luSet(s,i,f,v){const m=get(S.cur),L=m.lu[s],t=L.map(x=>({...x}));if(matchBusy(m))return;t[i][f]=v.trim();
@@ -294,7 +319,7 @@ function luSet(s,i,f,v){const m=get(S.cur),L=m.lu[s],t=L.map(x=>({...x}));if(mat
 function unplace(m,pid){Object.values(m.st||{}).forEach(a=>a.forEach((x,i)=>{if(x===pid)a[i]=null}))}
 function luDel(s,i){const m=get(S.cur);if(matchBusy(m))return;unplace(m,m.lu[s][i].pid);m.lu[s].splice(i,1);save();render()}
 function luToggle(s,pid,on){const m=get(S.cur),L=m.lu[s];if(matchBusy(m)){render();return}
-  if(on){const p=S.p.find(p=>p.id===pid),t=[...L,{role:p.role}];if(over(m,t)){alert(over(m,t)+' Remove someone first or change a role.');render();return}
+  if(on){const p0=S.p.find(p=>p.id===pid),tid=s==='h'?m.hid:m.aid,p=tv(p0,tid),t=[...L,{role:p.role}];if(over(m,t)){alert(over(m,t)+' Remove someone first or change a role.');render();return}
     L.push({pid:p.id,name:p.name,num:p.num,role:p.role})}
   else{unplace(m,pid);m.lu[s]=L.filter(x=>x.pid!==pid)}
   save();render()}
@@ -304,7 +329,7 @@ function luGuest(s){const m=get(S.cur);if(matchBusy(m))return;const n=(prompt('P
 function setDate(v){const m=get(S.cur);if(v)m.date=v;save();render()}
 function setFmt(v){const m=get(S.cur);m.fmt=v;m.rule=copy(getRule(v));save();render()}
 function luRow(s,x,i,lead,rm,lk){return`<div class="row" style="margin-top:8px;flex-wrap:nowrap">${lead}<input aria-label="Shirt number for ${esc(x.name)}" style="width:60px" inputmode="numeric" maxlength="3" value="${esc(x.num)}" onchange="luSet('${s}',${i},'num',this.value)"${lk?' disabled':''}><select aria-label="Role for ${esc(x.name)}" style="width:auto;max-width:42%" onchange="luSet('${s}',${i},'role',this.value)"${lk?' disabled':''}><option value="">None</option>${ROLES.map(r=>`<option${x.role===r?' selected':''}>${r}</option>`).join('')}</select>${rm?`<button aria-label="Remove ${esc(x.name)}" onclick="luDel('${s}',${i})"${lk?' disabled':''}>✕</button>`:''}</div>`}
-function luHtml(m,s){const lk=matchBusy(m),L=m.lu[s],id=s==='h'?m.hid:m.aid,fv=ruleOf(m).roster,c=cnt(L),ro=S.p.filter(p=>inTeam(p,id)&&(!p.arch||L.some(x=>x.pid===p.id))).sort((a,b)=>(parseInt(a.num,10)||999)-(parseInt(b.num,10)||999)||a.name.localeCompare(b.name));
+function luHtml(m,s){const lk=matchBusy(m),L=m.lu[s],id=s==='h'?m.hid:m.aid,fv=ruleOf(m).roster,c=cnt(L),ro=S.p.filter(p=>inTeam(p,id)&&(!p.arch||L.some(x=>x.pid===p.id))).map(p=>tv(p,id)).sort((a,b)=>(parseInt(a.num,10)||999)-(parseInt(b.num,10)||999)||a.name.localeCompare(b.name));
   const st=fv?`${c.pl} of 12 players, ${c.lib} of 2 liberos${c.lib<1?'. Add at least 1 libero.':''}`:`${L.length} attending`;
   let h=`<div style="border-top:1px solid var(--line);margin-top:12px;padding-top:10px"><div class="row sp"><b>${esc(s==='h'?m.home:m.away)}</b><span class="mut" ${over(m,L)||(fv&&c.lib<1)?'style="color:var(--bad)"':''}>${st}</span></div>`;
   ro.forEach(p=>{const i=L.findIndex(x=>x.pid===p.id);const lead=`<label style="display:flex;gap:8px;align-items:center;color:var(--fg);font-size:16px;margin:0;flex:1;min-width:0"><input type="checkbox" style="width:22px;height:22px;flex:none" ${i>=0?'checked':''}${lk?' disabled':''} onchange="luToggle('${s}','${p.id}',this.checked)"><span style="overflow-wrap:anywhere">${esc(p.name)}</span></label>`;
@@ -446,7 +471,7 @@ function listView(){
   if(S.tnform&&my&&!S.form)h+=`<div class="card"><label for="tn-n">Tournament name</label><input id="tn-n" autocomplete="off"><label for="tn-f">Default rules for its matches</label><select id="tn-f">${allRules().map(r=>`<option value="${r.id}">${esc(r.name)}</option>`).join('')}</select><div style="margin-top:14px"><button class="pri" onclick="addTn()">Save tournament</button></div></div>`;
   if(!my)h+=`<div class="card"><b>Set up your team first.</b><div class="mut">Matches use your team and its players. Add it on the Teams tab.</div><div style="margin-top:12px"><button class="pri" onclick="go('teams')">Go to Teams</button></div></div>`;
   if(S.form&&my){
-    const mts=myTeams(),my2=mts.find(t=>t.id===S.nt)||my,ps=S.p.filter(p=>inTeam(p,my2.id)&&!p.arch).sort(byNum);
+    const mts=myTeams(),my2=mts.find(t=>t.id===S.nt)||my,ps=S.p.filter(p=>inTeam(p,my2.id)&&!p.arch).map(p=>tv(p,my2.id)).sort(byNum);
     h+=`<div class="card"><datalist id="tl">${S.t.filter(t=>!t.mine).map(t=>`<option value="${esc(t.name)}">`).join('')}</datalist>
     ${mts.length>1?`<label for="f-t">My team</label><select id="f-t" onchange="S.nt=this.value;S.nf={a:document.getElementById('f-a').value,f:document.getElementById('f-f').value,d:document.getElementById('f-d').value,tn:document.getElementById('f-tn').value};render()">${mts.map(t=>`<option value="${t.id}"${t.id===my2.id?' selected':''}>${esc(t.name)}</option>`).join('')}</select>`:''}
     <label for="f-a">Opponent</label><input id="f-a" list="tl" autocomplete="off" value="${esc((S.nf||{}).a||'')}">
@@ -500,7 +525,7 @@ function matchView(m){
   const R=ruleOf(m),sw=setWin(m,m.n,x,y),last=m.n>=R.sets.length-1,need=Math.floor(R.sets.length/2)+1;
   const tm=tmOf(m),tmin=ruleMin(R),tup=!!(tmin&&tm&&timeLeft(m)<=0);
   if(!(sw&&!m.done)&&S.pd===m.id+':'+m.n)S.pd=null;
-  let h=`<div class="row sp"><button onclick="go('matches')">Back</button><button class="del" onclick="del('${m.id}')">Delete</button></div>
+  let h=`<div class="row sp"><button onclick="go('matches')">Back</button>${S.mt==='roster'?`<button class="del" onclick="del('${m.id}')">Delete</button>`:''}</div>
   <h1 style="margin-top:10px">${esc(m.home)} vs ${esc(m.away)}</h1>
   <div class="mut">${esc(m.date)}${m.event?', '+esc(m.event):''}, ${esc(R.name)}${m.sys&&m.sys!=='none'?', '+m.sys+' system':''}, set ${m.n+1}${m.done?', final':''} (sets ${sh}–${sa})</div>
   ${tabsHtml(m)}`;
@@ -515,7 +540,7 @@ function matchView(m){
   else if(!m.done&&tup)h+=`<div class="banner">Time is up and the score is level. The next point wins the set.</div>`;
   h+=toBoxes(m)+pieBox(m)+serveCard(m);
   if(!m.done){
-    h+=`<div class="pts a"><div class="mut" style="grid-column:1/-1">Point for ${esc(m.away)}</div>${(scoutMode==='adv'?TA.filter(x=>x[0]!=='kill'&&x[0]!=='ace'):TA).map(([k,l])=>`<button onclick="point('a','${k}')">${l}</button>`).join('')}</div>
+    h+=gateBtns(m,`<div class="pts a"><div class="mut" style="grid-column:1/-1">Point for ${esc(m.away)}</div>${(scoutMode==='adv'?TA.filter(x=>x[0]!=='kill'&&x[0]!=='ace'):TA).map(([k,l])=>`<button onclick="point('a','${k}')">${l}</button>`).join('')}</div>`)+`
     <div class="row" style="margin-top:12px"><button onclick="undo()" ${m.log.length||(m.sl||[]).some(e=>e.s===m.n)||(m.sb||[]).some(e=>e.s===m.n)||(m.ag||[]).some(e=>e.s===m.n)?'':'disabled'}>Undo last point</button>${!last&&!tup?`<button onclick="endSet()">End set ${m.n+1}</button>`:''}<button class="pri" onclick="finish()">Finish match</button></div>`}
   else h+=`<div class="row"><button onclick="finish()">Reopen match</button></div>`;
   h+=`<h2>Set scores</h2><div>${Array.from({length:m.n+1},(_,i)=>{const[a,b]=sc(m,i);return i<m.n?`<button class="chip" style="min-height:36px" onclick="S.mt='set';S.setv=${i};S.pick=null;render()">Set ${i+1}: ${a}–${b}</button>`:`<span class="chip">Set ${i+1}: ${a}–${b}</span>`}).join('')}</div>${m.n>0?'<div class="mut">Tap a finished set to see how it ended.</div>':''}
@@ -526,11 +551,11 @@ function matchView(m){
 function teamsView(){
   if(S.team){
     const t=S.t.find(x=>x.id===S.team),ed=S.edit&&S.edit!=='new'?S.p.find(p=>p.id===S.edit):null;
-    const srt=(a,b)=>(parseInt(a.num,10)||999)-(parseInt(b.num,10)||999)||a.name.localeCompare(b.name),L=S.p.filter(p=>inTeam(p,t.id)&&!p.arch).sort(srt),AR=S.p.filter(p=>inTeam(p,t.id)&&p.arch).sort(srt),others=myTeams().filter(x=>x.id!==t.id),cand=t.mine?S.p.filter(p=>!p.arch&&!inTeam(p,t.id)&&others.some(o=>inTeam(p,o.id))).sort(srt):[];
+    const srt=(a,b)=>(parseInt(a.num,10)||999)-(parseInt(b.num,10)||999)||a.name.localeCompare(b.name),L=S.p.filter(p=>inTeam(p,t.id)&&!p.arch).map(p=>tv(p,t.id)).sort(srt),AR=S.p.filter(p=>inTeam(p,t.id)&&p.arch).map(p=>tv(p,t.id)).sort(srt),others=myTeams().filter(x=>x.id!==t.id),cand=t.mine?S.p.filter(p=>!p.arch&&!inTeam(p,t.id)&&others.some(o=>inTeam(p,o.id))).map(p=>tv(p,p.teamId)).sort(srt):[];
     let h=`<div class="row sp"><button onclick="S.team=null;S.edit=null;render()">Back</button><div class="row"><button onclick="toggleMine()">${t.mine?'Not my team':'Set as my team'}</button><button onclick="renameTeam()">Rename</button><button class="del" onclick="delTeam()">Delete</button></div></div>
     <div class="row sp" style="margin-top:10px"><h1>${esc(t.name)}</h1>${S.edit?'':'<button class="pri" onclick="editPlayer(\'new\')">Add player</button>'}</div>
-    <div class="mut">${t.mine?'Your team. ':''}These are default numbers and roles. Each new match gets a copy you can change without touching this roster.</div>`;
-    if(S.edit)h+=`<div class="card"><label for="p-n">Name</label><input id="p-n" autocomplete="off" value="${esc(ed?ed.name:'')}"><label for="p-#">Shirt number</label><input id="p-#" inputmode="numeric" maxlength="3" autocomplete="off" value="${esc(ed?ed.num:'')}"><label for="p-r">Preferred role</label><select id="p-r"><option value="">None</option>${ROLES.map(r=>`<option${ed&&ed.role===r?' selected':''}>${r}</option>`).join('')}</select>${others.length?`<div style="margin-top:14px"><b>Also plays for</b><div class="mut">Shared players keep one set of stats across all their teams.</div>${others.map(o=>`<label style="display:flex;gap:8px;align-items:center;color:var(--fg);font-size:16px;margin:6px 0"><input type="checkbox" class="pt-also" value="${o.id}" style="width:22px;height:22px;flex:none"${ed&&inTeam(ed,o.id)?' checked':''}><span>${esc(o.name)}</span></label>`).join('')}</div>`:''}
+    <div class="mut">${t.mine?'Your team. ':''}These are this team’s default numbers and roles. Each new match gets a copy you can change without touching this roster.</div>`;
+    if(S.edit)h+=`<div class="card"><b>Player</b><div class="mut" style="font-size:13px">Name and preferred roles are the same in every team.</div><label for="p-n">Name</label><input id="p-n" autocomplete="off" value="${esc(ed?ed.name:'')}"><label for="pf-s0">Preferred roles</label><div class="mut" style="font-size:13px">First choice on top. Add more if the player has them.</div>${prefSlots(ed?prefsOf(ed):[])}<div style="margin-top:16px;border-top:1px solid var(--line);padding-top:10px"><b>In ${esc(t.name)}</b><div class="mut" style="font-size:13px">Shirt number and role belong to this team only.</div></div><label for="p-#">Shirt number</label><input id="p-#" inputmode="numeric" maxlength="3" autocomplete="off" value="${esc(ed?pNum(ed,t.id):'')}"><label for="p-r">Role in this team</label><select id="p-r">${roleOptsHtml(ed,t.id)}</select>${others.length?`<div style="margin-top:14px"><b>Also plays for</b><div class="mut">Shared players keep one set of stats across all their teams. Each team has its own number and role.</div>${others.map(o=>`<label style="display:flex;gap:8px;align-items:center;color:var(--fg);font-size:16px;margin:6px 0"><input type="checkbox" class="pt-also" value="${o.id}" style="width:22px;height:22px;flex:none"${ed&&inTeam(ed,o.id)?' checked':''}><span>${esc(o.name)}</span></label>`).join('')}</div>`:''}
     <div class="row" style="margin-top:14px"><button class="pri" onclick="savePlayer()">Save player</button><button onclick="S.edit=null;render()">Cancel</button>${ed?`<button onclick="archivePlayer('${ed.id}',${ed.arch?'false':'true'})">${ed.arch?'Restore':'Archive'}</button><button class="del" onclick="delPlayer('${ed.id}')">${[ed.teamId,...(ed.also||[])].length>1?'Remove from this team':'Remove'}</button>`:''}</div>${ed&&!ed.arch?'<div class="mut" style="margin-top:8px">Archive hides a player who has left, keeps their stats and frees the shirt number.</div>':''}</div>`;
     if(!L.length&&!AR.length&&!S.edit)h+=`<div class="card"><b>No players yet.</b><div class="mut">Add each player with a shirt number and preferred role.</div></div>`;
     L.forEach(p=>{const sh=[p.teamId,...(p.also||[])].filter(i=>i!==t.id).map(i=>(S.t.find(x=>x.id===i)||{}).name).filter(Boolean);h+=`<button class="m" onclick="editPlayer('${p.id}')"><div class="row"><span class="num" style="font-size:34px;min-width:52px">${p.num?'#'+esc(p.num):'–'}</span><div><b>${esc(p.name)}</b><div class="mut">${p.role?esc(p.role):'None'}${sh.length?' · also '+esc(sh.join(', ')):''}</div></div></div></button>`});
@@ -561,7 +586,7 @@ function applyBackup(d,mode){
   else{const map={},tmap={};
     (d.tournaments||[]).forEach(t=>{const l=S.tn.find(x=>x.name.toLowerCase()===String(t.name).toLowerCase());if(l)tmap[t.id]=l.id;else{const n=S.tn.some(x=>x.id===t.id)?{...t,id:'t'+Date.now().toString(36)+Math.random().toString(36).slice(2,5)}:{...t};S.tn.push(n);tmap[t.id]=n.id}});
     d.teams.forEach(t=>{const l=S.t.find(x=>x.name.toLowerCase()===String(t.name).toLowerCase());if(l)map[t.id]=l.id;else{const n={...t};S.t.push(n);map[t.id]=n.id}});
-    d.players.forEach(p=>{if(S.p.some(x=>x.id===p.id))return;S.p.push({...p,teamId:map[p.teamId]||p.teamId,...(p.also&&p.also.length?{also:p.also.map(i=>map[i]||i)}:{})})});
+    d.players.forEach(p=>{if(S.p.some(x=>x.id===p.id))return;S.p.push({...p,teamId:map[p.teamId]||p.teamId,...(p.also&&p.also.length?{also:p.also.map(i=>map[i]||i)}:{}),...(p.tm?{tm:Object.fromEntries(Object.entries(p.tm).map(([k,x])=>[map[k]||k,x]))}:{})})});
     d.rules.forEach(r=>{if(!S.r.some(x=>x.id===r.id))S.r.push(r)});
     d.matches.forEach(m=>{if(S.m.some(x=>x.id===m.id))return;S.m.push({...m,hid:map[m.hid]||m.hid,aid:map[m.aid]||m.aid,...(m.tid?{tid:tmap[m.tid]||m.tid}:{})})})}
   save();saveP();saveT();saveR();saveTn();S.cur=null;S.team=null;S.edit=null;S.rd=null;render()}
@@ -649,7 +674,7 @@ function statsView(){
   <div class="mut" style="margin-top:8px">Errors given: ${r.given}. Share of points from attack: ${r.pf?Math.round(r.kill/r.pf*100):0}%, from serve: ${r.pf?Math.round(r.ace/r.pf*100):0}%.</div></div>`});
   return h}
 
-const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 57</div>';
+const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 59</div>';
 const FXK='vb-scout-fx-v1';let fx={flash:true,sound:true};try{const r=JSON.parse(localStorage.getItem(FXK)||'null');if(r&&typeof r==='object')fx=Object.assign(fx,r)}catch(e){}
 function setFx(k,v){fx[k]=!!v;try{localStorage.setItem(FXK,JSON.stringify(fx))}catch(e){}render()}
 let actx=null;
