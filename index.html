@@ -56,6 +56,12 @@ nav button[aria-current=page]{color:var(--home);box-shadow:inset 0 3px 0 var(--h
 .tbx button[aria-pressed=true]{background:#1f6feb;color:#fff;border-color:#1f6feb}
 .tbx .sw{width:34px;min-width:34px;min-height:34px;height:34px;padding:0;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #94a3b8}
 .tbx .sw[aria-pressed=true]{box-shadow:0 0 0 3px #1f6feb}
+.tbx.tbd{background:#0f172a;color:#e2e8f0}
+.tbx.tbd button{background:#1e293b;color:#e2e8f0;border-color:#475569}
+.tbx.tbd button[aria-pressed=true]{background:#1f6feb;color:#fff;border-color:#1f6feb}
+.tbx.tbd .sw{border-color:#0f172a;box-shadow:0 0 0 1px #64748b}
+.tbx.tbd .sw[aria-pressed=true]{box-shadow:0 0 0 3px #3b82f6}
+.tbx.tbd svg{border-color:#334155;background:#0f172a}
 .tbx svg{touch-action:none;width:min(100%,calc((100vh - 190px)*.5714));aspect-ratio:360/630;height:auto;display:block;border:1px solid #cbd5e1;border-radius:8px;background:#fff}
 .cmp{display:flex;gap:12px;align-items:flex-start;margin:10px 0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
 .cmp-pie{flex:1 1 0;min-width:0}.cmp-pie>.card{margin:0;padding:0;border:0;border-radius:0;background:transparent}
@@ -272,6 +278,8 @@ function toReport(m){const L=m.to||[];if(!L.length)return'';const top=Math.max(m
   const rows=Array.from({length:top+1},(_,si)=>L.filter(e=>e.s===si).map(e=>`<tr><td>Set ${si+1}</td><td>${esc(e.t==='h'?m.home:m.away)}</td><td>${e.sc[0]}–${e.sc[1]}</td></tr>`).join('')).join('');
   return`<h2>Timeouts</h2><div class="card sc"><table><tr><th>Set</th><th>Called by</th><th>Score</th></tr>${rows}</table><div class="mut" style="font-size:13px;margin-top:6px">Score when the timeout was recorded: ${esc(m.home)} first, then ${esc(m.away)}.</div></div>`}
 const TBK='vb-scout-board-v1',TBC=['#111827','#d33','#1f6feb','#16a34a'];let TB=null,tbEl=null;
+const tbDark=()=>themeMode==='dark'||(themeMode==='auto'&&!!window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches);
+const tbIc=c=>tbDark()&&c==='#111827'?'#f1f5f9':c;
 const tbHome=[null,[260,520],[260,370],[180,370],[100,370],[100,520],[180,520]];
 function tbDefault(){const m=S.cur&&get(S.cur);let pos=[];try{if(m)pos=curLU(m,m.n).pos}catch(e){}
   const tok={};for(let p=1;p<=6;p++){const e=m&&m.lu.h.find(x=>x.pid===pos[p-1]),[x,y]=tbHome[p];tok['h'+p]={x,y,n:e&&e.num?String(e.num):'P'+p};tok['a'+p]={x:360-x,y:630-y,n:String(p)}}
@@ -284,23 +292,24 @@ const tbKey=e=>{if(e.key==='Escape')closeTB()};
 function openTB(){if(tbEl)return;TB=tbLoad();tbEl=document.createElement('div');tbEl.id='tb';tbEl.className='tbx';tbEl.setAttribute('role','dialog');tbEl.setAttribute('aria-modal','true');tbEl.setAttribute('aria-label','Tactical board');
   document.body.appendChild(tbEl);document.body.style.overflow='hidden';document.addEventListener('keydown',tbKey);tbDraw()}
 function closeTB(){if(!tbEl)return;tbEl.remove();tbEl=null;document.body.style.overflow='';document.removeEventListener('keydown',tbKey)}
-function tbInk(){return TB.ink.map(i=>{if(i.k==='p')return`<path d="${i.d}" fill="none" stroke="${i.c}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`;
+function tbInk(){return TB.ink.map(i=>{if(i.k==='p')return`<path d="${i.d}" fill="none" stroke="${tbIc(i.c)}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`;
   const a=Math.atan2(i.y2-i.y1,i.x2-i.x1),h=14,p1=[i.x2-h*Math.cos(a-.45),i.y2-h*Math.sin(a-.45)],p2=[i.x2-h*Math.cos(a+.45),i.y2-h*Math.sin(a+.45)];
-  return`<line x1="${i.x1}" y1="${i.y1}" x2="${i.x2}" y2="${i.y2}" stroke="${i.c}" stroke-width="4" stroke-linecap="round"/><polygon points="${i.x2},${i.y2} ${p1[0].toFixed(1)},${p1[1].toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}" fill="${i.c}"/>`}).join('')}
+  return`<line x1="${i.x1}" y1="${i.y1}" x2="${i.x2}" y2="${i.y2}" stroke="${tbIc(i.c)}" stroke-width="4" stroke-linecap="round"/><polygon points="${i.x2},${i.y2} ${p1[0].toFixed(1)},${p1[1].toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}" fill="${tbIc(i.c)}"/>`}).join('')}
 function tbTok(id){const t=TB.tok[id],c=id[0]==='h'?'#1f6feb':id[0]==='a'?'#d33':'#f59e0b',r=id==='b'?11:17;
   return`<g class="tk" data-id="${id}" transform="translate(${t.x.toFixed(1)} ${t.y.toFixed(1)})" style="cursor:grab"><circle r="${r}" fill="${c}" stroke="#fff" stroke-width="2"/>${t.n?`<text text-anchor="middle" dominant-baseline="central" fill="#fff" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="${t.n.length>2?13:16}" pointer-events="none">${esc(t.n)}</text>`:''}</g>`}
 function tbDraw(){if(!tbEl)return;
-  const tool=(k,l)=>`<button aria-pressed="${TB.tool===k}" onclick="tbTool('${k}')">${l}</button>`,sw=TBC.map(c=>`<button class="sw" style="background:${c}" aria-label="Colour ${c}" aria-pressed="${TB.col===c}" onclick="tbCol('${c}')"></button>`).join('');
-  const hints=[1,2,3,4,5,6].map(p=>`<text x="${tbHome[p][0]}" y="${tbHome[p][1]+30}" text-anchor="middle" fill="#cbd5e1" font-size="12" font-family="Arial,sans-serif">P${p}</text>`).join('');
+  const dk=tbDark(),P=dk?{bg:'#0f172a',ct:'#1e293b',ln:'#e2e8f0',hi:'#64748b'}:{bg:'#eef2f7',ct:'#fff',ln:'#111827',hi:'#cbd5e1'};tbEl.className='tbx'+(dk?' tbd':'');
+  const tool=(k,l)=>`<button aria-pressed="${TB.tool===k}" onclick="tbTool('${k}')">${l}</button>`,sw=TBC.map(c=>`<button class="sw" style="background:${tbIc(c)}" aria-label="Colour ${c}" aria-pressed="${TB.col===c}" onclick="tbCol('${c}')"></button>`).join('');
+  const hints=[1,2,3,4,5,6].map(p=>`<text x="${tbHome[p][0]}" y="${tbHome[p][1]+30}" text-anchor="middle" fill="${P.hi}" font-size="12" font-family="Arial,sans-serif">P${p}</text>`).join('');
   tbEl.innerHTML=`<div class="tbr"><b style="font-size:18px;margin-right:auto">Tactical board</b><button onclick="closeTB()" id="tb-x">Close</button></div><div class="tbr">${tool('move','Move')}${tool('pen','Pen')}${tool('arrow','Arrow')}<span style="width:6px"></span>${sw}</div><div class="tbr"><button onclick="tbUndo()">Undo drawing</button><button onclick="tbClear()">Clear drawings</button><button onclick="tbReset()">Reset players</button></div>
-<svg viewBox="0 0 360 630" preserveAspectRatio="none" role="img" aria-label="Volleyball court. Drag the players, draw with the pen or arrow."><rect width="360" height="630" fill="#eef2f7"/><rect x="45" y="45" width="270" height="540" fill="#fff" stroke="#111827" stroke-width="3"/><line x1="45" y1="225" x2="315" y2="225" stroke="#111827" stroke-width="2"/><line x1="45" y1="405" x2="315" y2="405" stroke="#111827" stroke-width="2"/><line x1="30" y1="315" x2="330" y2="315" stroke="#111827" stroke-width="6"/><circle cx="30" cy="315" r="5" fill="#111827"/><circle cx="330" cy="315" r="5" fill="#111827"/>${hints}<g id="tb-ink">${tbInk()}</g><g id="tb-tok">${Object.keys(TB.tok).map(tbTok).join('')}</g></svg>`;
+<svg viewBox="0 0 360 630" preserveAspectRatio="none" role="img" aria-label="Volleyball court. Drag the players, draw with the pen or arrow."><rect width="360" height="630" fill="${P.bg}"/><rect x="45" y="45" width="270" height="540" fill="${P.ct}" stroke="${P.ln}" stroke-width="3"/><line x1="45" y1="225" x2="315" y2="225" stroke="${P.ln}" stroke-width="2"/><line x1="45" y1="405" x2="315" y2="405" stroke="${P.ln}" stroke-width="2"/><line x1="30" y1="315" x2="330" y2="315" stroke="${P.ln}" stroke-width="6"/><circle cx="30" cy="315" r="5" fill="${P.ln}"/><circle cx="330" cy="315" r="5" fill="${P.ln}"/>${hints}<g id="tb-ink">${tbInk()}</g><g id="tb-tok">${Object.keys(TB.tok).map(tbTok).join('')}</g></svg>`;
   tbBind();const x=document.getElementById('tb-x');if(x&&x.focus)x.focus()}
 function tbBind(){const svg=tbEl.querySelector('svg'),ink=svg.querySelector('#tb-ink');let drag=null,cur=null,prev=null;
   const pt=e=>{const r=svg.getBoundingClientRect(),w=r.width||360,h=r.height||630;return[Math.max(0,Math.min(360,(e.clientX-r.left)/w*360)),Math.max(0,Math.min(630,(e.clientY-r.top)/h*630))]};
   const NS='http://www.w3.org/2000/svg';
   svg.addEventListener('pointerdown',e=>{const[x,y]=pt(e);try{svg.setPointerCapture(e.pointerId)}catch(_){}
     if(TB.tool==='move'){const g=e.target.closest&&e.target.closest('.tk');if(g){const t=TB.tok[g.dataset.id];drag={id:g.dataset.id,g,dx:t.x-x,dy:t.y-y};e.preventDefault()}}
-    else{cur={k:TB.tool==='pen'?'p':'a',pts:[[x,y]]};prev=document.createElementNS(NS,TB.tool==='pen'?'path':'line');prev.setAttribute('stroke',TB.col);prev.setAttribute('stroke-width','4');prev.setAttribute('fill','none');prev.setAttribute('stroke-linecap','round');ink.appendChild(prev);e.preventDefault()}});
+    else{cur={k:TB.tool==='pen'?'p':'a',pts:[[x,y]]};prev=document.createElementNS(NS,TB.tool==='pen'?'path':'line');prev.setAttribute('stroke',tbIc(TB.col));prev.setAttribute('stroke-width','4');prev.setAttribute('fill','none');prev.setAttribute('stroke-linecap','round');ink.appendChild(prev);e.preventDefault()}});
   svg.addEventListener('pointermove',e=>{const[x,y]=pt(e);
     if(drag){const t=TB.tok[drag.id];t.x=Math.max(17,Math.min(343,x+drag.dx));t.y=Math.max(17,Math.min(613,y+drag.dy));drag.g.setAttribute('transform','translate('+t.x.toFixed(1)+' '+t.y.toFixed(1)+')')}
     else if(cur){if(cur.k==='p'){cur.pts.push([x,y]);prev.setAttribute('d','M'+cur.pts.map(p=>p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' L'))}else{const p0=cur.pts[0];prev.setAttribute('x1',p0[0]);prev.setAttribute('y1',p0[1]);prev.setAttribute('x2',x);prev.setAttribute('y2',y);cur.end=[x,y]}}});
@@ -679,14 +688,15 @@ function teamsView(){
     h+=`<button class="m" onclick="openTeam('${t.id}')"><div class="row sp"><b>${esc(t.name)}</b><span class="mut">${n} player${n===1?'':'s'}${na?', '+na+' archived':''}</span></div></button>`});
   return h}
 
-function buildBackup(){return{app:'volleyscout',v:22,exported:new Date().toISOString(),data:{matches:S.m,players:S.p,teams:S.t,rules:S.r,scale:SC.map(x=>({n:x.n,d:x.d})),skills:SKX,tournaments:S.tn}}}
+function buildBackup(){return{app:'volleyscout',v:22,exported:new Date().toISOString(),data:{matches:S.m,players:S.p,teams:S.t,rules:S.r,scale:SC.map(x=>({n:x.n,d:x.d})),skills:SKX,tournaments:S.tn,scorer:S.sm}}}
 async function exportData(){const txt=JSON.stringify(buildBackup()),name='volleyscout-backup-'+new Date().toISOString().slice(0,10)+'.json';
   try{const f=new File([txt],name,{type:'application/json'});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'VolleyScout backup'});return}}catch(e){if(e&&e.name==='AbortError')return}
   const a=document.createElement('a'),u=URL.createObjectURL(new Blob([txt],{type:'application/json'}));a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
 function parseBackup(txt){let o;try{o=JSON.parse(txt)}catch(e){return null}const d=o&&o.app==='volleyscout'&&o.data;
   if(!d||!Array.isArray(d.matches)||!Array.isArray(d.players)||!Array.isArray(d.teams))return null;
-  return{matches:d.matches,players:d.players,teams:d.teams,rules:Array.isArray(d.rules)?d.rules:[],scale:Array.isArray(d.scale)&&d.scale.length===5?d.scale:null,skills:d.skills&&typeof d.skills==='object'?d.skills:null,tournaments:Array.isArray(d.tournaments)?d.tournaments:[]}}
+  return{matches:d.matches,players:d.players,teams:d.teams,rules:Array.isArray(d.rules)?d.rules:[],scale:Array.isArray(d.scale)&&d.scale.length===5?d.scale:null,skills:d.skills&&typeof d.skills==='object'?d.skills:null,tournaments:Array.isArray(d.tournaments)?d.tournaments:[],scorer:Array.isArray(d.scorer)?d.scorer:[]}}
 function applyBackup(d,mode){
+  if(mode==='replace'){S.sm=d.scorer||[]}else{(d.scorer||[]).forEach(x=>{if(!S.sm.some(y=>y.id===x.id))S.sm.push(x)})}saveSM();
   if(mode==='replace'){S.m=d.matches;S.p=d.players;S.t=d.teams;S.r=d.rules;S.tn=d.tournaments||[];
     if(d.scale){SC=d.scale.map((x,i)=>({k:SCDEF[i].k,n:x.n||SCDEF[i].n,d:x.d||SCDEF[i].d}));try{localStorage.setItem(SK,JSON.stringify(SC))}catch(e){}}
     if(d.skills){setSkx(d.skills);saveSkx()}}
@@ -705,24 +715,29 @@ function importFile(inp){const f=inp.files&&inp.files[0];if(!f)return;const r=ne
     const msg=d.matches.length+' matches, '+d.teams.length+' teams, '+d.players.length+' players. '+(impMode==='replace'?'This replaces everything on this device. Continue?':'Anything missing is added and nothing here is deleted. Continue?');
     if(!confirm(msg))return;applyBackup(d,impMode);alert('Import finished.')};
   r.readAsText(f)}
+function rulesHtml(){
+  let rules=`<div class="mut">A rule set defines the number of sets, the points to win, hard limits and time limits. You pick one when you create a match.</div>`;
+  allRules().forEach(r=>{const bi=BUILT.some(b=>b.id===r.id);
+    rules+=`<div class="card"><div class="row sp"><b>${esc(r.name)}</b>${bi?'<span class="mut">Built in</span>':`<button onclick="editRule('${r.id}')">Edit</button>`}</div>${r.sets.map((x,i)=>`<div class="mut">Set ${i+1}: ${x.win} to win${x.hard?', hard limit '+x.hard:', win by 2'}</div>`).join('')}${ruleMin(r)?`<div class="mut">Match time: ${ruleMin(r)} minutes</div>`:''}<div class="mut">Timeouts: ${ruleTO(r)} per team per set</div><div class="mut">Substitutions: ${ruleSub(r)} per team per set</div>${r.roster?'<div class="mut">Roster limit: 12 players + 1 or 2 liberos</div>':''}</div>`});
+  rules+=`<button class="pri" onclick="newRule()">Create rule set</button>`;
+  return rules}
+function backupHtml(){return `<div class="mut">Data lives only on this device. Export a file, send it to your other device (AirDrop, email, messages, cloud drive) and import it there. Export also works as a backup.</div><div class="row" style="margin-top:12px"><button class="pri" onclick="exportData()">Export data</button></div><div class="row" style="margin-top:10px"><button onclick="pickImport('replace')">Import and replace</button><button onclick="pickImport('merge')">Import and add</button></div><div class="mut" style="margin-top:8px"><b>Replace</b> makes this device match the file. <b>Add</b> keeps what is here and adds the matches, teams and players that are missing.</div><input id="imp" type="file" accept=".json,application/json" style="display:none" onchange="importFile(this)">`}
 function settingsView(){
   if(S.rd)return ruleForm();
   const box=(id,title,hint,body)=>`<details class="card" ${S.sopen&&S.sopen[id]?'open':''} ontoggle="(S.sopen=S.sopen||{})['${id}']=this.open"><summary style="cursor:pointer"><b>${title}</b>${hint?` <span class="mut">· ${esc(hint)}</span>`:''}</summary><div style="margin-top:10px">${body}</div></details>`;
   const nm=(L,k)=>((L.find(x=>x[0]===k)||[])[1])||'';
   const appearance=`<h2 style="margin-top:0">Theme</h2><div class="seg" role="group" aria-label="Theme">${[['auto','Auto'],['light','Light'],['dark','Dark']].map(([k,l])=>`<button aria-pressed="${themeMode===k}" onclick="setTheme('${k}')">${l}</button>`).join('')}</div><div class="mut" style="margin-top:6px">Auto follows your phone setting.</div><h2>Scout layout</h2><div class="seg" role="group" aria-label="Scout layout in settings">${LAYOUTS.map(([k,l])=>`<button aria-pressed="${layoutMode===k}" onclick="setLayout('${k}')">${l}</button>`).join('')}</div><div class="mut" style="margin-top:6px"><b>Extended:</b> everything in one column, for phones and small screens. <b>Compact:</b> for larger screens, to fit more without scrolling. The pie is on the left, with the scores and the timeouts in a column on its right.</div>`;
   const scouting=`<h2 style="margin-top:0">Default scouting level</h2><div class="seg" role="group" aria-label="Default scouting level">${LVL.map(([k,l])=>`<button aria-pressed="${defMode===k}" onclick="setDefMode('${k}')">${l}</button>`).join('')}</div><div class="mut" style="margin-top:6px">The level the Scout page starts at each time the app is opened. The cog on the Scout page still switches level, until the app is closed and reopened.</div><h2>Tap feedback</h2><div>${[['flash','Colour flash on scouting buttons'],['sound','Click sound on scouting buttons']].map(([k,l])=>`<div class="row sp" style="margin:6px 0"><span>${l}</span><div class="seg" role="group" aria-label="${l}">${[[true,'On'],[false,'Off']].map(([v,t])=>`<button aria-pressed="${fx[k]===v}" onclick="setFx('${k}',${v})">${t}</button>`).join('')}</div></div>`).join('')}</div>`;
-  let rules=`<div class="mut">A rule set defines the number of sets, the points to win, hard limits and time limits. You pick one when you create a match.</div>`;
-  allRules().forEach(r=>{const bi=BUILT.some(b=>b.id===r.id);
-    rules+=`<div class="card"><div class="row sp"><b>${esc(r.name)}</b>${bi?'<span class="mut">Built in</span>':`<button onclick="editRule('${r.id}')">Edit</button>`}</div>${r.sets.map((x,i)=>`<div class="mut">Set ${i+1}: ${x.win} to win${x.hard?', hard limit '+x.hard:', win by 2'}</div>`).join('')}${ruleMin(r)?`<div class="mut">Match time: ${ruleMin(r)} minutes</div>`:''}<div class="mut">Timeouts: ${ruleTO(r)} per team per set</div><div class="mut">Substitutions: ${ruleSub(r)} per team per set</div>${r.roster?'<div class="mut">Roster limit: 12 players + 1 or 2 liberos</div>':''}</div>`});
-  rules+=`<button class="pri" onclick="newRule()">Create rule set</button>`;
+  let rules=rulesHtml();
   const grades=`<div class="mut">The same five symbols are used for every skill. The symbols are fixed; you can rename each one and change its description. Open a skill to edit it. For serves, a ${G('--')} gives the opponents the point and a ${G('++')} gives your team the point. Only serves are graded on the Scout page for now.</div>${Object.keys(SKN).map(sk=>`<details class="card" ${S.gopen&&S.gopen[sk]?'open':''} ontoggle="(S.gopen=S.gopen||{})['${sk}']=this.open"><summary><b>${SKN[sk]} grades</b></summary>${gScale(sk).map((x,i)=>`<div style="margin-top:10px"><b>${G(x.k)}</b><label for="g-${sk}-n${i}">Short label</label><input id="g-${sk}-n${i}" maxlength="12" value="${esc(x.n)}"><label for="g-${sk}-d${i}">Description</label><input id="g-${sk}-d${i}" value="${esc(x.d)}"></div>`).join('')}<div class="row" style="margin-top:12px"><button class="pri" onclick="saveScale('${sk}')">Save</button><button onclick="resetScale('${sk}')">Reset to defaults</button></div></details>`).join('')}`;
-  const backup=`<div class="mut">Data lives only on this device. Export a file, send it to your other device (AirDrop, email, messages, cloud drive) and import it there. Export also works as a backup.</div><div class="row" style="margin-top:12px"><button class="pri" onclick="exportData()">Export data</button></div><div class="row" style="margin-top:10px"><button onclick="pickImport('replace')">Import and replace</button><button onclick="pickImport('merge')">Import and add</button></div><div class="mut" style="margin-top:8px"><b>Replace</b> makes this device match the file. <b>Add</b> keeps what is here and adds the matches, teams and players that are missing.</div><input id="imp" type="file" accept=".json,application/json" style="display:none" onchange="importFile(this)">`;
+  const backup=backupHtml();
   let h=`<h1>Settings</h1>`;
   h+=box('app','Appearance',nm([['auto','Auto'],['light','Light'],['dark','Dark']],themeMode)+' · '+nm(LAYOUTS,layoutMode),appearance);
   h+=box('sct','Scouting',nm(LVL,defMode),scouting);
   h+=box('rul','Tournament rules',allRules().length+' rule sets',rules);
   h+=box('grd','Grades','',grades);
   h+=box('bak','Backup and transfer','',backup);
+  h+=`<div class="card"><div class="row sp"><div><b>View</b><div class="mut">Coach view</div></div><button onclick="changeView()">Change view</button></div></div>`;
   return h}
 const RD0=()=>({id:null,name:'',min:null,to:2,sub:8,roster:false,sets:[{win:21,hard:23},{win:21,hard:23},{win:15,hard:15}]});
 function newRule(){S.rd=RD0();render()}
@@ -793,7 +808,7 @@ function statsView(){
   <div class="mut" style="margin-top:8px">Errors given: ${r.given}. Share of points from attack: ${r.pf?Math.round(r.kill/r.pf*100):0}%, from serve: ${r.pf?Math.round(r.ace/r.pf*100):0}%.</div></div>`});
   return h}
 
-const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 68</div>';
+const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 1.3.0</div>';
 const FXK='vb-scout-fx-v1';let fx={flash:true,sound:true};try{const r=JSON.parse(localStorage.getItem(FXK)||'null');if(r&&typeof r==='object')fx=Object.assign(fx,r)}catch(e){}
 function setFx(k,v){fx[k]=!!v;try{localStorage.setItem(FXK,JSON.stringify(fx))}catch(e){}render()}
 let actx=null;
@@ -803,10 +818,111 @@ function applyFx(){const f=S.fx;if(!f)return;S.fx=null;if(Date.now()-f.t>1500)re
   const b=[...document.querySelectorAll('button[onclick]')].find(x=>x.getAttribute('onclick')===f.k);
   if(b){const g=/'(--|\+\+)'\)$/.exec(f.k),c=g?(g[1]==='--'?'fx-bad':'fx-good'):f.k.startsWith("point('a'")?'fx-away':'fx';b.classList.add(c);b.addEventListener('animationend',()=>b.classList.remove(c),{once:true});return}
   const card=[...document.querySelectorAll('.card')].find(x=>x.textContent.includes('Graded'));if(card){card.classList.add('fx-card');card.addEventListener('animationend',()=>card.classList.remove('fx-card'),{once:true})}}
-function render(){
+function renderCoach(){
   const m=S.cur&&get(S.cur);
   document.getElementById('app').innerHTML=(m?matchView(m):S.tab==='stats'?statsView():S.tab==='settings'?settingsView():S.tab==='teams'||S.tab==='opps'?teamsView():listView())+VER;
   ['matches','teams','stats','settings'].forEach(t=>{const b=document.getElementById('t-'+t);if((S.tab===t||(t==='teams'&&S.tab==='opps'))&&!m)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});nrStatus();applyFx()}
+
+/* ===== Views: picker, Score table (VolleyScore) ===== */
+const APPK='vb-scout-appmode-v1',SCK='vb-scout-score-v1';
+let appMode=null;try{const r=localStorage.getItem(APPK);if(r==='coach'||r==='scorer')appMode=r}catch(e){}
+S.sm=[];try{const r=localStorage.getItem(SCK);if(r)S.sm=JSON.parse(r)||[]}catch(e){}
+S.stab='matches';S.sx=null;S.ts=null;
+const saveSM=()=>{try{localStorage.setItem(SCK,JSON.stringify(S.sm))}catch(e){}};
+const NAV_COACH=document.querySelector('nav').innerHTML;
+const NAV_SCORER='<button id="t-smatches" onclick="goS(\'matches\')">Matches</button><button id="t-srules" onclick="goS(\'rules\')">Rules</button><button id="t-ssettings" onclick="goS(\'settings\')">Settings</button>';
+function setApp(m){appMode=m;try{localStorage.setItem(APPK,m)}catch(e){}S.cur=null;S.tab=m==='coach'?'teams':'matches';S.stab='matches';S.sx=null;S.rd=null;render();scrollTo(0,0)}
+function changeView(){appMode=null;try{localStorage.removeItem(APPK)}catch(e){}S.cur=null;S.sx=null;S.rd=null;render();scrollTo(0,0)}
+function goS(t){S.stab=t;S.sx=null;S.ts=null;S.rd=null;render();scrollTo(0,0)}
+function pickView(){const b=(k,t,d)=>`<button onclick="setApp('${k}')" style="display:block;width:100%;text-align:left;padding:16px;margin:12px 0;font-size:16px"><b style="font-size:18px">${t}</b><div class="mut" style="margin-top:4px">${d}</div></button>`;
+  return`<h1>VolleyScout</h1><div class="mut">Choose how this device will be used. The choice is remembered. You can change it later in Settings.</div>${b('coach','Coach view','Your own team: roster, line-ups, rotation, substitutions and scouting.')}${b('scorer','Score table','Official scoring of a match between two teams. Set the match up in advance, then score it.')}`}
+const blankPl=(n=12)=>Array.from({length:n},()=>({n:'',name:'',lib:0}));
+const todayS=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const SX0=()=>({id:null,rule:'local',date:todayS(),keep:null,a:{name:'',cap:-1,pl:blankPl()},b:{name:'',cap:-1,pl:blankPl()}});
+function newSM(){S.sx=SX0();render();scrollTo(0,0)}
+function editSM(id){const m=S.sm.find(x=>x.id===id);if(!m)return;const f=t=>{const o=copy(m[t]);const pl=o.pl.map(p=>({n:p.n,name:p.name||'',lib:p.lib?1:0})),cap=o.pl.findIndex(p=>p.cap);while(pl.length<12)pl.push({n:'',name:'',lib:0});return{name:o.name,cap,pl}};
+  S.sx={id,rule:m.fmt,date:m.date,keep:m.rule,a:f('a'),b:f('b')};render();scrollTo(0,0)}
+function syncSx(){const x=S.sx,g=i=>document.getElementById(i);if(!x||!g('sx-d'))return;x.rule=g('sx-r').value;x.date=g('sx-d').value;
+  ['a','b'].forEach(t=>{x[t].name=g('sx-'+t+'-n').value;x[t].pl=x[t].pl.map((p,i)=>({n:g('sx-'+t+'-'+i+'-n').value,name:g('sx-'+t+'-'+i+'-m').value,lib:g('sx-'+t+'-'+i+'-l').checked?1:0}));const r=document.querySelector('input[name="sx-'+t+'-cap"]:checked');x[t].cap=r?+r.value:-1})}
+function sxAdd(t){syncSx();S.sx[t].pl.push({n:'',name:'',lib:0});render()}
+function sxCancel(){S.sx=null;render();scrollTo(0,0)}
+function saveSMatch(){syncSx();const x=S.sx,an=x.a.name.trim(),bn=x.b.name.trim();
+  if(!an||!bn){alert('Enter both team names.');return}
+  if(an.toLowerCase()===bn.toLowerCase()){alert('The two teams need different names.');return}
+  const R=x.keep&&x.id&&(S.sm.find(m=>m.id===x.id)||{}).fmt===x.rule?x.keep:copy(getRule(x.rule)),out={};
+  for(const t of ['a','b']){const nm=x[t].name.trim(),L=[],seen=new Set();
+    for(const [pi,p] of x[t].pl.entries()){const n=p.n.trim(),name=p.name.trim();if(!n&&!name)continue;
+      if(!n){alert(nm+': every player needs a shirt number.');return}
+      if(!/^\d{1,3}$/.test(n)){alert(nm+': shirt numbers must be digits only ('+n+').');return}
+      const key=String(+n);if(seen.has(key)){alert(nm+': shirt number '+key+' is used twice.');return}seen.add(key);
+      L.push({n:key,name,lib:p.lib?1:0,cap:pi===x[t].cap?1:0})}
+    if(!L.some(q=>q.cap)){alert(nm+': choose the captain.');return}
+    if(L.some(q=>q.cap&&q.lib)){alert(nm+': the libero cannot be the captain.');return}
+    if(!L.some(q=>q.lib)&&!confirm(nm+' has no libero. Continue without one?'))return
+    if(R.roster){const lib=L.filter(q=>q.lib).length,pl=L.length-lib;if(pl>12){alert(nm+': these rules allow 12 players plus liberos.');return}if(lib>2){alert(nm+': these rules allow 2 liberos.');return}}
+    L.sort((q,r)=>+q.n-+r.n);out[t]={name:nm,pl:L}}
+  const m={id:x.id||'s'+Date.now().toString(36),fmt:x.rule,rule:R,date:x.date||todayS(),a:out.a,b:out.b};
+  if(x.id){const i=S.sm.findIndex(y=>y.id===x.id);m.created=S.sm[i].created;if(S.sm[i].toss)m.toss=S.sm[i].toss;S.sm[i]=m}else{m.created=Date.now();S.sm.push(m)}
+  saveSM();S.sx=null;render();scrollTo(0,0)}
+function delSMatch(id){const m=S.sm.find(x=>x.id===id);if(m&&confirm('Delete '+m.a.name+' v '+m.b.name+'?')){S.sm=S.sm.filter(x=>x.id!==id);saveSM();render()}}
+function smForm(){const x=S.sx,rules=allRules(),has=rules.some(r=>r.id===x.rule);
+  const opts=rules.map(r=>`<option value="${esc(r.id)}"${r.id===x.rule?' selected':''}>${esc(r.name)}</option>`).join('')+(has?'':`<option value="${esc(x.rule)}" selected>${esc((x.keep||{}).name||'Saved rules')} (saved copy)</option>`);
+  const team=(t,lbl)=>`<div class="card"><label for="sx-${t}-n">${lbl} name</label><input id="sx-${t}-n" autocomplete="off" value="${esc(x[t].name)}" placeholder="Team name">
+    <div class="mut" style="margin-top:10px">Players, from the team's roster. Leave unused rows empty. Choose the captain (C, one player) and tick L for each libero.</div>
+    <div style="display:grid;grid-template-columns:64px 1fr 36px 36px;gap:6px;margin-top:6px;align-items:center"><span class="mut">No</span><span class="mut">Name (optional)</span><span class="mut">C</span><span class="mut">L</span>${x[t].pl.map((p,i)=>`<input id="sx-${t}-${i}-n" inputmode="numeric" maxlength="3" aria-label="${lbl} player ${i+1} shirt number" value="${esc(p.n)}"><input id="sx-${t}-${i}-m" autocomplete="off" aria-label="${lbl} player ${i+1} name" value="${esc(p.name)}"><input type="radio" name="sx-${t}-cap" value="${i}" style="width:22px;height:22px" aria-label="${lbl} player ${i+1} is the captain"${x[t].cap===i?' checked':''}><input id="sx-${t}-${i}-l" type="checkbox" style="width:22px;height:22px" aria-label="${lbl} player ${i+1} is a libero"${p.lib?' checked':''}>`).join('')}</div>
+    <div style="margin-top:10px"><button onclick="sxAdd('${t}')">Add a row</button></div></div>`;
+  return`<div class="row sp"><button onclick="sxCancel()">Back</button></div><h1 style="margin-top:10px">${x.id?'Edit match':'New match'}</h1>
+  <div class="card"><label for="sx-r">Rules</label><select id="sx-r">${opts}</select><label for="sx-d">Date</label><input id="sx-d" type="date" value="${esc(x.date)}"><div class="mut" style="margin-top:6px">Rule sets are created on the Rules tab. The match keeps its own copy of the rules.</div></div>
+  ${team('a','Team A')}${team('b','Team B')}
+  <div style="margin-top:14px"><button class="pri" onclick="saveSMatch()">Save match</button></div>`}
+function scorerMatches(){if(S.sx)return smForm();if(S.ts)return tossView();
+  const L=[...S.sm].sort((p,q)=>(p.date||'').localeCompare(q.date||'')||(p.created||0)-(q.created||0));
+  const cnt=t=>{const lib=t.pl.filter(p=>p.lib).length,pl=t.pl.length-lib,c=t.pl.find(p=>p.cap);return pl+' player'+(pl===1?'':'s')+(lib?' + '+lib+' libero'+(lib===1?'':'s'):'')+(c?', captain #'+c.n:'')};
+  return`<div class="row sp"><h1 style="margin:0">Matches</h1><button class="pri" onclick="newSM()">New match</button></div>`+(L.length?L.map(m=>`<div class="card"><b>${esc(m.a.name)} v ${esc(m.b.name)}</b><div class="mut">${esc(m.date||'')} · ${esc(m.rule.name)}</div><div class="mut">${esc(m.a.name)}: ${cnt(m.a)} · ${esc(m.b.name)}: ${cnt(m.b)}</div><div class="mut">${ruleText(m.rule)}</div>${tossLine(m)}<div class="row" style="margin-top:8px"><button class="pri" onclick="openToss('${m.id}')">${m.toss?'Edit toss':'Toss'}</button><button onclick="editSM('${m.id}')">Edit</button><button class="del" onclick="delSMatch('${m.id}')">Delete</button></div></div>`).join(''):`<div class="card"><b>No matches yet.</b><div class="mut">Create a match in advance: choose the rules, enter the two team names and their rosters.</div></div>`)+`<div class="mut">Scoring itself comes in the next step.</div>`}
+function scorerSettings(){
+  const th=`<div class="seg" role="group" aria-label="Theme">${[['auto','Auto'],['light','Light'],['dark','Dark']].map(([k,l])=>`<button aria-pressed="${themeMode===k}" onclick="setTheme('${k}')">${l}</button>`).join('')}</div><div class="mut" style="margin-top:6px">Auto follows your device setting.</div>`;
+  return`<h1>Settings</h1><div class="card"><h2 style="margin-top:0">Theme</h2>${th}</div><details class="card"><summary style="cursor:pointer"><b>Backup and transfer</b></summary><div style="margin-top:10px">${backupHtml()}</div></details><div class="card"><div class="row sp"><div><b>View</b><div class="mut">Score table</div></div><button onclick="changeView()">Change view</button></div></div>`}
+
+/* ===== Toss ===== */
+const SIDE={L:'left',R:'right'},oppT=t=>t==='a'?'b':'a',oppS=x=>x==='L'?'R':'L';
+function tossRes(ts){if(!ts||!ts.w||!ts.c||!ts.o)return null;const w=ts.w,o=oppT(w);let serve,sides={};
+  if(ts.c==='serve'||ts.c==='receive'){if(ts.o!=='L'&&ts.o!=='R')return null;serve=ts.c==='serve'?w:o;sides[o]=ts.o;sides[w]=oppS(ts.o)}
+  else{if(ts.o!=='serve'&&ts.o!=='receive')return null;sides[w]=ts.c;sides[o]=oppS(ts.c);serve=ts.o==='serve'?o:w}
+  return{serve,sides}}
+function tossText(m,r){const n=t=>m[t].name,f=r.serve,g=oppT(f);return n(f)+' serve first, on the '+SIDE[r.sides[f]]+' side. '+n(g)+' receive, on the '+SIDE[r.sides[g]]+' side.'}
+const rosterReady=m=>m.a.pl.length>=6&&m.b.pl.length>=6;
+function tossLine(m){if(m.toss&&m.toss.serve)return`<div class="mut" style="margin-top:4px"><b>Toss:</b> ${esc(tossText(m,m.toss))}</div>`;
+  return rosterReady(m)?'':`<div class="mut" style="margin-top:4px">Add at least 6 players to each roster before the toss.</div>`}
+function openToss(id){const m=S.sm.find(x=>x.id===id);if(!m)return;if(!rosterReady(m)){alert('Add at least 6 players to each roster first (Edit).');return}
+  const t=m.toss||{};S.ts={id,w:t.w||null,c:t.c||null,o:t.o||null};render();scrollTo(0,0)}
+function tsWin(t){S.ts.w=t;S.ts.o=null;render()}
+function tsPick(c){const ts=S.ts;if((c==='L'||c==='R')!==(ts.c==='L'||ts.c==='R'))ts.o=null;if(ts.c!==c)ts.o=null;ts.c=c;render()}
+function tsOther(o){S.ts.o=o;render()}
+function tsBack(){S.ts=null;render();scrollTo(0,0)}
+function tsClear(){const m=S.sm.find(x=>x.id===S.ts.id);if(m&&m.toss&&confirm('Remove the recorded toss?')){delete m.toss;saveSM()}S.ts=null;render()}
+function tsSave(){const ts=S.ts,m=S.sm.find(x=>x.id===ts.id),r=tossRes(ts);if(!m)return;if(!r){alert('Complete all the steps of the toss first.');return}
+  m.toss={w:ts.w,c:ts.c,o:ts.o,serve:r.serve,sides:r.sides};saveSM();S.ts=null;render();scrollTo(0,0)}
+function tossView(){const ts=S.ts,m=S.sm.find(x=>x.id===ts.id);if(!m){S.ts=null;return scorerMatches()}
+  const seg=(label,items,cur,fn)=>`<div class="card"><b>${label}</b><div class="seg" role="group" aria-label="${esc(label)}" style="margin-top:8px">${items.map(([k,l])=>`<button aria-pressed="${cur===k}" onclick="${fn}('${k}')">${l}</button>`).join('')}</div></div>`;
+  const n=t=>esc(m[t].name);let h=`<div class="row sp"><button onclick="tsBack()">Back</button>${m.toss?'<button class="del" onclick="tsClear()">Remove toss</button>':''}</div><h1 style="margin-top:10px">Toss</h1><div class="mut">${n('a')} v ${n('b')}. The referee flips the coin. Record who won it and what was chosen.</div>`;
+  h+=seg('Who won the toss?',[['a',n('a')],['b',n('b')]],ts.w,'tsWin');
+  if(ts.w){const W=n(ts.w),O=n(oppT(ts.w));
+    h+=seg(W+' chooses',[['serve','Serve'],['receive','Receive'],['L','Left side'],['R','Right side']],ts.c,'tsPick');
+    if(ts.c){const side=ts.c==='L'||ts.c==='R';
+      h+=seg(O+' chooses',side?[['serve','Serve'],['receive','Receive']]:[['L','Left side'],['R','Right side']],ts.o,'tsOther')}}
+  const r=tossRes(ts);
+  h+=r?`<div class="card"><b>Result</b><div style="margin-top:6px">${esc(tossText(m,r))}</div></div>`:'';
+  h+=`<div class="mut">Left and right are as seen from the scorer's table.</div><div style="margin-top:14px"><button class="pri" onclick="tsSave()">Save toss</button></div>`;
+  return h}
+function renderScorer(){const t=S.stab;
+  document.getElementById('app').innerHTML=(t==='rules'?(S.rd?ruleForm():'<h1>Rules</h1>'+rulesHtml()):t==='settings'?scorerSettings():scorerMatches())+VER;
+  ['matches','rules','settings'].forEach(k=>{const b=document.getElementById('t-s'+k);if(!b)return;if(t===k)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')})}
+function render(){const nav=document.querySelector('nav'),app=document.getElementById('app');
+  if(appMode===null){nav.style.display='none';app.innerHTML=pickView()+VER;return}
+  nav.style.display='';
+  if(appMode==='scorer'){if(nav.dataset.m!=='s'){nav.innerHTML=NAV_SCORER;nav.dataset.m='s'}renderScorer();return}
+  if(nav.dataset.m!=='c'){nav.innerHTML=NAV_COACH;nav.dataset.m='c'}
+  renderCoach()}
 render();
 if("serviceWorker" in navigator){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}
 </script>
