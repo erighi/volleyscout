@@ -85,12 +85,20 @@ th:first-child,td:first-child{text-align:left}
 .sc{overflow-x:auto}
 .del{color:var(--bad)}
 .dd{display:inline-flex;align-items:center;gap:.18em;vertical-align:middle}.dd i{display:block;width:.38em;min-width:5px;height:.09em;min-height:2px;background:currentColor;border-radius:1px}
-.crumbs ol{list-style:none;display:flex;flex-wrap:wrap;gap:6px;padding:0;margin:10px 0}
-.crumbs .cr{display:inline-flex;align-items:center;gap:5px;min-height:36px;padding:0 11px;border-radius:18px;border:1px solid var(--line);background:var(--card);color:var(--fg);font-size:14px;font-family:inherit}
+.crumbs{position:sticky;top:0;z-index:5;background:var(--bg);margin:-16px -16px 10px;padding:12px 16px 8px;border-bottom:1px solid var(--line)}
+.crumbs ol{list-style:none;display:flex;flex-wrap:nowrap;gap:6px;padding:0 0 2px;margin:0;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.crumbs ol::-webkit-scrollbar{display:none}
+.crumbs li{flex:none}
+.crumbs .back{font-weight:600}
+.sgbox{border:1px solid var(--line);border-radius:8px;background:#fff;margin-top:8px;padding:4px}
+.crumbs .cr{display:inline-flex;align-items:center;gap:5px;min-height:34px;padding:0 10px;white-space:nowrap;border-radius:17px;border:1px solid var(--line);background:var(--card);color:var(--fg);font-size:14px;font-family:inherit}
 .crumbs .cn{opacity:.7;font-size:12px}
 .crumbs .cur{background:var(--home);color:var(--onc);border-color:var(--home);font-weight:600}
 .crumbs .rdy{border-color:var(--home)}
 .crumbs .off{opacity:.45}
+.crumbs .sheetli{margin-left:auto}
+.crumbs .sheetb{border-color:var(--fg);font-weight:600}
+.crumbs .sheetb svg{flex:none}
 .sb{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
 .sb .col{min-width:0}
 .libs{text-align:center;margin-top:6px;font:600 15px/1.3 system-ui,sans-serif;color:var(--lib)}
@@ -114,7 +122,7 @@ th:first-child,td:first-child{text-align:left}
 .sheet th{font-weight:700;text-align:left;height:6mm;white-space:normal;overflow:visible;text-overflow:clip;line-height:1.15;padding:.6mm 1mm}
 .sheet .h td{font-size:6.5pt;font-weight:700;text-align:center;height:4.6mm}
 .sheet .sep td{font-weight:700;text-align:center;background:#e4e4e4;font-size:7pt;height:5mm;letter-spacing:.2mm}
-.sheet .sig td{height:14mm}
+.sheet .sig td{height:14mm;padding:.5mm 1mm;vertical-align:middle}
 .sheet .n{text-align:center}
 .sheet .cap{display:inline-block;min-width:4.2mm;height:4.2mm;line-height:3.7mm;border:.35mm solid #000;border-radius:50%;text-align:center;box-sizing:border-box}
 @media print{html,body{background:#fff!important;margin:0!important;padding:0!important}nav,#app>*:not(.sheetwrap){display:none!important}#app{padding:0!important;margin:0!important;max-width:none!important}.sheetwrap{margin:0!important;height:auto!important;overflow:visible!important}.sheet{transform:none!important;border:0!important;page-break-inside:avoid;break-inside:avoid}}
@@ -122,7 +130,7 @@ th:first-child,td:first-child{text-align:left}
 </head>
 <body>
 <main id="app"></main>
-<nav aria-label="Sections"><button id="t-teams" onclick="go('teams')">Teams</button><button id="t-matches" onclick="go('matches')">Matches</button><button id="t-stats" onclick="go('stats')">Stats</button><button id="t-settings" onclick="go('settings')">Settings</button></nav>
+<nav id="mainnav" aria-label="Sections"><button id="t-teams" onclick="go('teams')">Teams</button><button id="t-matches" onclick="go('matches')">Matches</button><button id="t-stats" onclick="go('stats')">Stats</button><button id="t-settings" onclick="go('settings')">Settings</button></nav>
 <script>
 const K='vb-scout-v1';
 const T=[['kill','Attack'],['ace','Ace'],['block','Block'],['err','Opp. error']];
@@ -841,7 +849,7 @@ function statsView(){
   <div class="mut" style="margin-top:8px">Errors given: ${r.given}. Share of points from attack: ${r.pf?Math.round(r.kill/r.pf*100):0}%, from serve: ${r.pf?Math.round(r.ace/r.pf*100):0}%.</div></div>`});
   return h}
 
-const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 1.12.0</div>';
+const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 1.15.0</div>';
 const FXK='vb-scout-fx-v1';let fx={flash:true,sound:true};try{const r=JSON.parse(localStorage.getItem(FXK)||'null');if(r&&typeof r==='object')fx=Object.assign(fx,r)}catch(e){}
 function setFx(k,v){fx[k]=!!v;try{localStorage.setItem(FXK,JSON.stringify(fx))}catch(e){}render()}
 let actx=null;
@@ -862,7 +870,7 @@ let appMode=null;try{const r=localStorage.getItem(APPK);if(r==='coach'||r==='sco
 S.sm=[];try{const r=localStorage.getItem(SCK);if(r)S.sm=JSON.parse(r)||[]}catch(e){}
 S.stab='matches';S.sx=null;S.ts=null;S.mv=null;
 const saveSM=()=>{try{localStorage.setItem(SCK,JSON.stringify(S.sm))}catch(e){}};
-const NAV_COACH=document.querySelector('nav').innerHTML;
+const NAV_COACH=document.getElementById('mainnav').innerHTML;
 const NAV_SCORER='<button id="t-smatches" onclick="goS(\'matches\')">Matches</button><button id="t-srules" onclick="goS(\'rules\')">Rules</button><button id="t-ssettings" onclick="goS(\'settings\')">Settings</button>';
 function setApp(m){appMode=m;try{localStorage.setItem(APPK,m)}catch(e){}S.cur=null;S.tab=m==='coach'?'teams':'matches';S.stab='matches';S.sx=null;S.mv=null;S.rd=null;render();scrollTo(0,0)}
 function changeView(){appMode=null;try{localStorage.removeItem(APPK)}catch(e){}S.cur=null;S.sx=null;S.rd=null;render();scrollTo(0,0)}
@@ -881,22 +889,47 @@ function saveSMatch(){syncSx();const x=S.sx,an=x.a.name.trim(),bn=x.b.name.trim(
   if(an.toLowerCase()===bn.toLowerCase()){alert('The two teams need different names.');return}
   if(x.id&&lockedM(x.id,'match')){alert('The set has started, so the match details can no longer be changed.');return}
   const old=x.id?S.sm.find(m=>m.id===x.id):null,R=x.keep&&old&&old.fmt===x.rule?x.keep:copy(getRule(x.rule));
-  const m={id:old?old.id:'s'+Date.now().toString(36),fmt:x.rule,rule:R,date:x.date||todayS(),a:{name:an,pl:old?old.a.pl:[]},b:{name:bn,pl:old?old.b.pl:[]}};
-  if(old){m.created=old.created;if(old.toss)m.toss=old.toss;S.sm[S.sm.findIndex(y=>y.id===old.id)]=m}else{m.created=Date.now();S.sm.push(m)}
+  const m=Object.assign({},old||{},{id:old?old.id:'s'+Date.now().toString(36),fmt:x.rule,rule:R,date:x.date||todayS(),a:{name:an,pl:old?old.a.pl:[]},b:{name:bn,pl:old?old.b.pl:[]}});
+  if(old){S.sm[S.sm.findIndex(y=>y.id===old.id)]=m}else{m.created=Date.now();S.sm.push(m)}
   saveSM();S.sx=null;openMatch(m.id)}
 function delSMatch(id){const m=S.sm.find(x=>x.id===id);if(m&&confirm(boardStarted(m)?'Delete '+m.a.name+' v '+m.b.name+'? Scoring has started and all of it will be lost.':'Delete '+m.a.name+' v '+m.b.name+'?')){S.sm=S.sm.filter(x=>x.id!==id);saveSM();render()}}
 function smForm(){const x=S.sx;{const m0=x.id&&S.sm.find(q=>q.id===x.id);if(m0&&editLocked(m0,'match'))return matchRO(m0)}
   const rules=allRules(),has=rules.some(r=>r.id===x.rule);
   const opts=rules.map(r=>`<option value="${esc(r.id)}"${r.id===x.rule?' selected':''}>${esc(r.name)}</option>`).join('')+(has?'':`<option value="${esc(x.rule)}" selected>${esc((x.keep||{}).name||'Saved rules')} (saved copy)</option>`);
-  return`<div class="row sp"><button onclick="sxCancel()">Matches</button></div>${crumbs(x.id&&S.sm.find(q=>q.id===x.id),'match')}<h1 style="margin-top:10px">${x.id?'Match':'New match'}</h1>
+  return`${crumbs(x.id&&S.sm.find(q=>q.id===x.id),'match')}<h1 style="margin-top:10px">${x.id?'Match':'New match'}</h1>
   <div class="card"><label for="sx-r">Rules</label><select id="sx-r">${opts}</select><label for="sx-d">Date</label><input id="sx-d" type="date" value="${esc(x.date)}"><div class="mut" style="margin-top:6px">Rule sets are created on the Rules tab. The match keeps its own copy of the rules.</div></div>
   <div class="card"><label for="sx-a-n">Team A name</label><input id="sx-a-n" autocomplete="off" value="${esc(x.a.name)}" placeholder="Team name"><label for="sx-b-n">Team B name</label><input id="sx-b-n" autocomplete="off" value="${esc(x.b.name)}" placeholder="Team name"></div>
   <div class="mut">The rosters are entered in the next step, when the teams hand them in.</div>
   <div style="margin-top:14px"><button class="pri" onclick="saveSMatch()">Save match</button></div>`}
+/* ===== Signatures (each team signs once its roster is complete) ===== */
+const SGW=300,SGH=100;
+const teamSigned=(m,t)=>!!(m.sig&&m.sig[t]&&m.sig[t].d);
+const teamDone=(m,t)=>teamReady(m[t])&&teamSigned(m,t);
+const rosterDone=m=>teamDone(m,'a')&&teamDone(m,'b');
+function sigSvg(sig,sheet){if(!sig||!sig.d)return'';return`<svg viewBox="0 0 ${+sig.w||SGW} ${+sig.h||SGH}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Signature" style="display:block;width:100%;height:${sheet?'13mm':'auto'}"><path d="${esc(sig.d)}" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`}
+function sgPad(m,t){const sig=m.sig&&m.sig[t],show=!sig||(S.sg&&S.sg.id===m.id&&S.sg.t===t&&S.sg.redo);
+  if(show&&(!S.sg||S.sg.id!==m.id||S.sg.t!==t))S.sg={id:m.id,t,d:'',redo:!!sig};
+  return`<div class="card"><b>Signature: ${esc(m[t].name)}</b><div class="mut">The coach or captain signs here to confirm the roster.</div>`+(show?
+    `<svg id="sgpad" viewBox="0 0 ${SGW} ${SGH}" preserveAspectRatio="none" role="img" aria-label="Signature pad, draw with a finger or stylus" style="display:block;width:100%;aspect-ratio:3/1;margin-top:8px;border:1px dashed var(--mut);border-radius:8px;background:#fff;touch-action:none"><path id="sgpath" d="${esc(S.sg.d)}" fill="none" stroke="#000" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="row" style="margin-top:8px"><button onclick="sgClear()">Clear</button><button class="pri" onclick="sgSave('${t}')">Save signature</button></div>`
+    :`<div class="sgbox">${sigSvg(sig)}</div><div class="mut" style="margin-top:4px">Signed ${hm(sig.at)}.</div><div class="row" style="margin-top:8px"><button onclick="sgRedo('${t}')">Sign again</button></div>`)+`</div>`}
+function sgBind(){const svg=document.getElementById('sgpad');if(!svg||!S.sg)return;const path=svg.querySelector('#sgpath');let down=false,lx=-9,ly=-9;
+  const pt=e=>{const r=svg.getBoundingClientRect();return[+((e.clientX-r.left)/(r.width||SGW)*SGW).toFixed(1),+((e.clientY-r.top)/(r.height||SGH)*SGH).toFixed(1)]};
+  svg.addEventListener('pointerdown',e=>{down=true;try{svg.setPointerCapture(e.pointerId)}catch(_){}const[x,y]=pt(e);lx=x;ly=y;S.sg.d+=(S.sg.d?' ':'')+'M'+x+' '+y+' L'+x+' '+y;path.setAttribute('d',S.sg.d);e.preventDefault()});
+  svg.addEventListener('pointermove',e=>{if(!down)return;const[x,y]=pt(e);if(Math.hypot(x-lx,y-ly)<.8)return;lx=x;ly=y;S.sg.d+=' L'+x+' '+y;path.setAttribute('d',S.sg.d);e.preventDefault()});
+  const up=()=>{down=false};svg.addEventListener('pointerup',up);svg.addEventListener('pointercancel',up)}
+function sgClear(){if(S.sg){S.sg.d='';render()}}
+function sgRedo(t){const m=S.sm.find(x=>x.id===S.mv.id);S.sg={id:m.id,t,d:'',redo:true};render()}
+function sgSave(t){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||!S.sg||S.sg.t!==t)return;if(editLocked(m,'roster')){alert('The set has started, so the signatures can no longer be changed.');return}
+  if(!teamReady(m[t])){alert('Complete and save the roster first.');return}
+  if(S.sg.d.split('M').length<2||S.sg.d.length<40){alert('Please sign in the box first.');return}
+  m.sig=m.sig||{};m.sig[t]={w:SGW,h:SGH,d:S.sg.d,at:Date.now()};saveSM();S.sg=null;const o=oppT(t);
+  if(rosterDone(m)){S.rx=null;openToss(m.id);return}
+  if(!teamDone(m,o)){S.rx.t=o;scrollTo(0,0)}
+  render()}
 /* ===== Roster step (one team at a time) ===== */
 function rxSide(m,t){const np=rulePl(m.rule),nl=ruleLib(m.rule),P=m[t].pl.filter(p=>!p.lib),Lb=m[t].pl.filter(p=>p.lib),pl=P.map(p=>({n:p.n,name:p.name||''})),lb=Lb.map(p=>({n:p.n,name:p.name||''})),cap=P.findIndex(p=>p.cap);
   while(pl.length<np)pl.push({n:'',name:''});while(lb.length<nl)lb.push({n:'',name:''});return{pl,lb,cap}}
-function openRoster(id,t){const m=S.sm.find(x=>x.id===id);if(!m)return;S.sx=null;S.ts=null;S.mv={id,step:'roster'};
+function openRoster(id,t){const m=S.sm.find(x=>x.id===id);if(!m)return;S.sg=null;S.sx=null;S.ts=null;S.mv={id,step:'roster'};
   const tt=t||(S.rx&&S.rx.id===id?S.rx.t:null)||(teamReady(m.a)&&!teamReady(m.b)?'b':'a');
   S.rx={id,t:tt,a:rxSide(m,'a'),b:rxSide(m,'b')};render();scrollTo(0,0)}
 function syncRx(){const x=S.rx,g=i=>document.getElementById(i);if(!x)return;const t=x.t;if(!g('rx-'+t+'-0-n'))return;
@@ -911,26 +944,28 @@ function commitTeam(ask){syncRx();const x=S.rx,m=S.sm.find(q=>q.id===x.id);if(!m
   for(const p of x[t].lb)if(!add(p,1,0))return false;
   L.sort((q,r)=>+q.n-+r.n);
   if(ask&&teamReady({pl:L})&&!L.some(p=>p.lib)&&!confirm(nm+' has no libero. Continue without one?'))return false;
-  m[t].pl=L;saveSM();x[t]=rxSide(m,t);return true}
+  const changed=JSON.stringify(m[t].pl)!==JSON.stringify(L),hadSig=teamSigned(m,t);
+  m[t].pl=L;if(changed&&hadSig){delete m.sig[t];alert(nm+': the roster changed, so its signature was removed. Please sign again.')}saveSM();x[t]=rxSide(m,t);return true}
 function rxTeam(t){const x=S.rx;if(!x||x.t===t)return;if(!commitTeam(false))return;x.t=t;render();scrollTo(0,0)}
 function saveRoster(){const x=S.rx,m=x&&S.sm.find(q=>q.id===x.id);if(!m)return;if(!commitTeam(true))return;const t=x.t,o=t==='a'?'b':'a';
-  if(rosterReady(m)){S.rx=null;openToss(m.id);return}
-  if(teamReady(m[t])&&!teamReady(m[o])){alert(m[t].name+' roster saved. Now enter the '+m[o].name+' roster.');x.t=o;render();scrollTo(0,0);return}
+  if(rosterDone(m)){S.rx=null;openToss(m.id);return}
+  if(teamReady(m[t])&&!teamSigned(m,t)){alert(m[t].name+' roster saved. Now the team signs below.');render();return}
+  if(teamDone(m,t)&&!teamDone(m,o)){alert(m[t].name+' roster saved. Now enter the '+m[o].name+' roster.');x.t=o;render();scrollTo(0,0);return}
   alert(m[t].name+' roster saved. It is complete with at least 6 players and a captain.');render()}
 function rosterViewS(){const x=S.rx,m=S.sm.find(q=>q.id===x.id);if(!m){S.rx=null;S.mv=null;return scorerMatches()}
   if(editLocked(m,'roster'))return rosterRO(m);
   const t=x.t,np=x[t].pl.length,nl=x[t].lb.length,g='display:grid;gap:6px;margin-top:6px;align-items:center;',nm=esc(m[t].name);
-  const tabs=`<div class="seg" role="group" aria-label="Team" style="margin:10px 0">${['a','b'].map(k=>`<button aria-pressed="${t===k}" onclick="rxTeam('${k}')">${teamReady(m[k])?'\u2713 ':''}${esc(m[k].name)}</button>`).join('')}</div>`;
+  const tabs=`<div class="seg" role="group" aria-label="Team" style="margin:10px 0">${['a','b'].map(k=>`<button aria-pressed="${t===k}" onclick="rxTeam('${k}')">${teamDone(m,k)?'\u2713 ':''}${esc(m[k].name)}</button>`).join('')}</div>`;
   const form=`<div class="card"><b>${nm}</b><div class="mut" style="margin-top:4px">Players: up to ${np}, as set by the rules. Choose the captain (C). Leave unused rows empty.</div>
     <div style="${g}grid-template-columns:64px 1fr 36px"><span class="mut">No</span><span class="mut">Name (optional)</span><span class="mut">C</span>${x[t].pl.map((p,i)=>`<input id="rx-${t}-${i}-n" inputmode="numeric" maxlength="3" aria-label="${nm} player ${i+1} shirt number" value="${esc(p.n)}"><input id="rx-${t}-${i}-m" autocomplete="off" aria-label="${nm} player ${i+1} name" value="${esc(p.name)}"><input type="radio" name="rx-${t}-cap" value="${i}" style="width:22px;height:22px" aria-label="${nm} player ${i+1} is the captain"${x[t].cap===i?' checked':''}>`).join('')}</div>
     ${nl?`<div class="mut" style="margin-top:12px">Liberos: up to ${nl}.</div><div style="${g}grid-template-columns:64px 1fr"><span class="mut">No</span><span class="mut">Name (optional)</span>${x[t].lb.map((p,i)=>`<input id="rx-${t}-L${i}-n" inputmode="numeric" maxlength="3" aria-label="${nm} libero ${i+1} shirt number" value="${esc(p.n)}"><input id="rx-${t}-L${i}-m" autocomplete="off" aria-label="${nm} libero ${i+1} name" value="${esc(p.name)}">`).join('')}</div>`:''}</div>`;
-  return stepHead(m,'roster')+tabs+form+`<div class="mut">A roster is complete with at least 6 players and a captain. You can save a partial roster and finish it later. Switching team saves the one you are leaving.</div><div style="margin-top:14px"><button class="pri" onclick="saveRoster()">Save ${nm} roster</button></div>`}
+  return stepHead(m,'roster')+tabs+form+`<div class="mut">A roster is complete with at least 6 players and a captain. You can save a partial roster and finish it later. Switching team saves the one you are leaving. Once a roster is complete the team signs; changing the roster later removes the signature.</div><div style="margin-top:14px"><button class="pri" onclick="saveRoster()">Save ${nm} roster</button></div>${teamReady(m[t])?sgPad(m,t):'<div class="mut" style="margin-top:12px">The team signs here as soon as its roster is complete.</div>'}`}
 function scorerMatches(){
   if(S.mv){const m=S.sm.find(x=>x.id===S.mv.id);if(!m)S.mv=null;else{const k=S.mv.step;if(k==='match'&&S.sx)return smForm();if(k==='roster'&&S.rx)return rosterViewS();if(k==='toss'&&S.ts)return tossView();if(k==='lineup')return lineupView();if(k==='board')return boardView();if(k==='sheet')return sheetView();if(k!=='match'&&k!=='roster'&&k!=='toss')return stepSoon(m,k)}}
   if(S.sx)return smForm();
   const L=[...S.sm].sort((p,q)=>(p.date||'').localeCompare(q.date||'')||(p.created||0)-(q.created||0));
   const cnt=t=>{const lib=t.pl.filter(p=>p.lib).length,pl=t.pl.length-lib,c=t.pl.find(p=>p.cap);return t.pl.length?pl+' player'+(pl===1?'':'s')+(lib?' + '+lib+' libero'+(lib===1?'':'s'):'')+(c?', captain #'+c.n:''):'no roster yet'};
-  return`<div class="row sp"><h1 style="margin:0">Matches</h1><button class="pri" onclick="newSM()">New match</button></div>`+(L.length?L.map(m=>`<div class="card"><b>${esc(m.a.name)} v ${esc(m.b.name)}</b><div class="mut">${esc(m.date||'')} · ${esc(m.rule.name)}</div><div class="mut">${esc(m.a.name)}: ${cnt(m.a)} · ${esc(m.b.name)}: ${cnt(m.b)}</div><div class="mut">${ruleText(m.rule)}</div>${boardStarted(m)&&m.sets[0].t0?`<div class="mut">Started ${hm(m.sets[0].t0)}</div>`:''}${tossLine(m)}<div class="row" style="margin-top:8px"><button class="pri" onclick="openMatch('${m.id}')">Open</button>${rosterReady(m)?`<button onclick="openSheet('${m.id}')">Preview sheet</button>`:''}<button class="del" onclick="delSMatch('${m.id}')">Delete</button></div></div>`).join(''):`<div class="card"><b>No matches yet.</b><div class="mut">Create a match in advance: choose the rules, enter the two team names and their rosters.</div></div>`)+`<div class="mut">Scoring itself comes in the next step.</div>`}
+  return`<div class="row sp"><h1 style="margin:0">Matches</h1><button class="pri" onclick="newSM()">New match</button></div>`+(L.length?L.map(m=>`<div class="card"><b>${esc(m.a.name)} v ${esc(m.b.name)}</b><div class="mut">${esc(m.date||'')} · ${esc(m.rule.name)}</div><div class="mut">${esc(m.a.name)}: ${cnt(m.a)} · ${esc(m.b.name)}: ${cnt(m.b)}</div><div class="mut">${ruleText(m.rule)}</div>${boardStarted(m)&&m.sets[0].t0?`<div class="mut">Started ${hm(m.sets[0].t0)}</div>`:''}${tossLine(m)}<div class="row" style="margin-top:8px"><button class="pri" onclick="openMatch('${m.id}')">Open</button><button onclick="openSheet('${m.id}')">Scoresheet</button><button class="del" onclick="delSMatch('${m.id}')">Delete</button></div></div>`).join(''):`<div class="card"><b>No matches yet.</b><div class="mut">Create a match in advance: choose the rules, enter the two team names and their rosters.</div></div>`)+`<div class="mut">Scoring itself comes in the next step.</div>`}
 function scorerSettings(){
   const th=`<div class="seg" role="group" aria-label="Theme">${[['auto','Auto'],['light','Light'],['dark','Dark']].map(([k,l])=>`<button aria-pressed="${themeMode===k}" onclick="setTheme('${k}')">${l}</button>`).join('')}</div><div class="mut" style="margin-top:6px">Auto follows your device setting.</div>`;
   return`<h1>Settings</h1><div class="card"><h2 style="margin-top:0">Theme</h2>${th}</div><details class="card"><summary style="cursor:pointer"><b>Backup and transfer</b></summary><div style="margin-top:10px">${backupHtml()}</div></details><div class="card"><div class="row sp"><div><b>View</b><div class="mut">Score table</div></div><button onclick="changeView()">Change view</button></div></div>`}
@@ -944,8 +979,8 @@ function tossRes(ts){if(!ts||!ts.w||!ts.c||!ts.o)return null;const w=ts.w,o=oppT
 function tossText(m,r){const n=t=>m[t].name,f=r.serve,g=oppT(f);return n(f)+' serve first, on the '+SIDE[r.sides[f]]+' side. '+n(g)+' receive, on the '+SIDE[r.sides[g]]+' side.'}
 const teamReady=t=>t.pl.filter(p=>!p.lib).length>=6&&t.pl.some(p=>p.cap&&!p.lib),rosterReady=m=>teamReady(m.a)&&teamReady(m.b);
 function tossLine(m){if(m.toss&&m.toss.serve)return`<div class="mut" style="margin-top:4px"><b>Toss:</b> ${esc(tossText(m,m.toss))}</div>`;
-  return rosterReady(m)?'':`<div class="mut" style="margin-top:4px">Complete both rosters (at least 6 players and a captain each) before the toss.</div>`}
-function openToss(id){const m=S.sm.find(x=>x.id===id);if(!m)return;if(!rosterReady(m)){alert('Complete both rosters first (at least 6 players and a captain each).');return}
+  return rosterDone(m)?'':`<div class="mut" style="margin-top:4px">Complete both rosters (at least 6 players and a captain each) and have both teams sign before the toss.</div>`}
+function openToss(id){const m=S.sm.find(x=>x.id===id);if(!m)return;if(!rosterDone(m)){alert('Complete both rosters and have both teams sign first.');return}
   const t=m.toss||{};S.sx=null;S.rx=null;S.mv={id,step:'toss'};S.ts={id,w:t.w||null,c:t.c||null,o:t.o||null};render();scrollTo(0,0)}
 function tsWin(t){if(lockedM(S.ts.id,'toss'))return;S.ts.w=t;S.ts.o=null;render()}
 function tsPick(c){const ts=S.ts;if(lockedM(ts.id,'toss'))return;if((c==='L'||c==='R')!==(ts.c==='L'||ts.c==='R'))ts.o=null;if(ts.c!==c)ts.o=null;ts.c=c;render()}
@@ -956,7 +991,7 @@ function tsSave(){const ts=S.ts,m=S.sm.find(x=>x.id===ts.id),r=tossRes(ts);if(!m
   m.toss={w:ts.w,c:ts.c,o:ts.o,serve:r.serve,sides:r.sides};saveSM();S.ts=null;S.mv={id:m.id,step:'lineup'};render();scrollTo(0,0)}
 function tossView(){const ts=S.ts,m=S.sm.find(x=>x.id===ts.id);if(!m){S.ts=null;return scorerMatches()}if(editLocked(m,'toss'))return tossRO(m);
   const seg=(label,items,cur,fn)=>`<div class="card"><b>${label}</b><div class="seg" role="group" aria-label="${esc(label)}" style="margin-top:8px">${items.map(([k,l])=>`<button aria-pressed="${cur===k}" onclick="${fn}('${k}')">${l}</button>`).join('')}</div></div>`;
-  const n=t=>esc(m[t].name);let h=`<div class="row sp"><button onclick="tsBack()">Matches</button>${m.toss?'<button class="del" onclick="tsClear()">Remove toss</button>':''}</div>${crumbs(m,'toss')}<h1 style="margin-top:10px">Toss</h1><div class="mut">${n('a')} v ${n('b')}. The referee flips the coin. Record who won it and what was chosen.</div>`;
+  const n=t=>esc(m[t].name);let h=`${crumbs(m,'toss')}${m.toss?'<div class="row sp"><button class="del" onclick="tsClear()">Remove toss</button></div>':''}<h1 style="margin-top:10px">Toss</h1><div class="mut">${n('a')} v ${n('b')}. The referee flips the coin. Record who won it and what was chosen.</div>`;
   h+=seg('Who won the toss?',[['a',n('a')],['b',n('b')]],ts.w,'tsWin');
   if(ts.w){const W=n(ts.w),O=n(oppT(ts.w));
     h+=seg(W+' chooses',[['serve','Serve'],['receive','Receive'],['L','Left side'],['R','Right side']],ts.c,'tsPick');
@@ -971,20 +1006,23 @@ function tossView(){const ts=S.ts,m=S.sm.find(x=>x.id===ts.id);if(!m){S.ts=null;
 const STEPS=[['match','Match'],['roster','Roster'],['toss','Toss'],['lineup','Line-up'],['board','Scoreboard'],['sheet','Sheet']];
 const boardStarted=m=>!!(m.sets&&m.sets.some(x=>x.on));
 const lineupDone=m=>{const x=m.sets&&m.sets[m.cur||0];return !!(x&&x.lu.a.every(Boolean)&&x.lu.b.every(Boolean))};
-function stepsDone(m){return[true,rosterReady(m),!!(m.toss&&m.toss.serve),lineupDone(m),false,false]}
+function stepsDone(m){return[true,rosterDone(m),!!(m.toss&&m.toss.serve),lineupDone(m),false,false]}
 function editLocked(m,k){if(k!=='match'&&k!=='roster'&&k!=='toss')return false;return boardStarted(m)||stepsDone(m).slice(4).some(Boolean)}
-function crumbs(m,cur){const d=m?stepsDone(m):STEPS.map(()=>false);
-  return`<nav class="crumbs" aria-label="Match steps"><ol>${STEPS.map(([k,l],i)=>{const on=m?(i===0||d[i-1]):i===0,mark=d[i]&&m?'\u2713 ':'',lab=`<span class="cn">${i+1}</span> ${mark}${l}`;
-    return`<li>${k===cur?`<span class="cr cur" aria-current="step">${lab}</span>`:on?`<button class="cr${d[i]?'':' rdy'}" onclick="goStep('${k}')">${lab}</button>`:`<span class="cr off" aria-disabled="true">${lab}</span>`}</li>`}).join('')}</ol></nav>`}
+const DOCIC='<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 13h8M9 17h8"/></svg>';
+function crumbs(m,cur){const d=m?stepsDone(m):STEPS.map(()=>false),main=STEPS.filter(x=>x[0]!=='sheet');
+  const li=main.map(([k,l],i)=>{const on=m?(i===0||d[i-1]):i===0,mark=d[i]&&m?'\u2713 ':'',lab=`<span class="cn">${i+1}</span> ${mark}${l}`;
+    return`<li>${k===cur?`<span class="cr cur" aria-current="step">${lab}</span>`:on?`<button class="cr${d[i]?'':' rdy'}" onclick="goStep('${k}')">${lab}</button>`:`<span class="cr off" aria-disabled="true">${lab}</span>`}</li>`}).join('');
+  const sh=!m?`<span class="cr off sheetb" aria-disabled="true">${DOCIC} Scoresheet</span>`:cur==='sheet'?`<span class="cr cur sheetb" aria-current="step">${DOCIC} Scoresheet</span>`:`<button class="cr sheetb" onclick="goStep('sheet')">${DOCIC} Scoresheet</button>`;
+  return`<div class="crumbs" role="navigation" aria-label="Match steps"><ol><li><button class="cr back" onclick="tsBack()">\u2039 Matches</button></li>${li}<li class="sheetli">${sh}</li></ol></div>`}
 function showStep(m,k){S.sx=null;S.ts=null;S.rx=null;if(k==='match'){editSM(m.id);return}if(k==='roster'){openRoster(m.id);return}if(k==='toss'){openToss(m.id);return}if(k==='lineup'){openLineup(m.id);return}if(k==='board'){openBoard(m.id);return}if(k==='sheet'){openSheet(m.id);return}S.mv={id:m.id,step:k};render();scrollTo(0,0)}
 function openMatch(id){const m=S.sm.find(x=>x.id===id);if(!m)return;const d=stepsDone(m),i=d.findIndex(x=>!x);showStep(m,STEPS[i<0?STEPS.length-1:i][0])}
-function goStep(k){const m=S.mv&&S.sm.find(x=>x.id===S.mv.id);if(!m)return;const i=STEPS.findIndex(x=>x[0]===k),d=stepsDone(m);if(i<0||!(i===0||d[i-1]))return;showStep(m,k)}
-const stepHead=(m,k)=>`<div class="row sp"><button onclick="tsBack()">Matches</button></div>${crumbs(m,k)}<h1 style="margin-top:10px">${STEPS.find(x=>x[0]===k)[1]}</h1><div class="mut">${esc(m.a.name)} v ${esc(m.b.name)}</div>`;
+function goStep(k){const m=S.mv&&S.sm.find(x=>x.id===S.mv.id);if(!m)return;const i=STEPS.findIndex(x=>x[0]===k),d=stepsDone(m);if(i<0||(k!=='sheet'&&!(i===0||d[i-1])))return;showStep(m,k)}
+const stepHead=(m,k)=>`${crumbs(m,k)}<h1 style="margin-top:10px">${STEPS.find(x=>x[0]===k)[1]}</h1><div class="mut">${esc(m.a.name)} v ${esc(m.b.name)}</div>`;
 function stepSoon(m,k){return stepHead(m,k)+`<div class="card"><b>Not built yet.</b><div class="mut">This step comes in a later version.</div></div>`}
 const roLine=t=>t.pl.length?t.pl.map(p=>'#'+esc(p.n)+(p.name?' '+esc(p.name):'')+(p.cap?' (captain)':'')+(p.lib?' (libero)':'')).join(', '):'No roster.';
 const roNote=k=>`<div class="mut">Read-only: the first set has started, so the ${k} can no longer be changed.</div>`;
 function matchRO(m){return stepHead(m,'match')+`<div class="card"><b>${esc(m.rule.name)}</b><div class="mut">${esc(m.date||'')}</div></div>`+roNote('match details')}
-function rosterRO(m){return stepHead(m,'roster')+`<div class="card"><b>${esc(m.a.name)}</b><div class="mut">${roLine(m.a)}</div></div><div class="card"><b>${esc(m.b.name)}</b><div class="mut">${roLine(m.b)}</div></div>`+roNote('rosters')}
+function rosterRO(m){return stepHead(m,'roster')+`<div class="card"><b>${esc(m.a.name)}</b><div class="mut">${roLine(m.a)}</div>${teamSigned(m,'a')?`<div class="sgbox">${sigSvg(m.sig.a)}</div>`:''}</div><div class="card"><b>${esc(m.b.name)}</b><div class="mut">${roLine(m.b)}</div>${teamSigned(m,'b')?`<div class="sgbox">${sigSvg(m.sig.b)}</div>`:''}</div>`+roNote('rosters')}
 function tossRO(m){return stepHead(m,'toss')+`<div class="card"><b>Result</b><div style="margin-top:6px">${m.toss&&m.toss.serve?esc(tossText(m,m.toss)):'No toss recorded.'}</div></div>`+roNote('toss')}
 /* ===== Scoreboard ===== */
 const hm=ms=>{const d=new Date(ms);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
@@ -1021,12 +1059,12 @@ function lineupView(){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||!m.toss||!m.to
     else panel=`<div class="mut" style="margin-top:10px">Tap a position on a team's pie to place a player. Position 1 is the server.</div>`;
     panel+=ready?`<div style="margin-top:12px"><button class="pri" onclick="goStep('board')">Continue to the scoreboard</button></div>`:`<div class="mut" style="margin-top:6px">The scoreboard opens when both teams have six players in the line-up.</div>`}
   else panel=`<div class="mut" style="margin-top:10px">Set ${i+1} has started, so its line-up can no longer be changed.</div>`;
-  return`<div class="row sp"><button onclick="tsBack()">Matches</button></div>${crumbs(m,'lineup')}<div class="sbh">${head(L)}<div class="st">Set ${i+1}${startedTxt(set)}</div>${head(Rt)}</div><div class="sb">${col(L)}${col(Rt)}</div>${panel}`}
+  return`${crumbs(m,'lineup')}<div class="sbh">${head(L)}<div class="st">Set ${i+1}${startedTxt(set)}</div>${head(Rt)}</div><div class="sb">${col(L)}${col(Rt)}</div>${panel}`}
 function boardView(){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||!m.toss||!m.toss.serve){S.mv=null;return scorerMatches()}
   const{set,i,L,Rt,srv}=sideInfo(m);if(!lineupDone(m)){S.mv.step='lineup';return lineupView()}
   const on=set.on,dis=on?'':' disabled',col=t=>`<div class="col">${spie(m,t,set,true,t===srv)}${libLine(m,t)}<div class="row" style="flex-wrap:nowrap;gap:8px;margin-top:8px;align-items:stretch;${t===Rt?'flex-direction:row-reverse;':''}${on?'':'opacity:.45'}"><div class="big" style="background:${tcol(t)}" aria-label="${esc(m[t].name)} points"${on?'':' aria-disabled="true"'}>0</div><div class="sets" style="border-color:${tcol(t)}" aria-label="${esc(m[t].name)} sets won"><small>Sets</small>0</div></div><div class="acts"><button${dis}>Substitution</button><button${dis}>Timeout</button></div></div>`;
   const head=t=>`<div><div class="nm" style="color:${tcol(t)}">${esc(m[t].name)}</div><div class="mut" style="font-size:12px">${t===srv?'Serving':'Receiving'}</div></div>`;
-  return`<div class="row sp"><button onclick="tsBack()">Matches</button></div>${crumbs(m,'board')}<div class="sbh">${head(L)}<div class="st">Set ${i+1}${startedTxt(set)}</div>${head(Rt)}</div><div class="sb">${col(L)}${col(Rt)}</div>${on?`<div class="mut" style="margin-top:10px">Set ${i+1} is in progress. Points, substitutions and timeouts come in the next version.</div>`:`<div style="margin-top:12px"><button class="pri" onclick="startSetS()">Start set ${i+1}</button><div class="mut" style="margin-top:4px">The score and the buttons switch on when the set starts. The line-up can still be changed until then.</div></div>`}`}
+  return`${crumbs(m,'board')}<div class="sbh">${head(L)}<div class="st">Set ${i+1}${startedTxt(set)}</div>${head(Rt)}</div><div class="sb">${col(L)}${col(Rt)}</div>${on?`<div class="mut" style="margin-top:10px">Set ${i+1} is in progress. Points, substitutions and timeouts come in the next version.</div>`:`<div style="margin-top:12px"><button class="pri" onclick="startSetS()">Start set ${i+1}</button><div class="mut" style="margin-top:4px">The score and the buttons switch on when the set starts. The line-up can still be changed until then.</div></div>`}`}
 /* ===== Scoresheet (A5 landscape, one page) ===== */
 function sheetHtml(m){
   const P=t=>m[t].pl.filter(p=>!p.lib).sort((a,b)=>+a.n-+b.n),Lb=t=>m[t].pl.filter(p=>p.lib).sort((a,b)=>+a.n-+b.n);
@@ -1041,17 +1079,18 @@ function sheetHtml(m){
 <tr class="h"><td>MVP</td><td>#</td><td>Name</td><td>MVP</td><td>#</td><td>Name</td></tr>${body}
 <tr class="sep"><td colspan="6">LIBERO PLAYERS</td></tr>${lib}
 <tr class="sep"><td colspan="6">SIGNATURES BEFORE MATCH</td></tr>
-<tr class="sig"><td colspan="3"></td><td colspan="3"></td></tr></table>`;
+<tr class="sig"><td colspan="3">${sigSvg(m.sig&&m.sig.a,1)}</td><td colspan="3">${sigSvg(m.sig&&m.sig.b,1)}</td></tr></table>`;
   return`<div class="sheet"><div class="left"><div class="todo">Set sheets: next step</div></div><div class="right">${table}</div></div>`}
 function openSheet(id){const m=S.sm.find(x=>x.id===id);if(!m)return;S.sx=null;S.ts=null;S.rx=null;S.bp=null;S.mv={id,step:'sheet'};render();scrollTo(0,0)}
 function sheetView(){const m=S.sm.find(x=>x.id===S.mv.id);if(!m){S.mv=null;return scorerMatches()}
-  return`<div class="row sp"><button onclick="tsBack()">Matches</button><button class="pri" onclick="window.print()">Print / save as PDF</button></div>${crumbs(m,'sheet')}<div class="mut" style="margin:6px 0">A5 landscape, one page. In the print dialog choose Save as PDF, margins none, scale 100%. This is a preview and fills in as the match is recorded.</div><div class="sheetwrap">${sheetHtml(m)}</div>`}
+  return`${crumbs(m,'sheet')}<div class="row sp"><button class="pri" onclick="window.print()">Print / save as PDF</button></div><div class="mut" style="margin:6px 0">A5 landscape, one page. In the print dialog choose Save as PDF, margins none, scale 100%. This is a preview and fills in as the match is recorded.</div><div class="sheetwrap">${sheetHtml(m)}</div>`}
+function fitCrumbs(){const ol=document.querySelector('.crumbs ol'),c=ol&&ol.querySelector('.cur');if(c)ol.scrollLeft=Math.max(0,c.offsetLeft-ol.offsetLeft-70)}
 function fitSheet(){const w=document.querySelector('.sheetwrap');if(!w)return;const sh=w.firstElementChild,k=w.clientWidth?Math.min(1,w.clientWidth/793.7):1;sh.style.transformOrigin='0 0';sh.style.transform='scale('+k+')';w.style.height=(559.4*k)+'px'}
 window.addEventListener('resize',fitSheet);
 function renderScorer(){const t=S.stab;
   document.getElementById('app').innerHTML=(t==='rules'?(S.rd?ruleForm():'<h1>Rules</h1>'+rulesHtml()):t==='settings'?scorerSettings():scorerMatches())+VER;
-  ['matches','rules','settings'].forEach(k=>{const b=document.getElementById('t-s'+k);if(!b)return;if(t===k)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});fitSheet()}
-function render(){const nav=document.querySelector('nav'),app=document.getElementById('app');
+  ['matches','rules','settings'].forEach(k=>{const b=document.getElementById('t-s'+k);if(!b)return;if(t===k)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});fitSheet();fitCrumbs();sgBind()}
+function render(){const nav=document.getElementById('mainnav'),app=document.getElementById('app');
   if(appMode===null){nav.style.display='none';app.innerHTML=pickView()+VER;return}
   nav.style.display='';
   if(appMode==='scorer'){if(nav.dataset.m!=='s'){nav.innerHTML=NAV_SCORER;nav.dataset.m='s'}renderScorer();return}
