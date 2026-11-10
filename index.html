@@ -93,13 +93,31 @@ th:first-child,td:first-child{text-align:left}
 .crumbs .off{opacity:.45}
 .sb{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
 .sb .col{min-width:0}
+.libs{text-align:center;margin-top:6px;font:600 15px/1.3 system-ui,sans-serif;color:var(--lib)}
+.libs b{font:700 20px/1 'Barlow Condensed','Arial Narrow',sans-serif;margin-left:4px}
 .sbh{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;text-align:center;margin-top:6px}
 .sbh .nm{font:700 20px/1.1 'Barlow Condensed','Arial Narrow',sans-serif;overflow-wrap:anywhere}
+.sbh .st small{display:block;font:600 11px/1.2 system-ui,sans-serif;color:var(--mut);margin-top:2px}
 .sbh .st{font:700 22px/1 'Barlow Condensed','Arial Narrow',sans-serif;padding:6px 10px;border:2px solid var(--line);border-radius:10px;background:var(--card)}
 .sb .big{flex:1;min-width:0;border-radius:12px;color:var(--onc);text-align:center;font:700 64px/1.1 'Barlow Condensed','Arial Narrow',sans-serif;padding:4px 0}
 .sb .sets{border:2px solid;border-radius:10px;text-align:center;padding:2px 8px;min-width:46px;font:700 28px/1.2 'Barlow Condensed','Arial Narrow',sans-serif;display:flex;flex-direction:column;justify-content:center}
 .sb .sets small{font:600 11px/1 system-ui,sans-serif;color:var(--mut)}
 .sb .acts{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+@page{size:A5 landscape;margin:0}
+.sheetwrap{margin-top:8px;overflow:hidden}
+.sheet{width:210mm;height:148mm;box-sizing:border-box;background:#fff;color:#000;display:flex;font:8pt/1.2 Arial,Helvetica,sans-serif;border:1px solid #bbb;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.sheet .left{flex:1;position:relative}
+.sheet .todo{position:absolute;left:6mm;right:4mm;top:6mm;bottom:6mm;border:1px dashed #bbb;color:#999;display:flex;align-items:center;justify-content:center;text-align:center;font-size:9pt}
+.sheet .right{width:84mm;padding:6mm 6mm 6mm 0;box-sizing:border-box}
+.sheet table{width:78mm;border-collapse:collapse;table-layout:fixed}
+.sheet td,.sheet th{border:.25mm solid #000;padding:0 1mm;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;height:var(--rh,5.2mm);font-weight:normal;font-size:8pt}
+.sheet th{font-weight:700;text-align:left;height:6mm;white-space:normal;overflow:visible;text-overflow:clip;line-height:1.15;padding:.6mm 1mm}
+.sheet .h td{font-size:6.5pt;font-weight:700;text-align:center;height:4.6mm}
+.sheet .sep td{font-weight:700;text-align:center;background:#e4e4e4;font-size:7pt;height:5mm;letter-spacing:.2mm}
+.sheet .sig td{height:14mm}
+.sheet .n{text-align:center}
+.sheet .cap{display:inline-block;min-width:4.2mm;height:4.2mm;line-height:3.7mm;border:.35mm solid #000;border-radius:50%;text-align:center;box-sizing:border-box}
+@media print{html,body{background:#fff!important;margin:0!important;padding:0!important}nav,#app>*:not(.sheetwrap){display:none!important}#app{padding:0!important;margin:0!important;max-width:none!important}.sheetwrap{margin:0!important;height:auto!important;overflow:visible!important}.sheet{transform:none!important;border:0!important;page-break-inside:avoid;break-inside:avoid}}
 </style>
 </head>
 <body>
@@ -823,7 +841,7 @@ function statsView(){
   <div class="mut" style="margin-top:8px">Errors given: ${r.given}. Share of points from attack: ${r.pf?Math.round(r.kill/r.pf*100):0}%, from serve: ${r.pf?Math.round(r.ace/r.pf*100):0}%.</div></div>`});
   return h}
 
-const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 1.7.0</div>';
+const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 1.12.0</div>';
 const FXK='vb-scout-fx-v1';let fx={flash:true,sound:true};try{const r=JSON.parse(localStorage.getItem(FXK)||'null');if(r&&typeof r==='object')fx=Object.assign(fx,r)}catch(e){}
 function setFx(k,v){fx[k]=!!v;try{localStorage.setItem(FXK,JSON.stringify(fx))}catch(e){}render()}
 let actx=null;
@@ -861,11 +879,12 @@ function sxCancel(){S.sx=null;S.mv=null;S.ts=null;S.rx=null;render();scrollTo(0,
 function saveSMatch(){syncSx();const x=S.sx,an=x.a.name.trim(),bn=x.b.name.trim();
   if(!an||!bn){alert('Enter both team names.');return}
   if(an.toLowerCase()===bn.toLowerCase()){alert('The two teams need different names.');return}
+  if(x.id&&lockedM(x.id,'match')){alert('The set has started, so the match details can no longer be changed.');return}
   const old=x.id?S.sm.find(m=>m.id===x.id):null,R=x.keep&&old&&old.fmt===x.rule?x.keep:copy(getRule(x.rule));
   const m={id:old?old.id:'s'+Date.now().toString(36),fmt:x.rule,rule:R,date:x.date||todayS(),a:{name:an,pl:old?old.a.pl:[]},b:{name:bn,pl:old?old.b.pl:[]}};
   if(old){m.created=old.created;if(old.toss)m.toss=old.toss;S.sm[S.sm.findIndex(y=>y.id===old.id)]=m}else{m.created=Date.now();S.sm.push(m)}
   saveSM();S.sx=null;openMatch(m.id)}
-function delSMatch(id){const m=S.sm.find(x=>x.id===id);if(m&&confirm('Delete '+m.a.name+' v '+m.b.name+'?')){S.sm=S.sm.filter(x=>x.id!==id);saveSM();render()}}
+function delSMatch(id){const m=S.sm.find(x=>x.id===id);if(m&&confirm(boardStarted(m)?'Delete '+m.a.name+' v '+m.b.name+'? Scoring has started and all of it will be lost.':'Delete '+m.a.name+' v '+m.b.name+'?')){S.sm=S.sm.filter(x=>x.id!==id);saveSM();render()}}
 function smForm(){const x=S.sx;{const m0=x.id&&S.sm.find(q=>q.id===x.id);if(m0&&editLocked(m0,'match'))return matchRO(m0)}
   const rules=allRules(),has=rules.some(r=>r.id===x.rule);
   const opts=rules.map(r=>`<option value="${esc(r.id)}"${r.id===x.rule?' selected':''}>${esc(r.name)}</option>`).join('')+(has?'':`<option value="${esc(x.rule)}" selected>${esc((x.keep||{}).name||'Saved rules')} (saved copy)</option>`);
@@ -883,7 +902,7 @@ function openRoster(id,t){const m=S.sm.find(x=>x.id===id);if(!m)return;S.sx=null
 function syncRx(){const x=S.rx,g=i=>document.getElementById(i);if(!x)return;const t=x.t;if(!g('rx-'+t+'-0-n'))return;
   x[t].pl=x[t].pl.map((p,i)=>({n:g('rx-'+t+'-'+i+'-n').value,name:g('rx-'+t+'-'+i+'-m').value}));x[t].lb=x[t].lb.map((p,i)=>({n:g('rx-'+t+'-L'+i+'-n').value,name:g('rx-'+t+'-L'+i+'-m').value}));
   const r=document.querySelector('input[name="rx-'+t+'-cap"]:checked');x[t].cap=r?+r.value:-1}
-function commitTeam(ask){syncRx();const x=S.rx,m=S.sm.find(q=>q.id===x.id);if(!m)return false;const t=x.t,nm=m[t].name,seen=new Set(),L=[];
+function commitTeam(ask){syncRx();const x=S.rx,m=S.sm.find(q=>q.id===x.id);if(!m)return false;if(editLocked(m,'roster')){alert('The set has started, so the rosters can no longer be changed.');return false}const t=x.t,nm=m[t].name,seen=new Set(),L=[];
   const add=(p,lib,cap)=>{const n=p.n.trim(),name=p.name.trim();if(!n&&!name)return true;
     if(!n){alert(nm+': every player needs a shirt number.');return false}
     if(!/^\d{1,3}$/.test(n)){alert(nm+': shirt numbers must be digits only ('+n+').');return false}
@@ -898,7 +917,7 @@ function saveRoster(){const x=S.rx,m=x&&S.sm.find(q=>q.id===x.id);if(!m)return;i
   if(rosterReady(m)){S.rx=null;openToss(m.id);return}
   if(teamReady(m[t])&&!teamReady(m[o])){alert(m[t].name+' roster saved. Now enter the '+m[o].name+' roster.');x.t=o;render();scrollTo(0,0);return}
   alert(m[t].name+' roster saved. It is complete with at least 6 players and a captain.');render()}
-function rosterView(){const x=S.rx,m=S.sm.find(q=>q.id===x.id);if(!m){S.rx=null;S.mv=null;return scorerMatches()}
+function rosterViewS(){const x=S.rx,m=S.sm.find(q=>q.id===x.id);if(!m){S.rx=null;S.mv=null;return scorerMatches()}
   if(editLocked(m,'roster'))return rosterRO(m);
   const t=x.t,np=x[t].pl.length,nl=x[t].lb.length,g='display:grid;gap:6px;margin-top:6px;align-items:center;',nm=esc(m[t].name);
   const tabs=`<div class="seg" role="group" aria-label="Team" style="margin:10px 0">${['a','b'].map(k=>`<button aria-pressed="${t===k}" onclick="rxTeam('${k}')">${teamReady(m[k])?'\u2713 ':''}${esc(m[k].name)}</button>`).join('')}</div>`;
@@ -907,11 +926,11 @@ function rosterView(){const x=S.rx,m=S.sm.find(q=>q.id===x.id);if(!m){S.rx=null;
     ${nl?`<div class="mut" style="margin-top:12px">Liberos: up to ${nl}.</div><div style="${g}grid-template-columns:64px 1fr"><span class="mut">No</span><span class="mut">Name (optional)</span>${x[t].lb.map((p,i)=>`<input id="rx-${t}-L${i}-n" inputmode="numeric" maxlength="3" aria-label="${nm} libero ${i+1} shirt number" value="${esc(p.n)}"><input id="rx-${t}-L${i}-m" autocomplete="off" aria-label="${nm} libero ${i+1} name" value="${esc(p.name)}">`).join('')}</div>`:''}</div>`;
   return stepHead(m,'roster')+tabs+form+`<div class="mut">A roster is complete with at least 6 players and a captain. You can save a partial roster and finish it later. Switching team saves the one you are leaving.</div><div style="margin-top:14px"><button class="pri" onclick="saveRoster()">Save ${nm} roster</button></div>`}
 function scorerMatches(){
-  if(S.mv){const m=S.sm.find(x=>x.id===S.mv.id);if(!m)S.mv=null;else{const k=S.mv.step;if(k==='match'&&S.sx)return smForm();if(k==='roster'&&S.rx)return rosterView();if(k==='toss'&&S.ts)return tossView();if(k==='lineup')return lineupView();if(k==='board')return boardView();if(k!=='match'&&k!=='roster'&&k!=='toss')return stepSoon(m,k)}}
+  if(S.mv){const m=S.sm.find(x=>x.id===S.mv.id);if(!m)S.mv=null;else{const k=S.mv.step;if(k==='match'&&S.sx)return smForm();if(k==='roster'&&S.rx)return rosterViewS();if(k==='toss'&&S.ts)return tossView();if(k==='lineup')return lineupView();if(k==='board')return boardView();if(k==='sheet')return sheetView();if(k!=='match'&&k!=='roster'&&k!=='toss')return stepSoon(m,k)}}
   if(S.sx)return smForm();
   const L=[...S.sm].sort((p,q)=>(p.date||'').localeCompare(q.date||'')||(p.created||0)-(q.created||0));
   const cnt=t=>{const lib=t.pl.filter(p=>p.lib).length,pl=t.pl.length-lib,c=t.pl.find(p=>p.cap);return t.pl.length?pl+' player'+(pl===1?'':'s')+(lib?' + '+lib+' libero'+(lib===1?'':'s'):'')+(c?', captain #'+c.n:''):'no roster yet'};
-  return`<div class="row sp"><h1 style="margin:0">Matches</h1><button class="pri" onclick="newSM()">New match</button></div>`+(L.length?L.map(m=>`<div class="card"><b>${esc(m.a.name)} v ${esc(m.b.name)}</b><div class="mut">${esc(m.date||'')} · ${esc(m.rule.name)}</div><div class="mut">${esc(m.a.name)}: ${cnt(m.a)} · ${esc(m.b.name)}: ${cnt(m.b)}</div><div class="mut">${ruleText(m.rule)}</div>${tossLine(m)}<div class="row" style="margin-top:8px"><button class="pri" onclick="openMatch('${m.id}')">Open</button><button class="del" onclick="delSMatch('${m.id}')">Delete</button></div></div>`).join(''):`<div class="card"><b>No matches yet.</b><div class="mut">Create a match in advance: choose the rules, enter the two team names and their rosters.</div></div>`)+`<div class="mut">Scoring itself comes in the next step.</div>`}
+  return`<div class="row sp"><h1 style="margin:0">Matches</h1><button class="pri" onclick="newSM()">New match</button></div>`+(L.length?L.map(m=>`<div class="card"><b>${esc(m.a.name)} v ${esc(m.b.name)}</b><div class="mut">${esc(m.date||'')} · ${esc(m.rule.name)}</div><div class="mut">${esc(m.a.name)}: ${cnt(m.a)} · ${esc(m.b.name)}: ${cnt(m.b)}</div><div class="mut">${ruleText(m.rule)}</div>${boardStarted(m)&&m.sets[0].t0?`<div class="mut">Started ${hm(m.sets[0].t0)}</div>`:''}${tossLine(m)}<div class="row" style="margin-top:8px"><button class="pri" onclick="openMatch('${m.id}')">Open</button>${rosterReady(m)?`<button onclick="openSheet('${m.id}')">Preview sheet</button>`:''}<button class="del" onclick="delSMatch('${m.id}')">Delete</button></div></div>`).join(''):`<div class="card"><b>No matches yet.</b><div class="mut">Create a match in advance: choose the rules, enter the two team names and their rosters.</div></div>`)+`<div class="mut">Scoring itself comes in the next step.</div>`}
 function scorerSettings(){
   const th=`<div class="seg" role="group" aria-label="Theme">${[['auto','Auto'],['light','Light'],['dark','Dark']].map(([k,l])=>`<button aria-pressed="${themeMode===k}" onclick="setTheme('${k}')">${l}</button>`).join('')}</div><div class="mut" style="margin-top:6px">Auto follows your device setting.</div>`;
   return`<h1>Settings</h1><div class="card"><h2 style="margin-top:0">Theme</h2>${th}</div><details class="card"><summary style="cursor:pointer"><b>Backup and transfer</b></summary><div style="margin-top:10px">${backupHtml()}</div></details><div class="card"><div class="row sp"><div><b>View</b><div class="mut">Score table</div></div><button onclick="changeView()">Change view</button></div></div>`}
@@ -928,12 +947,12 @@ function tossLine(m){if(m.toss&&m.toss.serve)return`<div class="mut" style="marg
   return rosterReady(m)?'':`<div class="mut" style="margin-top:4px">Complete both rosters (at least 6 players and a captain each) before the toss.</div>`}
 function openToss(id){const m=S.sm.find(x=>x.id===id);if(!m)return;if(!rosterReady(m)){alert('Complete both rosters first (at least 6 players and a captain each).');return}
   const t=m.toss||{};S.sx=null;S.rx=null;S.mv={id,step:'toss'};S.ts={id,w:t.w||null,c:t.c||null,o:t.o||null};render();scrollTo(0,0)}
-function tsWin(t){S.ts.w=t;S.ts.o=null;render()}
-function tsPick(c){const ts=S.ts;if((c==='L'||c==='R')!==(ts.c==='L'||ts.c==='R'))ts.o=null;if(ts.c!==c)ts.o=null;ts.c=c;render()}
-function tsOther(o){S.ts.o=o;render()}
+function tsWin(t){if(lockedM(S.ts.id,'toss'))return;S.ts.w=t;S.ts.o=null;render()}
+function tsPick(c){const ts=S.ts;if(lockedM(ts.id,'toss'))return;if((c==='L'||c==='R')!==(ts.c==='L'||ts.c==='R'))ts.o=null;if(ts.c!==c)ts.o=null;ts.c=c;render()}
+function tsOther(o){if(lockedM(S.ts.id,'toss'))return;S.ts.o=o;render()}
 function tsBack(){S.ts=null;S.sx=null;S.rx=null;S.mv=null;render();scrollTo(0,0)}
-function tsClear(){const m=S.sm.find(x=>x.id===S.ts.id);if(m&&m.toss&&confirm('Remove the recorded toss?')){delete m.toss;saveSM();S.ts={id:m.id,w:null,c:null,o:null}}render()}
-function tsSave(){const ts=S.ts,m=S.sm.find(x=>x.id===ts.id),r=tossRes(ts);if(!m)return;if(!r){alert('Complete all the steps of the toss first.');return}
+function tsClear(){const m=S.sm.find(x=>x.id===S.ts.id);if(m&&editLocked(m,'toss'))return;if(m&&m.toss&&confirm('Remove the recorded toss?')){delete m.toss;saveSM();S.ts={id:m.id,w:null,c:null,o:null}}render()}
+function tsSave(){const ts=S.ts,m=S.sm.find(x=>x.id===ts.id),r=tossRes(ts);if(!m)return;if(editLocked(m,'toss')){alert('The set has started, so the toss can no longer be changed.');return}if(!r){alert('Complete all the steps of the toss first.');return}
   m.toss={w:ts.w,c:ts.c,o:ts.o,serve:r.serve,sides:r.sides};saveSM();S.ts=null;S.mv={id:m.id,step:'lineup'};render();scrollTo(0,0)}
 function tossView(){const ts=S.ts,m=S.sm.find(x=>x.id===ts.id);if(!m){S.ts=null;return scorerMatches()}if(editLocked(m,'toss'))return tossRO(m);
   const seg=(label,items,cur,fn)=>`<div class="card"><b>${label}</b><div class="seg" role="group" aria-label="${esc(label)}" style="margin-top:8px">${items.map(([k,l])=>`<button aria-pressed="${cur===k}" onclick="${fn}('${k}')">${l}</button>`).join('')}</div></div>`;
@@ -951,13 +970,13 @@ function tossView(){const ts=S.ts,m=S.sm.find(x=>x.id===ts.id);if(!m){S.ts=null;
 /* ===== Steps (breadcrumbs) ===== */
 const STEPS=[['match','Match'],['roster','Roster'],['toss','Toss'],['lineup','Line-up'],['board','Scoreboard'],['sheet','Sheet']];
 const boardStarted=m=>!!(m.sets&&m.sets.some(x=>x.on));
-const lineupDone=m=>!!(m.sets&&m.sets[m.cur||0]&&m.sets[m.cur||0].on);
+const lineupDone=m=>{const x=m.sets&&m.sets[m.cur||0];return !!(x&&x.lu.a.every(Boolean)&&x.lu.b.every(Boolean))};
 function stepsDone(m){return[true,rosterReady(m),!!(m.toss&&m.toss.serve),lineupDone(m),false,false]}
 function editLocked(m,k){if(k!=='match'&&k!=='roster'&&k!=='toss')return false;return boardStarted(m)||stepsDone(m).slice(4).some(Boolean)}
 function crumbs(m,cur){const d=m?stepsDone(m):STEPS.map(()=>false);
   return`<nav class="crumbs" aria-label="Match steps"><ol>${STEPS.map(([k,l],i)=>{const on=m?(i===0||d[i-1]):i===0,mark=d[i]&&m?'\u2713 ':'',lab=`<span class="cn">${i+1}</span> ${mark}${l}`;
     return`<li>${k===cur?`<span class="cr cur" aria-current="step">${lab}</span>`:on?`<button class="cr${d[i]?'':' rdy'}" onclick="goStep('${k}')">${lab}</button>`:`<span class="cr off" aria-disabled="true">${lab}</span>`}</li>`}).join('')}</ol></nav>`}
-function showStep(m,k){S.sx=null;S.ts=null;S.rx=null;if(k==='match'){editSM(m.id);return}if(k==='roster'){openRoster(m.id);return}if(k==='toss'){openToss(m.id);return}if(k==='lineup'){openLineup(m.id);return}if(k==='board'){openBoard(m.id);return}S.mv={id:m.id,step:k};render();scrollTo(0,0)}
+function showStep(m,k){S.sx=null;S.ts=null;S.rx=null;if(k==='match'){editSM(m.id);return}if(k==='roster'){openRoster(m.id);return}if(k==='toss'){openToss(m.id);return}if(k==='lineup'){openLineup(m.id);return}if(k==='board'){openBoard(m.id);return}if(k==='sheet'){openSheet(m.id);return}S.mv={id:m.id,step:k};render();scrollTo(0,0)}
 function openMatch(id){const m=S.sm.find(x=>x.id===id);if(!m)return;const d=stepsDone(m),i=d.findIndex(x=>!x);showStep(m,STEPS[i<0?STEPS.length-1:i][0])}
 function goStep(k){const m=S.mv&&S.sm.find(x=>x.id===S.mv.id);if(!m)return;const i=STEPS.findIndex(x=>x[0]===k),d=stepsDone(m);if(i<0||!(i===0||d[i-1]))return;showStep(m,k)}
 const stepHead=(m,k)=>`<div class="row sp"><button onclick="tsBack()">Matches</button></div>${crumbs(m,k)}<h1 style="margin-top:10px">${STEPS.find(x=>x[0]===k)[1]}</h1><div class="mut">${esc(m.a.name)} v ${esc(m.b.name)}</div>`;
@@ -968,6 +987,10 @@ function matchRO(m){return stepHead(m,'match')+`<div class="card"><b>${esc(m.rul
 function rosterRO(m){return stepHead(m,'roster')+`<div class="card"><b>${esc(m.a.name)}</b><div class="mut">${roLine(m.a)}</div></div><div class="card"><b>${esc(m.b.name)}</b><div class="mut">${roLine(m.b)}</div></div>`+roNote('rosters')}
 function tossRO(m){return stepHead(m,'toss')+`<div class="card"><b>Result</b><div style="margin-top:6px">${m.toss&&m.toss.serve?esc(tossText(m,m.toss)):'No toss recorded.'}</div></div>`+roNote('toss')}
 /* ===== Scoreboard ===== */
+const hm=ms=>{const d=new Date(ms);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
+const lockedM=(id,k)=>{const m=S.sm.find(x=>x.id===id);return !!(m&&editLocked(m,k))};
+const libLine=(m,t)=>{const L=m[t].pl.filter(p=>p.lib);return L.length?`<div class="libs" aria-label="${esc(m[t].name)} libero numbers">Libero${L.length>1?'s':''}${L.map(p=>` <b>#${esc(p.n)}</b>`).join('')}</div>`:''};
+const startedTxt=set=>set&&set.on&&set.t0?`<small>Started ${hm(set.t0)}</small>`:'';
 const sideOfT=(m,i,t)=>{const x=m.toss.sides[t];return i%2?(x==='L'?'R':'L'):x};
 const serveOfT=(m,i)=>i%2?(m.toss.serve==='a'?'b':'a'):m.toss.serve;
 const tcol=t=>t==='a'?'var(--home)':'var(--away)';
@@ -977,35 +1000,57 @@ function openBoard(id){const m=S.sm.find(x=>x.id===id);if(!m)return;bset(m);S.sx
 function bpPick(t,p){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||bset(m).on)return;S.bp={t,p};render()}
 function bpPlace(n){const m=S.sm.find(x=>x.id===S.mv.id),set=bset(m),{t,p}=S.bp;if(set.on)return;
   set.lu[t]=set.lu[t].map(x=>x===n?null:x);set.lu[t][p-1]=n;
-  const nx=[1,2,3,4,5,6].map(k=>(p-1+k)%6+1).find(q=>!set.lu[t][q-1]);S.bp=nx?{t,p:nx}:null;saveSM();render()}
+  const nx=[1,2,3,4,5,6].map(k=>(p-1+k)%6+1).find(q=>!set.lu[t][q-1]);S.bp=nx?{t,p:nx}:null;saveSM();if(lineupDone(m)){S.bp=null;S.mv.step='board';render();scrollTo(0,0);return}render()}
 function bpClear(){const m=S.sm.find(x=>x.id===S.mv.id),set=bset(m),{t,p}=S.bp;if(set.on)return;set.lu[t][p-1]=null;saveSM();render()}
-function startSet(){const m=S.sm.find(x=>x.id===S.mv.id),set=bset(m);if(set.on||!['a','b'].every(t=>set.lu[t].every(Boolean))){alert('Both teams need six players in the line-up.');return}
+function startSetS(){const m=S.sm.find(x=>x.id===S.mv.id),set=bset(m);if(set.on)return;if(!lineupDone(m)){alert('Both teams need six players in the line-up.');return}
+  if(!confirm('Start set '+(m.cur+1)+' now? The start time is recorded, and the match details, rosters, toss and line-up are locked.'))return
   set.on=true;set.t0=Date.now();S.bp=null;S.mv.step='board';saveSM();render();scrollTo(0,0)}
 function spie(m,t,set,ro,serving){const R=140,C=150,pt=(a,r)=>{const q=a*Math.PI/180;return[(C+r*Math.sin(q)).toFixed(1),(C-r*Math.cos(q)).toFixed(1)]},lu=set.lu[t],nm=esc(m[t].name);
-  const g=[1,2,3,4,5,6].map(p=>{const a=ANG[p],[x1,y1]=pt(a-30,R),[x2,y2]=pt(a+30,R),[tx,ty]=pt(a,R*.58),[lx,ly]=pt(a,R*.87),n=lu[p-1],pl=n&&m[t].pl.find(q=>q.n===n),sel=!!(S.bp&&S.bp.t===t&&S.bp.p===p),srv=!!(serving&&p===1&&n),
+  const g=[1,2,3,4,5,6].map(p=>{const a=ANG[p],[x1,y1]=pt(a-30,R),[x2,y2]=pt(a+30,R),[tx,ty]=pt(a,R*.58),[lx,ly]=pt(a,R*.87),n=lu[p-1],pl=n&&m[t].pl.find(q=>q.n===n),sel=!!(S.bp&&S.bp.t===t&&S.bp.p===p),srv=!!(serving&&p===1&&n),cap=!!(pl&&pl.cap),
     fill=n?(srv?'var(--yel)':tcol(t)):'var(--card)',tc=n?(srv?'var(--onyel)':'var(--onc)'):'var(--mut)',inter=!ro,hnd=`bpPick('${t}',${p})`;
-    return`<g role="${inter?'button':'img'}"${inter?' tabindex="0"':''} aria-label="${nm} position ${p}, ${n?'player '+esc(n)+(pl&&pl.name?' '+esc(pl.name):'')+(srv?', serving':''):'empty'}"${inter?` onclick="${hnd}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();${hnd}}" style="cursor:pointer"`:''}><path d="M${C} ${C}L${x1} ${y1}A${R} ${R} 0 0 1 ${x2} ${y2}Z" fill="${fill}" stroke="${sel?'var(--fg)':'var(--line)'}" stroke-width="${sel?6:2}" stroke-linejoin="round"/><text x="${tx}" y="${ty}" text-anchor="middle" dominant-baseline="central" fill="${tc}" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="${n?46:32}">${n?esc(n):'+'}</text><text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="central" fill="${tc}" font-size="13">P${p}</text></g>`}).join('');
+    return`<g role="${inter?'button':'img'}"${inter?' tabindex="0"':''} aria-label="${nm} position ${p}, ${n?'player '+esc(n)+(pl&&pl.name?' '+esc(pl.name):'')+(cap?', captain':'')+(srv?', serving':''):'empty'}"${inter?` onclick="${hnd}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();${hnd}}" style="cursor:pointer"`:''}><path d="M${C} ${C}L${x1} ${y1}A${R} ${R} 0 0 1 ${x2} ${y2}Z" fill="${fill}" stroke="${sel?'var(--fg)':'var(--line)'}" stroke-width="${sel?6:2}" stroke-linejoin="round"/><text x="${tx}" y="${ty}" text-anchor="middle" dominant-baseline="central" fill="${tc}" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="${n?46:32}">${n?esc(n):'+'}</text>${cap?`<circle cx="${tx}" cy="${ty}" r="33" fill="none" stroke="${tc}" stroke-width="4"/>`:''}<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="central" fill="${tc}" font-size="13">P${p}</text></g>`}).join('');
   return`<svg viewBox="-14 -14 328 328" role="group" aria-label="${nm} line-up" style="width:100%;max-width:340px;display:block;margin:0 auto">${g}</svg>`}
 function sideInfo(m){const set=bset(m),i=m.cur,L=['a','b'].find(t=>sideOfT(m,i,t)==='L');return{set,i,L,Rt:L==='a'?'b':'a',srv:serveOfT(m,i)}}
 function lineupView(){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||!m.toss||!m.toss.serve){S.mv=null;return scorerMatches()}
-  const{set,i,L,Rt,srv}=sideInfo(m),ro=set.on,full=t=>set.lu[t].every(Boolean),ready=full('a')&&full('b');
-  const col=t=>`<div class="col">${spie(m,t,set,ro,t===srv)}</div>`;
+  const{set,i,L,Rt,srv}=sideInfo(m),ro=set.on,ready=lineupDone(m);
+  const col=t=>`<div class="col">${spie(m,t,set,ro,t===srv)}${libLine(m,t)}</div>`;
   const head=t=>`<div><div class="nm" style="color:${tcol(t)}">${esc(m[t].name)}</div><div class="mut" style="font-size:12px">${t===srv?'Serving':'Receiving'}</div></div>`;
   let panel='';
   if(!ro){if(S.bp){const t=S.bp.t,p=S.bp.p,cur=set.lu[t][p-1],used=new Set(set.lu[t].filter(Boolean)),pool=m[t].pl.filter(q=>!q.lib);
       panel=`<div class="card"><b style="color:${tcol(t)}">${esc(m[t].name)}: position ${p}</b><div class="mut">Choose the player.</div><div class="row" style="margin-top:8px">${pool.map(q=>`<button${used.has(q.n)&&q.n!==cur?' disabled':''} onclick="bpPlace('${q.n}')" aria-pressed="${q.n===cur}">#${esc(q.n)}${q.name?' '+esc(q.name):''}${q.cap?' (C)':''}</button>`).join('')}${cur?'<button class="del" onclick="bpClear()">Clear</button>':''}</div></div>`}
     else panel=`<div class="mut" style="margin-top:10px">Tap a position on a team's pie to place a player. Position 1 is the server.</div>`;
-    panel+=`<div style="margin-top:12px"><button class="pri" onclick="startSet()"${ready?'':' disabled'}>Start set ${i+1}</button>${ready?'':'<div class="mut" style="margin-top:4px">Both teams need six players in the line-up.</div>'}</div>`}
+    panel+=ready?`<div style="margin-top:12px"><button class="pri" onclick="goStep('board')">Continue to the scoreboard</button></div>`:`<div class="mut" style="margin-top:6px">The scoreboard opens when both teams have six players in the line-up.</div>`}
   else panel=`<div class="mut" style="margin-top:10px">Set ${i+1} has started, so its line-up can no longer be changed.</div>`;
-  return`<div class="row sp"><button onclick="tsBack()">Matches</button></div>${crumbs(m,'lineup')}<div class="sbh">${head(L)}<div class="st">Set ${i+1}</div>${head(Rt)}</div><div class="sb">${col(L)}${col(Rt)}</div>${panel}`}
+  return`<div class="row sp"><button onclick="tsBack()">Matches</button></div>${crumbs(m,'lineup')}<div class="sbh">${head(L)}<div class="st">Set ${i+1}${startedTxt(set)}</div>${head(Rt)}</div><div class="sb">${col(L)}${col(Rt)}</div>${panel}`}
 function boardView(){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||!m.toss||!m.toss.serve){S.mv=null;return scorerMatches()}
-  const{set,i,L,Rt,srv}=sideInfo(m);if(!set.on){S.mv.step='lineup';return lineupView()}
-  const col=t=>`<div class="col">${spie(m,t,set,true,t===srv)}<div class="row" style="flex-wrap:nowrap;gap:8px;margin-top:8px;align-items:stretch"><div class="big" style="background:${tcol(t)}" aria-label="${esc(m[t].name)} points">0</div><div class="sets" style="border-color:${tcol(t)}" aria-label="${esc(m[t].name)} sets won"><small>Sets</small>0</div></div><div class="acts"><button disabled>Substitution</button><button disabled>Timeout</button></div></div>`;
+  const{set,i,L,Rt,srv}=sideInfo(m);if(!lineupDone(m)){S.mv.step='lineup';return lineupView()}
+  const on=set.on,dis=on?'':' disabled',col=t=>`<div class="col">${spie(m,t,set,true,t===srv)}${libLine(m,t)}<div class="row" style="flex-wrap:nowrap;gap:8px;margin-top:8px;align-items:stretch;${t===Rt?'flex-direction:row-reverse;':''}${on?'':'opacity:.45'}"><div class="big" style="background:${tcol(t)}" aria-label="${esc(m[t].name)} points"${on?'':' aria-disabled="true"'}>0</div><div class="sets" style="border-color:${tcol(t)}" aria-label="${esc(m[t].name)} sets won"><small>Sets</small>0</div></div><div class="acts"><button${dis}>Substitution</button><button${dis}>Timeout</button></div></div>`;
   const head=t=>`<div><div class="nm" style="color:${tcol(t)}">${esc(m[t].name)}</div><div class="mut" style="font-size:12px">${t===srv?'Serving':'Receiving'}</div></div>`;
-  return`<div class="row sp"><button onclick="tsBack()">Matches</button></div>${crumbs(m,'board')}<div class="sbh">${head(L)}<div class="st">Set ${i+1}</div>${head(Rt)}</div><div class="sb">${col(L)}${col(Rt)}</div><div class="mut" style="margin-top:10px">Set ${i+1} is in progress. Points, substitutions and timeouts come in the next version.</div>`}
+  return`<div class="row sp"><button onclick="tsBack()">Matches</button></div>${crumbs(m,'board')}<div class="sbh">${head(L)}<div class="st">Set ${i+1}${startedTxt(set)}</div>${head(Rt)}</div><div class="sb">${col(L)}${col(Rt)}</div>${on?`<div class="mut" style="margin-top:10px">Set ${i+1} is in progress. Points, substitutions and timeouts come in the next version.</div>`:`<div style="margin-top:12px"><button class="pri" onclick="startSetS()">Start set ${i+1}</button><div class="mut" style="margin-top:4px">The score and the buttons switch on when the set starts. The line-up can still be changed until then.</div></div>`}`}
+/* ===== Scoresheet (A5 landscape, one page) ===== */
+function sheetHtml(m){
+  const P=t=>m[t].pl.filter(p=>!p.lib).sort((a,b)=>+a.n-+b.n),Lb=t=>m[t].pl.filter(p=>p.lib).sort((a,b)=>+a.n-+b.n);
+  const rows=Math.max(12,P('a').length,P('b').length),lrows=Math.max(2,Lb('a').length,Lb('b').length),rh=Math.min(5.2,62.4/rows).toFixed(2)+'mm';
+  const cell=(p,flag)=>p?`<td></td><td class="n">${p.cap&&!flag?`<span class="cap">${esc(p.n)}</span>`:esc(p.n)}</td><td>${esc(p.name||'')}</td>`:'<td></td><td></td><td></td>';
+  let body='';
+  for(let i=0;i<rows;i++)body+=`<tr>${cell(P('a')[i])}${cell(P('b')[i])}</tr>`;
+  let lib='';
+  for(let i=0;i<lrows;i++)lib+=`<tr>${cell(Lb('a')[i],1)}${cell(Lb('b')[i],1)}</tr>`;
+  const table=`<table class="rt" style="--rh:${rh}"><colgroup><col style="width:8mm"><col style="width:8mm"><col><col style="width:8mm"><col style="width:8mm"><col></colgroup>
+<tr><th colspan="3">Team: ${esc(m.a.name)}</th><th colspan="3">Team: ${esc(m.b.name)}</th></tr>
+<tr class="h"><td>MVP</td><td>#</td><td>Name</td><td>MVP</td><td>#</td><td>Name</td></tr>${body}
+<tr class="sep"><td colspan="6">LIBERO PLAYERS</td></tr>${lib}
+<tr class="sep"><td colspan="6">SIGNATURES BEFORE MATCH</td></tr>
+<tr class="sig"><td colspan="3"></td><td colspan="3"></td></tr></table>`;
+  return`<div class="sheet"><div class="left"><div class="todo">Set sheets: next step</div></div><div class="right">${table}</div></div>`}
+function openSheet(id){const m=S.sm.find(x=>x.id===id);if(!m)return;S.sx=null;S.ts=null;S.rx=null;S.bp=null;S.mv={id,step:'sheet'};render();scrollTo(0,0)}
+function sheetView(){const m=S.sm.find(x=>x.id===S.mv.id);if(!m){S.mv=null;return scorerMatches()}
+  return`<div class="row sp"><button onclick="tsBack()">Matches</button><button class="pri" onclick="window.print()">Print / save as PDF</button></div>${crumbs(m,'sheet')}<div class="mut" style="margin:6px 0">A5 landscape, one page. In the print dialog choose Save as PDF, margins none, scale 100%. This is a preview and fills in as the match is recorded.</div><div class="sheetwrap">${sheetHtml(m)}</div>`}
+function fitSheet(){const w=document.querySelector('.sheetwrap');if(!w)return;const sh=w.firstElementChild,k=w.clientWidth?Math.min(1,w.clientWidth/793.7):1;sh.style.transformOrigin='0 0';sh.style.transform='scale('+k+')';w.style.height=(559.4*k)+'px'}
+window.addEventListener('resize',fitSheet);
 function renderScorer(){const t=S.stab;
   document.getElementById('app').innerHTML=(t==='rules'?(S.rd?ruleForm():'<h1>Rules</h1>'+rulesHtml()):t==='settings'?scorerSettings():scorerMatches())+VER;
-  ['matches','rules','settings'].forEach(k=>{const b=document.getElementById('t-s'+k);if(!b)return;if(t===k)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')})}
+  ['matches','rules','settings'].forEach(k=>{const b=document.getElementById('t-s'+k);if(!b)return;if(t===k)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});fitSheet()}
 function render(){const nav=document.querySelector('nav'),app=document.getElementById('app');
   if(appMode===null){nav.style.display='none';app.innerHTML=pickView()+VER;return}
   nav.style.display='';
