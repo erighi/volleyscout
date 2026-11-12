@@ -113,18 +113,76 @@ th:first-child,td:first-child{text-align:left}
 .sb .acts{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 @page{size:A5 landscape;margin:0}
 .sheetwrap{margin-top:8px;overflow:hidden}
-.sheet{width:210mm;height:148mm;box-sizing:border-box;background:#fff;color:#000;display:flex;font:8pt/1.2 Arial,Helvetica,sans-serif;border:1px solid #bbb;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.sheet .left{flex:1;position:relative}
-.sheet .todo{position:absolute;left:6mm;right:4mm;top:6mm;bottom:6mm;border:1px dashed #bbb;color:#999;display:flex;align-items:center;justify-content:center;text-align:center;font-size:9pt}
-.sheet .right{width:84mm;padding:6mm 6mm 6mm 0;box-sizing:border-box}
-.sheet table{width:78mm;border-collapse:collapse;table-layout:fixed}
-.sheet td,.sheet th{border:.25mm solid #000;padding:0 1mm;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;height:var(--rh,5.2mm);font-weight:normal;font-size:8pt}
-.sheet th{font-weight:700;text-align:left;height:6mm;white-space:normal;overflow:visible;text-overflow:clip;line-height:1.15;padding:.6mm 1mm}
-.sheet .h td{font-size:6.5pt;font-weight:700;text-align:center;height:4.6mm}
-.sheet .sep td{font-weight:700;text-align:center;background:#e4e4e4;font-size:7pt;height:5mm;letter-spacing:.2mm}
-.sheet .sig td{height:14mm;padding:.5mm 1mm;vertical-align:middle}
+.sheet{width:210mm;height:148mm;box-sizing:border-box;background:#fff;color:#000;display:flex;flex-direction:column;font:8pt/1.2 Arial,Helvetica,sans-serif;border:1px solid #bbb;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.sheet .shead{display:flex;height:12mm;margin:3mm 6mm 0;flex:none}
+.sheet .org{width:42mm;flex:none;box-sizing:border-box;border:.25mm solid #000;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:1mm;text-align:center;font-weight:700;font-size:9pt;line-height:1.15}
+.sheet .org img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+.sheet .org .ph{color:#999;font-weight:400;font-size:7pt}
+.sheet .hc{display:flex;flex-direction:column;box-sizing:border-box;border:.25mm solid #000;border-left:0;min-width:0;overflow:hidden}
+.sheet .hc.h2{flex:66 1 0}.sheet .hc.h3{flex:36 1 0}.sheet .hc.h4{flex:54 1 0}
+.sheet .hr{flex:1;min-height:0;box-sizing:border-box;border-top:.25mm solid #000;padding:.3mm .8mm;overflow:hidden;text-align:left}
+.sheet .hr:first-child{border-top:0}
+.sheet .hd{display:block;white-space:nowrap;overflow:hidden;font-size:7pt;line-height:1.15;margin-top:.2mm}
+.sheet .ht{display:block;font-size:5pt;line-height:1;font-weight:400;color:#000;text-align:left}
+.sheet .sbody{flex:1;display:flex;gap:4mm;margin:1mm 6mm 3mm;min-height:0}
+.sheet .sets{flex:1;display:flex;flex-direction:column;gap:2mm;min-width:0}
+.sheet .stable{flex:1;display:flex;box-sizing:border-box;border:.25mm solid #000;min-height:0}
+.sheet .sc{flex:1;display:flex;align-items:center;justify-content:center;color:#999;font-size:7pt;border-left:.25mm solid #000;min-width:0}
+.sheet .sbox{flex:1;display:flex;flex-direction:column;min-width:0;border-left:.25mm solid #000}
+.sheet .sbox:first-child{border-left:0}
+.sheet .sbox > .sc{border-left:0}
+.sheet .stable:not(.tie){border:0;gap:2mm}
+.sheet .stable:not(.tie) > .sbox{border:.25mm solid #000}
+.sheet .stable:not(.tie) > .sbox.none{border:0}
+.sheet .shr{display:flex;height:6mm;flex:none;border-bottom:.25mm solid #000}
+.sheet .shr > span{display:flex;align-items:center;justify-content:center;box-sizing:border-box;border-left:.25mm solid #000;font-size:7pt;min-width:0}
+.sheet .shr > span:first-child{border-left:0}
+.sheet .shr .sm{width:9mm;flex:none}
+.sheet .shr .bg{flex:1;font-size:9pt;font-weight:700;letter-spacing:.2mm}
+.sheet .shs{display:flex;height:7mm;flex:none;border-bottom:.25mm solid #000}
+.sheet .tn{flex:1;min-width:0;display:grid;grid-template-columns:minmax(0,6fr) minmax(0,1fr);border-left:.25mm solid #000;box-sizing:border-box}
+.sheet .tn:first-child{border-left:0}
+.sheet .tl{flex:1;min-width:0;display:flex;align-items:center;justify-content:space-between;padding:0 1mm;box-sizing:border-box}
+.sheet .tn .nm{display:block;font-weight:700;font-size:7pt;line-height:1.05;overflow:hidden;min-width:0;max-height:6.2mm;overflow-wrap:anywhere}
+.sheet .pt{box-sizing:border-box;min-width:0;overflow:hidden;display:flex;align-items:center;justify-content:center;border-left:.25mm solid #000;font-size:4.5pt;font-weight:700;line-height:1}
+.sheet .pt{position:relative}
+.sheet .pt b{display:block;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-90deg);white-space:nowrap;font-weight:700}
+.sheet .rs2{display:flex;flex-direction:column;align-items:center;gap:.3mm;flex:none;margin-left:1mm}
+.sheet .cir{display:block;width:2.9mm;height:2.9mm;box-sizing:border-box;border:.3mm solid #000;border-radius:50%;font:700 5.5pt/2.3mm Arial,Helvetica,sans-serif;font-style:normal;text-align:center}
+.sheet .cir.on{background:#000;color:#fff}
+.sheet .sv{display:flex;height:4.5mm;flex:none;border-bottom:.25mm solid #000}
+.sheet .sg{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));min-width:0;box-sizing:border-box;border-left:.25mm solid #000}
+.sheet .sg:first-child{border-left:0}
+.sheet .sg > span{display:flex;align-items:center;justify-content:center;box-sizing:border-box;border-left:.25mm solid #000;font-size:6pt;font-weight:700;min-width:0;line-height:1}
+.sheet .sg > span:first-child{border-left:0}
+.sheet .stable.tie{flex-direction:column}
+.sheet .tcells{flex:1;display:flex;min-height:0}
+.sheet .sc:first-child{border-left:0}
+.sheet .sgrid{flex:1;display:flex;flex-direction:column;min-height:0}
+.sheet .gr{flex:1;min-height:0;display:flex;overflow:hidden}
+.sheet .gr .sg > span{border-top:.25mm solid #000;overflow:hidden}
+.sheet .gr .sg > span.f{border-top:0}
+.sheet .gr:first-child .sg > span{border-top:0}
+.sheet .gr .sg > span.hf{padding:0;align-items:stretch}
+.sheet .gr .sg > span.hf i{flex:1;min-width:0}
+.sheet .gr .sg > span.hf i + i{border-left:.25mm solid #000}
+.sheet .right{width:72mm;flex:none;display:flex;flex-direction:column;gap:1mm;min-height:0}
+.sheet table{width:72mm;border-collapse:collapse;table-layout:fixed}
+.sheet td,.sheet th{border:.25mm solid #000;padding:0 .8mm;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;height:var(--rh,5.2mm);font-weight:normal;font-size:var(--fs,8pt)}
+.sheet th{font-weight:700;text-align:left;height:4.6mm;font-size:7pt;white-space:nowrap;overflow:hidden;text-overflow:clip;line-height:1.1;padding:.2mm .8mm}
+.sheet .h td{font-size:6pt;font-weight:700;text-align:center;height:3.4mm}
+.sheet .sep td{font-weight:700;text-align:center;background:#e4e4e4;font-size:6.5pt;height:3.4mm;letter-spacing:.2mm}
+.sheet .sig td{height:7mm;padding:.3mm .8mm;vertical-align:middle}
+.sheet .rs{table-layout:fixed}
+.sheet .rs col{width:3mm}
+.sheet .rs .wn td{height:4mm;font-size:7pt}
+.sheet .rs .wn td:first-child{font-weight:700}
+.sheet .rs .rf td{height:7mm;vertical-align:top;padding:.3mm .8mm}
+.sheet .cp{display:block;color:#888;font-size:5.5pt;line-height:1}
+.sheet .rm td{height:7.5mm;vertical-align:top;font-weight:700;font-size:6.5pt;padding:.4mm .8mm}
 .sheet .n{text-align:center}
-.sheet .cap{display:inline-block;min-width:4.2mm;height:4.2mm;line-height:3.7mm;border:.35mm solid #000;border-radius:50%;text-align:center;box-sizing:border-box}
+.sheet td.n{overflow:visible}
+.sheet .cap{display:inline-block;min-width:calc(var(--rh,5.2mm) - .1mm);height:calc(var(--rh,5.2mm) - .1mm);line-height:calc(var(--rh,5.2mm) - .7mm);border:.35mm solid #000;border-radius:50%;text-align:center;box-sizing:border-box}
 @media print{html,body{background:#fff!important;margin:0!important;padding:0!important}nav,#app>*:not(.sheetwrap){display:none!important}#app{padding:0!important;margin:0!important;max-width:none!important}.sheetwrap{margin:0!important;height:auto!important;overflow:visible!important}.sheet{transform:none!important;border:0!important;page-break-inside:avoid;break-inside:avoid}}
 </style>
 </head>
@@ -849,7 +907,7 @@ function statsView(){
   <div class="mut" style="margin-top:8px">Errors given: ${r.given}. Share of points from attack: ${r.pf?Math.round(r.kill/r.pf*100):0}%, from serve: ${r.pf?Math.round(r.ace/r.pf*100):0}%.</div></div>`});
   return h}
 
-const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 1.15.0</div>';
+const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 1.22.0</div>';
 const FXK='vb-scout-fx-v1';let fx={flash:true,sound:true};try{const r=JSON.parse(localStorage.getItem(FXK)||'null');if(r&&typeof r==='object')fx=Object.assign(fx,r)}catch(e){}
 function setFx(k,v){fx[k]=!!v;try{localStorage.setItem(FXK,JSON.stringify(fx))}catch(e){}render()}
 let actx=null;
@@ -879,19 +937,21 @@ function pickView(){const b=(k,t,d)=>`<button onclick="setApp('${k}')" style="di
   return`<h1>VolleyScout</h1><div class="mut">Choose how this device will be used. The choice is remembered. You can change it later in Settings.</div>${b('coach','Coach view','Your own team: roster, line-ups, rotation, substitutions and scouting.')}${b('scorer','Score table','Official scoring of a match between two teams. Set the match up in advance, then score it.')}`}
 const todayS=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 const rulePl=r=>r.pl==null?12:r.pl,ruleLib=r=>r.lib==null?2:r.lib;
-const SX0=()=>({id:null,rule:'local',date:todayS(),keep:null,a:{name:''},b:{name:''}});
+const HDF=[['venue','Venue'],['match','Match'],['no','Match #'],['court','Court'],['ref','Referee Team']];
+const HD0=()=>({venue:'',match:'',no:'',court:'',ref:''});
+const SX0=()=>({id:null,rule:'local',date:todayS(),keep:null,a:{name:''},b:{name:''},hd:HD0()});
 function newSM(){S.sx=SX0();S.mv=null;S.ts=null;S.rx=null;render();scrollTo(0,0)}
-function editSM(id){const m=S.sm.find(x=>x.id===id);if(!m)return;S.sx={id,rule:m.fmt,date:m.date,keep:m.rule,a:{name:m.a.name},b:{name:m.b.name}};S.mv={id,step:'match'};S.ts=null;S.rx=null;render();scrollTo(0,0)}
-function syncSx(){const x=S.sx,g=i=>document.getElementById(i);if(!x||!g('sx-d'))return;x.rule=g('sx-r').value;x.date=g('sx-d').value;x.a.name=g('sx-a-n').value;x.b.name=g('sx-b-n').value}
+function editSM(id){const m=S.sm.find(x=>x.id===id);if(!m)return;S.sx={id,rule:m.fmt,date:m.date,keep:m.rule,a:{name:m.a.name},b:{name:m.b.name},hd:Object.assign(HD0(),m.hd)};S.mv={id,step:'match'};S.ts=null;S.rx=null;render();scrollTo(0,0)}
+function syncSx(){const x=S.sx,g=i=>document.getElementById(i);if(!x||!g('sx-d'))return;x.rule=g('sx-r').value;x.date=g('sx-d').value;x.a.name=g('sx-a-n').value;x.b.name=g('sx-b-n').value;x.hd=Object.assign(HD0(),x.hd);for(const k in x.hd){const e=g('sx-h-'+k);if(e)x.hd[k]=e.value}}
 function sxCancel(){S.sx=null;S.mv=null;S.ts=null;S.rx=null;render();scrollTo(0,0)}
 function saveSMatch(){syncSx();const x=S.sx,an=x.a.name.trim(),bn=x.b.name.trim();
   if(!an||!bn){alert('Enter both team names.');return}
   if(an.toLowerCase()===bn.toLowerCase()){alert('The two teams need different names.');return}
   if(x.id&&lockedM(x.id,'match')){alert('The set has started, so the match details can no longer be changed.');return}
   const old=x.id?S.sm.find(m=>m.id===x.id):null,R=x.keep&&old&&old.fmt===x.rule?x.keep:copy(getRule(x.rule));
-  const m=Object.assign({},old||{},{id:old?old.id:'s'+Date.now().toString(36),fmt:x.rule,rule:R,date:x.date||todayS(),a:{name:an,pl:old?old.a.pl:[]},b:{name:bn,pl:old?old.b.pl:[]}});
+  const m=Object.assign({},old||{},{id:old?old.id:'s'+Date.now().toString(36),fmt:x.rule,rule:R,date:x.date||todayS(),hd:Object.assign(HD0(),x.hd,{}),a:{name:an,pl:old?old.a.pl:[]},b:{name:bn,pl:old?old.b.pl:[]}});
   if(old){S.sm[S.sm.findIndex(y=>y.id===old.id)]=m}else{m.created=Date.now();S.sm.push(m)}
-  saveSM();S.sx=null;openMatch(m.id)}
+  for(const k in m.hd)m.hd[k]=String(m.hd[k]||'').trim();saveSM();S.sx=null;openMatch(m.id)}
 function delSMatch(id){const m=S.sm.find(x=>x.id===id);if(m&&confirm(boardStarted(m)?'Delete '+m.a.name+' v '+m.b.name+'? Scoring has started and all of it will be lost.':'Delete '+m.a.name+' v '+m.b.name+'?')){S.sm=S.sm.filter(x=>x.id!==id);saveSM();render()}}
 function smForm(){const x=S.sx;{const m0=x.id&&S.sm.find(q=>q.id===x.id);if(m0&&editLocked(m0,'match'))return matchRO(m0)}
   const rules=allRules(),has=rules.some(r=>r.id===x.rule);
@@ -899,6 +959,7 @@ function smForm(){const x=S.sx;{const m0=x.id&&S.sm.find(q=>q.id===x.id);if(m0&&
   return`${crumbs(x.id&&S.sm.find(q=>q.id===x.id),'match')}<h1 style="margin-top:10px">${x.id?'Match':'New match'}</h1>
   <div class="card"><label for="sx-r">Rules</label><select id="sx-r">${opts}</select><label for="sx-d">Date</label><input id="sx-d" type="date" value="${esc(x.date)}"><div class="mut" style="margin-top:6px">Rule sets are created on the Rules tab. The match keeps its own copy of the rules.</div></div>
   <div class="card"><label for="sx-a-n">Team A name</label><input id="sx-a-n" autocomplete="off" value="${esc(x.a.name)}" placeholder="Team name"><label for="sx-b-n">Team B name</label><input id="sx-b-n" autocomplete="off" value="${esc(x.b.name)}" placeholder="Team name"></div>
+  <div class="card"><b>Sheet header</b><div class="mut" style="margin-bottom:4px">Printed in the top table of the scoresheet. All optional.</div>${HDF.map(([k,l])=>`<label for="sx-h-${k}">${l}</label><input id="sx-h-${k}" autocomplete="off" value="${esc((x.hd||{})[k]||'')}">`).join('')}</div>
   <div class="mut">The rosters are entered in the next step, when the teams hand them in.</div>
   <div style="margin-top:14px"><button class="pri" onclick="saveSMatch()">Save match</button></div>`}
 /* ===== Signatures (each team signs once its roster is complete) ===== */
@@ -906,7 +967,7 @@ const SGW=300,SGH=100;
 const teamSigned=(m,t)=>!!(m.sig&&m.sig[t]&&m.sig[t].d);
 const teamDone=(m,t)=>teamReady(m[t])&&teamSigned(m,t);
 const rosterDone=m=>teamDone(m,'a')&&teamDone(m,'b');
-function sigSvg(sig,sheet){if(!sig||!sig.d)return'';return`<svg viewBox="0 0 ${+sig.w||SGW} ${+sig.h||SGH}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Signature" style="display:block;width:100%;height:${sheet?'13mm':'auto'}"><path d="${esc(sig.d)}" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`}
+function sigSvg(sig,sheet){if(!sig||!sig.d)return'';return`<svg viewBox="0 0 ${+sig.w||SGW} ${+sig.h||SGH}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Signature" style="display:block;width:100%;height:${sheet?'5.6mm':'auto'}"><path d="${esc(sig.d)}" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`}
 function sgPad(m,t){const sig=m.sig&&m.sig[t],show=!sig||(S.sg&&S.sg.id===m.id&&S.sg.t===t&&S.sg.redo);
   if(show&&(!S.sg||S.sg.id!==m.id||S.sg.t!==t))S.sg={id:m.id,t,d:'',redo:!!sig};
   return`<div class="card"><b>Signature: ${esc(m[t].name)}</b><div class="mut">The coach or captain signs here to confirm the roster.</div>`+(show?
@@ -968,7 +1029,7 @@ function scorerMatches(){
   return`<div class="row sp"><h1 style="margin:0">Matches</h1><button class="pri" onclick="newSM()">New match</button></div>`+(L.length?L.map(m=>`<div class="card"><b>${esc(m.a.name)} v ${esc(m.b.name)}</b><div class="mut">${esc(m.date||'')} · ${esc(m.rule.name)}</div><div class="mut">${esc(m.a.name)}: ${cnt(m.a)} · ${esc(m.b.name)}: ${cnt(m.b)}</div><div class="mut">${ruleText(m.rule)}</div>${boardStarted(m)&&m.sets[0].t0?`<div class="mut">Started ${hm(m.sets[0].t0)}</div>`:''}${tossLine(m)}<div class="row" style="margin-top:8px"><button class="pri" onclick="openMatch('${m.id}')">Open</button><button onclick="openSheet('${m.id}')">Scoresheet</button><button class="del" onclick="delSMatch('${m.id}')">Delete</button></div></div>`).join(''):`<div class="card"><b>No matches yet.</b><div class="mut">Create a match in advance: choose the rules, enter the two team names and their rosters.</div></div>`)+`<div class="mut">Scoring itself comes in the next step.</div>`}
 function scorerSettings(){
   const th=`<div class="seg" role="group" aria-label="Theme">${[['auto','Auto'],['light','Light'],['dark','Dark']].map(([k,l])=>`<button aria-pressed="${themeMode===k}" onclick="setTheme('${k}')">${l}</button>`).join('')}</div><div class="mut" style="margin-top:6px">Auto follows your device setting.</div>`;
-  return`<h1>Settings</h1><div class="card"><h2 style="margin-top:0">Theme</h2>${th}</div><details class="card"><summary style="cursor:pointer"><b>Backup and transfer</b></summary><div style="margin-top:10px">${backupHtml()}</div></details><div class="card"><div class="row sp"><div><b>View</b><div class="mut">Score table</div></div><button onclick="changeView()">Change view</button></div></div>`}
+  return`<h1>Settings</h1><div class="card"><h2 style="margin-top:0">Theme</h2>${th}</div>${orgCard()}<details class="card"><summary style="cursor:pointer"><b>Backup and transfer</b></summary><div style="margin-top:10px">${backupHtml()}</div></details><div class="card"><div class="row sp"><div><b>View</b><div class="mut">Score table</div></div><button onclick="changeView()">Change view</button></div></div>`}
 
 /* ===== Toss ===== */
 const SIDE={L:'left',R:'right'},oppT=t=>t==='a'?'b':'a',oppS=x=>x==='L'?'R':'L';
@@ -1021,7 +1082,7 @@ const stepHead=(m,k)=>`${crumbs(m,k)}<h1 style="margin-top:10px">${STEPS.find(x=
 function stepSoon(m,k){return stepHead(m,k)+`<div class="card"><b>Not built yet.</b><div class="mut">This step comes in a later version.</div></div>`}
 const roLine=t=>t.pl.length?t.pl.map(p=>'#'+esc(p.n)+(p.name?' '+esc(p.name):'')+(p.cap?' (captain)':'')+(p.lib?' (libero)':'')).join(', '):'No roster.';
 const roNote=k=>`<div class="mut">Read-only: the first set has started, so the ${k} can no longer be changed.</div>`;
-function matchRO(m){return stepHead(m,'match')+`<div class="card"><b>${esc(m.rule.name)}</b><div class="mut">${esc(m.date||'')}</div></div>`+roNote('match details')}
+function matchRO(m){return stepHead(m,'match')+`<div class="card"><b>${esc(m.rule.name)}</b><div class="mut">${esc(m.date||'')}</div></div>`+(HDF.some(([k])=>m.hd&&m.hd[k])?`<div class="card">${HDF.filter(([k])=>m.hd&&m.hd[k]).map(([k,l])=>`<div class="mut">${l}</div><div>${esc(m.hd[k])}</div>`).join('')}</div>`:'')+roNote('match details')}
 function rosterRO(m){return stepHead(m,'roster')+`<div class="card"><b>${esc(m.a.name)}</b><div class="mut">${roLine(m.a)}</div>${teamSigned(m,'a')?`<div class="sgbox">${sigSvg(m.sig.a)}</div>`:''}</div><div class="card"><b>${esc(m.b.name)}</b><div class="mut">${roLine(m.b)}</div>${teamSigned(m,'b')?`<div class="sgbox">${sigSvg(m.sig.b)}</div>`:''}</div>`+roNote('rosters')}
 function tossRO(m){return stepHead(m,'toss')+`<div class="card"><b>Result</b><div style="margin-top:6px">${m.toss&&m.toss.serve?esc(tossText(m,m.toss)):'No toss recorded.'}</div></div>`+roNote('toss')}
 /* ===== Scoreboard ===== */
@@ -1065,28 +1126,72 @@ function boardView(){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||!m.toss||!m.tos
   const on=set.on,dis=on?'':' disabled',col=t=>`<div class="col">${spie(m,t,set,true,t===srv)}${libLine(m,t)}<div class="row" style="flex-wrap:nowrap;gap:8px;margin-top:8px;align-items:stretch;${t===Rt?'flex-direction:row-reverse;':''}${on?'':'opacity:.45'}"><div class="big" style="background:${tcol(t)}" aria-label="${esc(m[t].name)} points"${on?'':' aria-disabled="true"'}>0</div><div class="sets" style="border-color:${tcol(t)}" aria-label="${esc(m[t].name)} sets won"><small>Sets</small>0</div></div><div class="acts"><button${dis}>Substitution</button><button${dis}>Timeout</button></div></div>`;
   const head=t=>`<div><div class="nm" style="color:${tcol(t)}">${esc(m[t].name)}</div><div class="mut" style="font-size:12px">${t===srv?'Serving':'Receiving'}</div></div>`;
   return`${crumbs(m,'board')}<div class="sbh">${head(L)}<div class="st">Set ${i+1}${startedTxt(set)}</div>${head(Rt)}</div><div class="sb">${col(L)}${col(Rt)}</div>${on?`<div class="mut" style="margin-top:10px">Set ${i+1} is in progress. Points, substitutions and timeouts come in the next version.</div>`:`<div style="margin-top:12px"><button class="pri" onclick="startSetS()">Start set ${i+1}</button><div class="mut" style="margin-top:4px">The score and the buttons switch on when the set starts. The line-up can still be changed until then.</div></div>`}`}
+/* ===== Organiser (name or logo in the first cell of the sheet) ===== */
+const ORGK='vb-scout-org-v1';
+let ORG={name:'',logo:''};try{const r=JSON.parse(localStorage.getItem(ORGK)||'null');if(r&&typeof r==='object')ORG={name:String(r.name||''),logo:String(r.logo||'')}}catch(e){}
+const orgSave=()=>{try{localStorage.setItem(ORGK,JSON.stringify(ORG))}catch(e){}};
+const orgLogoOk=()=>/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(ORG.logo);
+function orgSetName(v){ORG.name=String(v).slice(0,60);orgSave()}
+function orgClearLogo(){ORG.logo='';orgSave();render()}
+function orgPickLogo(inp){const f=inp.files&&inp.files[0];if(!f)return;if(!/^image\//.test(f.type)){alert('Choose an image file.');return}
+  const rd=new FileReader();rd.onload=()=>{const img=new Image();img.onload=()=>{const k=Math.min(1,400/img.width,160/img.height),c=document.createElement('canvas');c.width=Math.max(1,Math.round(img.width*k));c.height=Math.max(1,Math.round(img.height*k));c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    try{ORG.logo=c.toDataURL('image/png')}catch(e){alert('This image cannot be used.');return}orgSave();render()};img.onerror=()=>alert('This image cannot be read.');img.src=rd.result};rd.readAsDataURL(f)}
+function orgCard(){return`<div class="card"><h2 style="margin-top:0">Organiser</h2><div class="mut">Shown in the first cell at the top of the scoresheet: the logo if there is one, otherwise the name.</div><label for="org-n">Name</label><input id="org-n" autocomplete="off" value="${esc(ORG.name)}" onchange="orgSetName(this.value);render()" maxlength="60"><label for="org-l">Logo</label>${orgLogoOk()?`<div class="sgbox" style="max-width:220px"><img src="${ORG.logo}" alt="Organiser logo" style="display:block;max-width:100%;max-height:70px;margin:0 auto"></div>`:''}<input id="org-l" type="file" accept="image/*" onchange="orgPickLogo(this)">${orgLogoOk()?'<div class="row" style="margin-top:8px"><button class="del" onclick="orgClearLogo()">Remove logo</button></div>':''}</div>`}
 /* ===== Scoresheet (A5 landscape, one page) ===== */
 function sheetHtml(m){
   const P=t=>m[t].pl.filter(p=>!p.lib).sort((a,b)=>+a.n-+b.n),Lb=t=>m[t].pl.filter(p=>p.lib).sort((a,b)=>+a.n-+b.n);
-  const rows=Math.max(12,P('a').length,P('b').length),lrows=Math.max(2,Lb('a').length,Lb('b').length),rh=Math.min(5.2,62.4/rows).toFixed(2)+'mm';
+  const N=(m.rule&&m.rule.sets&&m.rule.sets.length)||3,rows=Math.max(12,P('a').length,P('b').length),lrows=Math.max(2,Lb('a').length,Lb('b').length);
+  const rhn=Math.max(2.4,Math.min(5.2,(129-63)/(rows+lrows+N)-.25)),rh=rhn.toFixed(2)+'mm',fs=rhn>=4.6?8:rhn>=3.2?7:6.2;
   const cell=(p,flag)=>p?`<td></td><td class="n">${p.cap&&!flag?`<span class="cap">${esc(p.n)}</span>`:esc(p.n)}</td><td>${esc(p.name||'')}</td>`:'<td></td><td></td><td></td>';
   let body='';
   for(let i=0;i<rows;i++)body+=`<tr>${cell(P('a')[i])}${cell(P('b')[i])}</tr>`;
   let lib='';
   for(let i=0;i<lrows;i++)lib+=`<tr>${cell(Lb('a')[i],1)}${cell(Lb('b')[i],1)}</tr>`;
-  const table=`<table class="rt" style="--rh:${rh}"><colgroup><col style="width:8mm"><col style="width:8mm"><col><col style="width:8mm"><col style="width:8mm"><col></colgroup>
-<tr><th colspan="3">Team: ${esc(m.a.name)}</th><th colspan="3">Team: ${esc(m.b.name)}</th></tr>
+  const table=`<table class="rt"><colgroup><col style="width:7mm"><col style="width:7mm"><col><col style="width:7mm"><col style="width:7mm"><col></colgroup>
+<tr><th colspan="3" style="font-size:${fitPt('Team: '+m.a.name,34.4,7,5,1)}pt">Team: ${esc(m.a.name)}</th><th colspan="3" style="font-size:${fitPt('Team: '+m.b.name,34.4,7,5,1)}pt">Team: ${esc(m.b.name)}</th></tr>
 <tr class="h"><td>MVP</td><td>#</td><td>Name</td><td>MVP</td><td>#</td><td>Name</td></tr>${body}
 <tr class="sep"><td colspan="6">LIBERO PLAYERS</td></tr>${lib}
 <tr class="sep"><td colspan="6">SIGNATURES BEFORE MATCH</td></tr>
 <tr class="sig"><td colspan="3">${sigSvg(m.sig&&m.sig.a,1)}</td><td colspan="3">${sigSvg(m.sig&&m.sig.b,1)}</td></tr></table>`;
-  return`<div class="sheet"><div class="left"><div class="todo">Set sheets: next step</div></div><div class="right">${table}</div></div>`}
+  /* result table: a 24-unit grid so halves (12) and thirds (8) line up with the roster table */
+  let setRows='';
+  for(let i=1;i<=N;i++)setRows+=`<tr><td colspan="3"></td><td colspan="4"></td><td colspan="3"></td><td colspan="4" class="n">Set ${i}</td><td colspan="3"></td><td colspan="4"></td><td colspan="3"></td></tr>`;
+  const win=m.res&&m.res.winner&&m[m.res.winner]?esc(m[m.res.winner].name):'';
+  const result=`<table class="rs"><colgroup>${'<col>'.repeat(24)}</colgroup>
+<tr class="h"><td colspan="3">Subs</td><td colspan="4">Timeouts</td><td colspan="3">Points</td><td colspan="4">Results</td><td colspan="3">Points</td><td colspan="4">Timeouts</td><td colspan="3">Subs</td></tr>${setRows}
+<tr class="wn"><td colspan="10">WINNER:</td><td colspan="14">${win}</td></tr>
+<tr class="sep"><td colspan="24">SIGNATURES AFTER MATCH</td></tr>
+<tr class="sig"><td colspan="12"></td><td colspan="12"></td></tr>
+<tr class="rf"><td colspan="8"><span class="cp">1st referee</span></td><td colspan="8"><span class="cp">2nd referee</span></td><td colspan="8"><span class="cp">Scorer</span></td></tr></table>`;
+  const remarks='<table class="rm"><tr><td>REMARKS</td></tr></table>';
+  const tabs=[],normal=N>=3?N-1:N,tm=(i)=>m.sets&&m.sets[i]&&m.sets[i].t0?hm(m.sets[i].t0):':';
+  const shr=(n)=>`<div class="shr"><span class="sm"><b>Start</b></span><span class="sm">${tm(n-1)}</span><span class="bg">SET ${n}</span><span class="sm"><b>End</b></span><span class="sm">:</span></div>`;
+  /* second row of a set box: team names, with R and S (receive / serve) circled; the one that applies is filled. The deciding set needs its own toss, so it stays unmarked. */
+  const srv=n=>(!m.toss||!m.toss.serve||(N>=3&&n===N))?null:serveOfT(m,n-1);
+  const LW=210-12-72-4;
+  const tn=(t,n,w)=>{const sv=srv(n),nm=t?m[t].name:'',fs=fitPt('Team: '+nm,(w*6/7-2-3.9)*.86,8,5,2);return`<div class="tn"><span class="tl"><span class="nm" style="font-size:${fs}pt"><b>Team:</b> ${esc(nm)}</span><span class="rs2"><i class="cir${t&&sv&&sv!==t?' on':''}">R</i><i class="cir${t&&sv===t?' on':''}">S</i></span></span><span class="pt"><b>POINTS</b></span></div>`};
+  const grp=`<div class="sg">${['I','II','III','IV','V','VI',''].map(x=>`<span>${x}</span>`).join('')}</div>`;
+  /* rows under the roman numbers: 2 empty, 2 with a colon, then rows with each cell split in two (4 for a set to 25, 3 for a lower limit such as 23). The 7th column stays open (the POINTS column). */
+  const lim=n=>{const r=m.rule&&m.rule.sets&&m.rule.sets[n-1];return r?(+r.hard||+r.win||25):25};
+  const gcells=k=>{const c=k==='c'?'<span class="co">:</span>':k==='h'?'<span class="hf"><i></i><i></i></span>':'<span></span>';return c.repeat(6)+'<span class="f"></span>'};
+  const sgrid=(n,q)=>{const ks=['e','e','c','c'].concat(Array(lim(n)>=25?4:3).fill('h'));return`<div class="sgrid">${ks.map(k=>`<div class="gr">${Array(q||2).fill(`<div class="sg">${gcells(k)}</div>`).join('')}</div>`).join('')}</div>`};
+  /* normal set boxes hold 2 teams; the tie break table holds 3 team blocks (the third repeats the first team: the teams change courts at 8 points) */
+  const shs=(n,k)=>{const ts=k===3?['a','b','a']:['a','b'],w=k===3?LW/3:(LW-2)/4-.3;return`<div class="shs">${ts.map(t=>tn(t,n,w)).join('')}</div><div class="sv">${ts.map(()=>grp).join('')}</div>`};
+  for(let i=0;i<normal;i+=2){const a=i+1,b=i+2<=normal?i+2:0;tabs.push(`<div class="stable" data-sets="${a}${b?','+b:''}"><div class="sbox">${shr(a)}${shs(a)}${sgrid(a)}</div><div class="sbox${b?'':' none'}">${b?shr(b)+shs(b)+sgrid(b):''}</div></div>`)}
+  if(N>=3)tabs.push(`<div class="stable tie" data-sets="${N}">${shr(N)}${shs(N,3)}${sgrid(N,3)}</div>`);
+  const hcell=(t,k,w)=>{const v=String((m.hd&&m.hd[k])||'');return`<div class="hr"><span class="ht">${t}</span><span class="hd" style="font-size:${fitPt(v,w,7,4.5,1)}pt">${esc(v)}</span></div>`};
+  const org=orgLogoOk()?`<img src="${ORG.logo}" alt="Organiser logo">`:ORG.name?esc(ORG.name):'<span class="ph">Organiser</span>';
+  return`<div class="sheet"><div class="shead"><div class="org">${org}</div><div class="hc h2">${hcell("Venue","venue",64)}${hcell("Match","match",64)}</div><div class="hc h3">${hcell("Match #","no",34)}${hcell("Court","court",34)}</div><div class="hc h4">${hcell("Referee Team","ref",52)}</div></div><div class="sbody"><div class="sets">${tabs.join('')}</div><div class="right" data-rows="${rows+lrows+N}" style="--rh:${rh};--fs:${fs}pt">${table}${result}${remarks}</div></div></div>`}
 function openSheet(id){const m=S.sm.find(x=>x.id===id);if(!m)return;S.sx=null;S.ts=null;S.rx=null;S.bp=null;S.mv={id,step:'sheet'};render();scrollTo(0,0)}
 function sheetView(){const m=S.sm.find(x=>x.id===S.mv.id);if(!m){S.mv=null;return scorerMatches()}
   return`${crumbs(m,'sheet')}<div class="row sp"><button class="pri" onclick="window.print()">Print / save as PDF</button></div><div class="mut" style="margin:6px 0">A5 landscape, one page. In the print dialog choose Save as PDF, margins none, scale 100%. This is a preview and fills in as the match is recorded.</div><div class="sheetwrap">${sheetHtml(m)}</div>`}
 function fitCrumbs(){const ol=document.querySelector('.crumbs ol'),c=ol&&ol.querySelector('.cur');if(c)ol.scrollLeft=Math.max(0,c.offsetLeft-ol.offsetLeft-70)}
-function fitSheet(){const w=document.querySelector('.sheetwrap');if(!w)return;const sh=w.firstElementChild,k=w.clientWidth?Math.min(1,w.clientWidth/793.7):1;sh.style.transformOrigin='0 0';sh.style.transform='scale('+k+')';w.style.height=(559.4*k)+'px'}
-window.addEventListener('resize',fitSheet);
+function fitPt(txt,w,max,min,lines){for(let f=max;f>=min;f-=.25){const L=Math.ceil(String(txt).length*.58*f*.3528*1.08/Math.max(1,w));if(L<=lines&&L*f*.3528*1.1<=6.2)return f}return min}
+function fitNames(){document.querySelectorAll('.sheet .nm,.sheet .rt th,.sheet .hd').forEach(el=>{let f=parseFloat(el.style.fontSize)||7;for(let i=0;i<16&&(el.scrollWidth>el.clientWidth+1||el.scrollHeight>el.clientHeight+1)&&f>4.5;i++){f-=.25;el.style.fontSize=f+'pt'}})}
+function fitRight(){const r=document.querySelector('.sheet .right'),b=document.querySelector('.sheet .sbody');if(!r||!b||!b.clientHeight)return;const rows=+r.getAttribute('data-rows')||19;let rh=parseFloat(r.style.getPropertyValue('--rh'))||3;
+  for(let i=0;i<6&&r.scrollHeight>b.clientHeight+1;i++){rh=Math.max(2.2,rh-(r.scrollHeight-b.clientHeight)/3.7795/rows-.02);r.style.setProperty('--rh',rh.toFixed(2)+'mm');r.style.setProperty('--fs',(rh>=4.6?8:rh>=3.2?7:6.2)+'pt')}}
+function fitSheet(){fitRight();fitNames();const w=document.querySelector('.sheetwrap');if(!w)return;const sh=w.firstElementChild,k=w.clientWidth?Math.min(1,w.clientWidth/793.7):1;sh.style.transformOrigin='0 0';sh.style.transform='scale('+k+')';w.style.height=(559.4*k)+'px'}
+window.addEventListener('resize',fitSheet);window.addEventListener('beforeprint',()=>{fitRight();fitNames()});
 function renderScorer(){const t=S.stab;
   document.getElementById('app').innerHTML=(t==='rules'?(S.rd?ruleForm():'<h1>Rules</h1>'+rulesHtml()):t==='settings'?scorerSettings():scorerMatches())+VER;
   ['matches','rules','settings'].forEach(k=>{const b=document.getElementById('t-s'+k);if(!b)return;if(t===k)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});fitSheet();fitCrumbs();sgBind()}
