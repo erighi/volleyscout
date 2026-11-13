@@ -140,7 +140,7 @@ th:first-child,td:first-child{text-align:left}
 .sheet .shr .sm{width:9mm;flex:none}
 .sheet .shr .bg{flex:1;font-size:9pt;font-weight:700;letter-spacing:.2mm}
 .sheet .shs{display:flex;height:7mm;flex:none;border-bottom:.25mm solid #000}
-.sheet .tn{flex:1;min-width:0;display:grid;grid-template-columns:minmax(0,6fr) minmax(0,1fr);border-left:.25mm solid #000;box-sizing:border-box}
+.sheet .tn{flex:1;min-width:0;display:grid;grid-template-columns:minmax(0,6fr) minmax(0,1.8fr);border-left:.25mm solid #000;box-sizing:border-box}
 .sheet .tn:first-child{border-left:0}
 .sheet .tl{flex:1;min-width:0;display:flex;align-items:center;justify-content:space-between;padding:0 1mm;box-sizing:border-box}
 .sheet .tn .nm{display:block;font-weight:700;font-size:7pt;line-height:1.05;overflow:hidden;min-width:0;max-height:6.2mm;overflow-wrap:anywhere}
@@ -151,28 +151,48 @@ th:first-child,td:first-child{text-align:left}
 .sheet .cir{display:block;width:2.9mm;height:2.9mm;box-sizing:border-box;border:.3mm solid #000;border-radius:50%;font:700 5.5pt/2.3mm Arial,Helvetica,sans-serif;font-style:normal;text-align:center}
 .sheet .cir.on{background:#000;color:#fff}
 .sheet .sv{display:flex;height:4.5mm;flex:none;border-bottom:.25mm solid #000}
-.sheet .sg{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));min-width:0;box-sizing:border-box;border-left:.25mm solid #000}
+.sheet .sg{flex:1;display:grid;grid-template-columns:repeat(6,minmax(0,1fr)) minmax(0,1.8fr);min-width:0;box-sizing:border-box;border-left:.25mm solid #000}
 .sheet .sg:first-child{border-left:0}
 .sheet .sg > span{display:flex;align-items:center;justify-content:center;box-sizing:border-box;border-left:.25mm solid #000;font-size:6pt;font-weight:700;min-width:0;line-height:1}
 .sheet .sg > span:first-child{border-left:0}
 .sheet .stable.tie{flex-direction:column}
 .sheet .tcells{flex:1;display:flex;min-height:0}
 .sheet .sc:first-child{border-left:0}
-.sheet .sgrid{flex:1;display:flex;flex-direction:column;min-height:0}
+.sheet .sgw{flex:1;min-height:0;position:relative}
+.sheet .sgrid{position:absolute;left:0;right:0;top:0;bottom:0;display:flex;flex-direction:column}
+.sheet .lb{box-sizing:border-box;flex:none;display:flex;align-items:center;justify-content:center;text-align:center;font-size:3.1pt;line-height:1.05;font-weight:400;overflow:hidden;padding:0 .2mm}
+.sheet .lw{width:6.6mm}.sheet .ls{width:2mm}.sheet .lt{width:4.6mm}
+.sheet .gr .lb{border-top:.25mm solid #000}
+.sheet .gr:first-child .lb{border-top:0}
+.sheet .gr .lb.ls{border-right:.25mm solid #000}
+.sheet .gr .lb.nt{border-top:0}
+.sheet .pnr{position:absolute;left:0;right:0;top:0;display:flex;overflow:hidden}
+.sheet .pl{flex:none;width:6.6mm}
+.sheet .pnb{flex:1 1 0;min-width:0;display:flex}
+.sheet .pns{flex:6 1 0;min-width:0}
+.sheet .pnc{flex:1.8 1 0;min-width:0;display:flex;box-sizing:border-box;padding-left:.25mm}
+.sheet .pcol{flex:1 1 0;min-width:0;display:flex;flex-direction:column}
+.sheet .pcol b{flex:1 1 0;min-height:0;display:flex;align-items:center;justify-content:center;font-weight:400;line-height:1;color:#000;overflow:hidden}
+.sheet .pcol b.pb{font-weight:700}
+.sheet .ovs{position:absolute;left:0;width:2mm;display:flex;align-items:center;justify-content:center;overflow:visible}
+.sheet .ovs b{display:block;white-space:nowrap;font-size:3.1pt;font-weight:400;line-height:1;transform:rotate(-90deg)}
 .sheet .gr{flex:1;min-height:0;display:flex;overflow:hidden}
 .sheet .gr .sg > span{border-top:.25mm solid #000;overflow:hidden}
-.sheet .gr .sg > span.f{border-top:0}
+.sheet .gr .sg > span.f{border-top:0;padding:0;align-items:stretch}
+.sheet .gr .sg > span.f i{flex:1;min-width:0}
+.sheet .gr .sg > span.f i + i{border-left:.25mm solid #000}
+.sheet .gr .sg > span.tt{font-size:5pt;font-weight:700}
 .sheet .gr:first-child .sg > span{border-top:0}
 .sheet .gr .sg > span.hf{padding:0;align-items:stretch}
 .sheet .gr .sg > span.hf i{flex:1;min-width:0}
 .sheet .gr .sg > span.hf i + i{border-left:.25mm solid #000}
 .sheet .gr .sg > span.hf i{position:relative}
 .sheet .no{font-style:normal;position:absolute;left:.3mm;top:.1mm;font-size:3.6pt;line-height:1;font-weight:400;color:#aaa}
-.sheet .right{width:72mm;flex:none;display:flex;flex-direction:column;gap:1mm;min-height:0}
-.sheet table{width:72mm;border-collapse:collapse;table-layout:fixed}
+.sheet .right{width:62mm;flex:none;display:flex;flex-direction:column;gap:1mm;min-height:0}
+.sheet table{width:62mm;border-collapse:collapse;table-layout:fixed}
 .sheet td,.sheet th{border:.25mm solid #000;padding:0 .8mm;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;height:var(--rh,5.2mm);font-weight:normal;font-size:var(--fs,8pt)}
 .sheet th{font-weight:700;text-align:left;height:4.6mm;font-size:7pt;white-space:nowrap;overflow:hidden;text-overflow:clip;line-height:1.1;padding:.2mm .8mm}
-.sheet .h td{font-size:6pt;font-weight:700;text-align:center;height:3.4mm}
+.sheet .h td{font-size:5.5pt;font-weight:700;text-align:center;height:3.4mm}
 .sheet .sep td{font-weight:700;text-align:center;background:#e4e4e4;font-size:6.5pt;height:3.4mm;letter-spacing:.2mm}
 .sheet .sig td{height:7mm;padding:.3mm .8mm;vertical-align:middle}
 .sheet .rs{table-layout:fixed}
@@ -943,7 +963,7 @@ function statsView(){
   <div class="mut" style="margin-top:8px">Errors given: ${r.given}. Share of points from attack: ${r.pf?Math.round(r.kill/r.pf*100):0}%, from serve: ${r.pf?Math.round(r.ace/r.pf*100):0}%.</div></div>`});
   return h}
 
-const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 1.28.0</div>';
+const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 1.31.0</div>';
 const FXK='vb-scout-fx-v1';let fx={flash:true,sound:true};try{const r=JSON.parse(localStorage.getItem(FXK)||'null');if(r&&typeof r==='object')fx=Object.assign(fx,r)}catch(e){}
 function setFx(k,v){fx[k]=!!v;try{localStorage.setItem(FXK,JSON.stringify(fx))}catch(e){}render()}
 let actx=null;
@@ -1251,7 +1271,7 @@ function sheetHtml(m){
   for(let i=0;i<rows;i++)body+=`<tr>${cell(P('a')[i])}${cell(P('b')[i])}</tr>`;
   let lib='';
   for(let i=0;i<lrows;i++)lib+=`<tr>${cell(Lb('a')[i],1)}${cell(Lb('b')[i],1)}</tr>`;
-  const table=`<table class="rt"><colgroup><col style="width:7mm"><col style="width:7mm"><col><col style="width:7mm"><col style="width:7mm"><col></colgroup>
+  const table=`<table class="rt"><colgroup><col style="width:6mm"><col style="width:6mm"><col><col style="width:6mm"><col style="width:6mm"><col></colgroup>
 <tr><th colspan="3" style="font-size:${fitPt('Team: '+m.a.name,34.4,7,5,1)}pt">Team: ${esc(m.a.name)}</th><th colspan="3" style="font-size:${fitPt('Team: '+m.b.name,34.4,7,5,1)}pt">Team: ${esc(m.b.name)}</th></tr>
 <tr class="h"><td>MVP</td><td>#</td><td>Name</td><td>MVP</td><td>#</td><td>Name</td></tr>${body}
 <tr class="sep"><td colspan="6">LIBERO PLAYERS</td></tr>${lib}
@@ -1272,15 +1292,21 @@ function sheetHtml(m){
   const shr=(n)=>`<div class="shr"><span class="sm"><b>Start</b></span><span class="sm">${tm(n-1)}</span><span class="bg">SET ${n}</span><span class="sm"><b>End</b></span><span class="sm">:</span></div>`;
   /* second row of a set box: team names, with R and S (receive / serve) circled; the one that applies is filled. The deciding set needs its own toss, so it stays unmarked. */
   const srv=n=>(!m.toss||!m.toss.serve||(N>=3&&n===N))?null:serveOfT(m,n-1);
-  const LW=210-12-72-4;
-  const tn=(t,n,w)=>{const sv=srv(n),nm=t?m[t].name:'',fs=fitPt('Team: '+nm,(w*6/7-2-3.9)*.86,8,5,2);return`<div class="tn"><span class="tl"><span class="nm" style="font-size:${fs}pt"><b>Team:</b> ${esc(nm)}</span><span class="rs2"><i class="cir${t&&sv&&sv!==t?' on':''}">R</i><i class="cir${t&&sv===t?' on':''}">S</i></span></span><span class="pt"><b>POINTS</b></span></div>`};
+  const LW=210-12-62-4;
+  const tn=(t,n,w)=>{const sv=srv(n),nm=t?m[t].name:'',fs=fitPt('Team: '+nm,(w*6/7.8-2-3.9)*.86,8,5,2);return`<div class="tn"><span class="tl"><span class="nm" style="font-size:${fs}pt"><b>Team:</b> ${esc(nm)}</span><span class="rs2"><i class="cir${t&&sv&&sv!==t?' on':''}">R</i><i class="cir${t&&sv===t?' on':''}">S</i></span></span><span class="pt"><b>POINTS</b></span></div>`};
   const grp=`<div class="sg">${['I','II','III','IV','V','VI',''].map(x=>`<span>${x}</span>`).join('')}</div>`;
   /* rows under the roman numbers: 2 empty, 2 with a colon, then rows with each cell split in two (4 for a set to 25, 3 for a lower limit such as 23). The 7th column stays open (the POINTS column). */
   const lim=n=>{const r=m.rule&&m.rule.sets&&m.rule.sets[n-1];return r?(+r.hard||+r.win||25):25};
-  const gcells=(k,r,R)=>{if(k==='h')return Array.from({length:6},(_,c)=>`<span class="hf"><i><b class="no">${r+1}</b></i><i><b class="no">${R+r+1}</b></i></span>`).join('')+'<span class="f"></span>';const c=k==='c'?'<span class="co">:</span>':'<span></span>';return c.repeat(6)+'<span class="f"></span>'};
-  const sgrid=(n,q)=>{const R=lim(n)>=25?4:3,ks=['e','e','c','c'].concat(Array(R).fill('h'));return`<div class="sgrid">${ks.map((k,i)=>`<div class="gr">${Array(q||2).fill(`<div class="sg">${gcells(k,i-4,R)}</div>`).join('')}</div>`).join('')}</div>`};
+  const gcells=(k,r,R,d)=>{const f=d===2?'<span class="f2 tt">T</span>':d<2?'<span class="f2 co">:</span>':'<span class="f"><i></i><i></i><i></i></span>';
+    if(k==='h')return Array.from({length:6},(_,c)=>`<span class="hf"><i><b class="no">${r+1}</b></i><i><b class="no">${R+r+1}</b></i></span>`).join('')+f;const c=k==='c'?'<span class="co">:</span>':'<span></span>';return c.repeat(6)+f};
+  /* label column (Starting players, Player No, Score at change, Subs) and the printed point numbers over the open part of the 7th column: three columns of equal length, 8/8/7 for a set to 21 (23), 6/6/5 for a set to 15 (17), 12 each up to 36 for a set to 25; the numbers from the winning score on are bold */
+  const lbl=i=>i===0?'<span class="lb lw">Starting players</span>':i===1?'<span class="lb ls"></span><span class="lb lt">Player No</span>':i===2?'<span class="lb ls nt"></span><span class="lb lt">Score at</span>':i===3?'<span class="lb ls nt"></span><span class="lb lt">change</span>':'<span class="lb lw"></span>';
+  const sgrid=(n,q)=>{const R=lim(n)>=25?4:3,ks=['e','e','c','c'].concat(Array(R).fill('h')),T=ks.length,rs=(m.rule&&m.rule.sets&&m.rule.sets[n-1])||{},win=+rs.win||25,M=win>=25?36:Math.max(win+2,+rs.hard||0),per=Math.ceil(M/3),fs=per>=12?3.3:per>=8?3.7:4,
+    cols=Array.from({length:3},(_,c)=>`<span class="pcol">${Array.from({length:per},(_,j)=>{const v=c*per+j+1;return v<=M?`<b${v>=win?' class="pb"':''}>${v}</b>`:'<b></b>'}).join('')}</span>`).join(''),
+    blk=`<div class="pnb"><span class="pns"></span><span class="pnc">${cols}</span></div>`;
+    return`<div class="sgw"><div class="sgrid">${ks.map((k,i)=>`<div class="gr">${lbl(i)}${Array(q||2).fill(0).map(()=>`<div class="sg">${gcells(k,i-4,R,T-1-i)}</div>`).join('')}</div>`).join('')}</div><div class="pnr" style="height:${(100*(T-3)/T).toFixed(3)}%;font-size:${fs}pt"><span class="pl"></span>${Array(q||2).fill(blk).join('')}</div><div class="ovs" style="top:${(100/T).toFixed(3)}%;height:${(300/T).toFixed(3)}%"><b>Subs</b></div></div>`};
   /* normal set boxes hold 2 teams; the tie break table holds 3 team blocks (the third repeats the first team: the teams change courts at 8 points) */
-  const shs=(n,k)=>{const ts=k===3?['a','b','a']:['a','b'],w=k===3?LW/3:(LW-2)/4-.3;return`<div class="shs">${ts.map(t=>tn(t,n,w)).join('')}</div><div class="sv">${ts.map(()=>grp).join('')}</div>`};
+  const shs=(n,k)=>{const ts=k===3?['a','b','a']:['a','b'],w=k===3?(LW-.5-6.6)/3:((LW-2)/2-.5-6.6)/2;return`<div class="shs"><span class="lb lw"></span>${ts.map(t=>tn(t,n,w)).join('')}</div><div class="sv"><span class="lb lw">Service Order</span>${ts.map(()=>grp).join('')}</div>`};
   for(let i=0;i<normal;i+=2){const a=i+1,b=i+2<=normal?i+2:0;tabs.push(`<div class="stable" data-sets="${a}${b?','+b:''}"><div class="sbox">${shr(a)}${shs(a)}${sgrid(a)}</div><div class="sbox${b?'':' none'}">${b?shr(b)+shs(b)+sgrid(b):''}</div></div>`)}
   if(N>=3)tabs.push(`<div class="stable tie" data-sets="${N}">${shr(N)}${shs(N,3)}${sgrid(N,3)}</div>`);
   const dmy=d=>/^\d{4}-\d{2}-\d{2}$/.test(d||'')?d.slice(8)+'/'+d.slice(5,7)+'/'+d.slice(0,4):String(d||''),
