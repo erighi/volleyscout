@@ -110,7 +110,12 @@ th:first-child,td:first-child{text-align:left}
 .sb .big{flex:1;min-width:0;border-radius:12px;color:var(--onc);text-align:center;font:700 64px/1.1 'Barlow Condensed','Arial Narrow',sans-serif;padding:4px 0}
 .sb .sets{border:2px solid;border-radius:10px;text-align:center;padding:2px 8px;min-width:46px;font:700 28px/1.2 'Barlow Condensed','Arial Narrow',sans-serif;display:flex;flex-direction:column;justify-content:center}
 .sb .sets small{font:600 11px/1 system-ui,sans-serif;color:var(--mut)}
+.lg{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.lgt{flex:none;width:68px;font-variant-numeric:tabular-nums;color:var(--mut)}
 .sb .acts{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.sb .tks{display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;color:var(--mut)}
+.sb .tkx{display:inline-block;position:relative;width:20px;height:20px;box-sizing:border-box;border:2px solid var(--fg);border-radius:5px;background:var(--card)}
+.sb .tkx.on::after{content:"";position:absolute;left:5px;top:0;width:5px;height:11px;border:solid var(--fg);border-width:0 3px 3px 0;transform:rotate(45deg)}
 @page{size:A5 landscape;margin:0}
 .sheetwrap{margin-top:8px;overflow:hidden}
 .sheet{width:210mm;height:148mm;box-sizing:border-box;background:#fff;color:#000;display:flex;flex-direction:column;font:8pt/1.2 Arial,Helvetica,sans-serif;border:1px solid #bbb;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -182,26 +187,36 @@ th:first-child,td:first-child{text-align:left}
 .sheet .gr .sg > span.f i{flex:1;min-width:0}
 .sheet .gr .sg > span.f i + i{border-left:.25mm solid #000}
 .sheet .gr .sg > span.tt{font-size:5pt;font-weight:700}
+.sheet .gr .sg > span.ts{font-size:4.2pt;font-weight:700}
+.sheet .gr .sg > span.nn{font-size:5pt;font-weight:700}
 .sheet .gr:first-child .sg > span{border-top:0}
-.sheet .gr .sg > span.hf{padding:0;align-items:stretch}
+.sheet .gr .sg > span.hf{padding:0;align-items:stretch;position:relative}
+.sheet .hf i.cx{display:flex;overflow:hidden}
+.sheet .dt{display:block;position:absolute;left:.3mm;bottom:.3mm;width:0;height:0;border:.4mm solid #000;border-radius:50%;text-decoration:none}
+.sheet .scn{font-style:normal;text-decoration:none;position:absolute;left:0;right:.15mm;top:.8mm;text-align:right;font-size:3.4pt;font-weight:700;line-height:1;color:#000}
+.sheet .pcol b.cx{position:relative}
+.sheet .pcol b.cx::after{content:"";position:absolute;left:0;right:0;top:50%;border-top:.3mm solid #000;transform:rotate(-40deg)}
+.sheet .xx{position:static;display:block;flex:1 1 0;min-width:0;width:100%;align-self:stretch}
+.sheet .xx line{stroke:#000}
 .sheet .gr .sg > span.hf i{flex:1;min-width:0}
 .sheet .gr .sg > span.hf i + i{border-left:.25mm solid #000}
 .sheet .gr .sg > span.hf i{position:relative}
 .sheet .no{font-style:normal;position:absolute;left:.3mm;top:.1mm;font-size:3.6pt;line-height:1;font-weight:400;color:#aaa}
-.sheet .right{width:62mm;flex:none;display:flex;flex-direction:column;gap:1mm;min-height:0}
-.sheet table{width:62mm;border-collapse:collapse;table-layout:fixed}
+.sheet .right{width:57mm;flex:none;display:flex;flex-direction:column;gap:1mm;min-height:0}
+.sheet table{width:57mm;border-collapse:collapse;table-layout:fixed}
 .sheet td,.sheet th{border:.25mm solid #000;padding:0 .8mm;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;height:var(--rh,5.2mm);font-weight:normal;font-size:var(--fs,8pt)}
 .sheet th{font-weight:700;text-align:left;height:4.6mm;font-size:7pt;white-space:nowrap;overflow:hidden;text-overflow:clip;line-height:1.1;padding:.2mm .8mm}
-.sheet .h td{font-size:5.5pt;font-weight:700;text-align:center;height:3.4mm}
+.sheet .h td{font-size:4.2pt;padding:0 .3mm;text-overflow:clip;font-weight:700;text-align:center;height:3.4mm}
 .sheet .sep td{font-weight:700;text-align:center;background:#e4e4e4;font-size:6.5pt;height:3.4mm;letter-spacing:.2mm}
 .sheet .sig td{height:7mm;padding:.3mm .8mm;vertical-align:middle}
 .sheet .rs{table-layout:fixed}
-.sheet .rs col{width:3mm}
+.sheet .rs col{width:2.375mm}
 .sheet .rs .wn td{height:4mm;font-size:7pt}
 .sheet .rs .wn td:first-child{font-weight:700}
 .sheet .rs .rf td{height:7mm;vertical-align:top;padding:.3mm .8mm}
 .sheet .cp{display:block;color:#888;font-size:5.5pt;line-height:1}
 .sheet .rm td{height:7.5mm;vertical-align:top;font-weight:700;font-size:6.5pt;padding:.4mm .8mm}
+.sheet .rm .rmt{font-weight:400;font-size:4.4pt;line-height:1.15;max-height:15mm;overflow:hidden;margin-top:.3mm}
 .sheet .n{text-align:center}
 .sheet td.n{overflow:visible}
 .sheet .cap{display:inline-block;min-width:calc(var(--rh,5.2mm) - .1mm);height:calc(var(--rh,5.2mm) - .1mm);line-height:calc(var(--rh,5.2mm) - .7mm);border:.35mm solid #000;border-radius:50%;text-align:center;box-sizing:border-box}
@@ -963,7 +978,7 @@ function statsView(){
   <div class="mut" style="margin-top:8px">Errors given: ${r.given}. Share of points from attack: ${r.pf?Math.round(r.kill/r.pf*100):0}%, from serve: ${r.pf?Math.round(r.ace/r.pf*100):0}%.</div></div>`});
   return h}
 
-const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 1.31.0</div>';
+const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 1.42.0</div>';
 const FXK='vb-scout-fx-v1';let fx={flash:true,sound:true};try{const r=JSON.parse(localStorage.getItem(FXK)||'null');if(r&&typeof r==='object')fx=Object.assign(fx,r)}catch(e){}
 function setFx(k,v){fx[k]=!!v;try{localStorage.setItem(FXK,JSON.stringify(fx))}catch(e){}render()}
 let actx=null;
@@ -994,7 +1009,7 @@ const NAV_COACH=document.getElementById('mainnav').innerHTML;
 const NAV_SCORER='<button id="t-smatches" onclick="goS(\'matches\')">Matches</button><button id="t-stournaments" onclick="goS(\'tournaments\')">Tournaments</button><button id="t-srules" onclick="goS(\'rules\')">Rules</button><button id="t-ssettings" onclick="goS(\'settings\')">Settings</button>';
 function setApp(m){appMode=m;try{localStorage.setItem(APPK,m)}catch(e){}S.cur=null;S.tab=m==='coach'?'teams':'matches';S.stab='matches';S.sx=null;S.mv=null;S.rd=null;render();scrollTo(0,0)}
 function changeView(){appMode=null;try{localStorage.removeItem(APPK)}catch(e){}S.cur=null;S.sx=null;S.rd=null;render();scrollTo(0,0)}
-function goS(t){S.stab=t;S.td=null;S.lv=null;S.sx=null;S.ts=null;S.rx=null;S.mv=null;S.rd=null;render();scrollTo(0,0)}
+function goS(t){S.stab=t;S.td=null;S.lv=null;S.toc=null;S.sbq=null;S.rpq=null;S.sx=null;S.ts=null;S.rx=null;S.mv=null;S.rd=null;render();scrollTo(0,0)}
 function pickView(){const b=(k,t,d)=>`<button onclick="setApp('${k}')" style="display:block;width:100%;text-align:left;padding:16px;margin:12px 0;font-size:16px"><b style="font-size:18px">${t}</b><div class="mut" style="margin-top:4px">${d}</div></button>`;
   return`<h1>VolleyScout</h1><div class="mut">Choose how this device will be used. The choice is remembered. You can change it later in Settings.</div>${b('coach','Coach view','Your own team: roster, line-ups, rotation, substitutions and scouting.')}${b('scorer','Score table','Official scoring of a match between two teams. Set the match up in advance, then score it.')}`}
 const todayS=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
@@ -1116,7 +1131,7 @@ function bySt(L,fn){const gs=[...S.stt].sort((a,b)=>a.name.localeCompare(b.name)
   if(!gs.length)return L.map(fn).join('');const rest=L.filter(m=>!sttOf(m.tid));
   return gs.map(([t,ms])=>`<h2 style="margin:16px 0 6px">${esc(t.name)}</h2>`+ms.map(fn).join('')).join('')+(rest.length?`<h2 style="margin:16px 0 6px">No tournament</h2>`+rest.map(fn).join(''):'')}
 function scorerMatches(){
-  if(S.mv){const m=S.sm.find(x=>x.id===S.mv.id);if(!m)S.mv=null;else{const k=S.mv.step;if(k==='match'&&S.sx)return smForm();if(k==='roster'&&S.rx)return rosterViewS();if(k==='toss'&&S.ts)return tossView();if(k==='lineup')return lineupView();if(k==='board')return boardView();if(k==='sheet')return sheetView();if(k!=='match'&&k!=='roster'&&k!=='toss')return stepSoon(m,k)}}
+  if(S.mv){const m=S.sm.find(x=>x.id===S.mv.id);if(!m)S.mv=null;else{const k=S.mv.step;if(k==='match'&&S.sx)return smForm();if(k==='roster'&&S.rx)return rosterViewS();if(k==='toss'&&S.ts)return tossView();if(k==='lineup')return lineupView();if(k==='board')return boardView();if(k==='sheet')return sheetView();if(k==='log')return logView();if(k!=='match'&&k!=='roster'&&k!=='toss')return stepSoon(m,k)}}
   if(S.sx)return smForm();
   const L=[...S.sm].sort((p,q)=>(p.date||'').localeCompare(q.date||'')||(p.created||0)-(q.created||0));
   const cnt=t=>{const lib=t.pl.filter(p=>p.lib).length,pl=t.pl.length-lib,c=t.pl.find(p=>p.cap);return t.pl.length?pl+' player'+(pl===1?'':'s')+(lib?' + '+lib+' libero'+(lib===1?'':'s'):'')+(c?', captain #'+c.n:''):'no roster yet'};
@@ -1169,10 +1184,10 @@ function crumbs(m,cur){const d=m?stepsDone(m):STEPS.map(()=>false),main=STEPS.fi
   const li=main.map(([k,l],i)=>{const on=m?(i===0||d[i-1]):i===0,mark=d[i]&&m?'\u2713 ':'',lab=`<span class="cn">${i+1}</span> ${mark}${l}`;
     return`<li>${k===cur?`<span class="cr cur" aria-current="step">${lab}</span>`:on?`<button class="cr${d[i]?'':' rdy'}" onclick="goStep('${k}')">${lab}</button>`:`<span class="cr off" aria-disabled="true">${lab}</span>`}</li>`}).join('');
   const sh=!m?`<span class="cr off sheetb" aria-disabled="true">${DOCIC} Scoresheet</span>`:cur==='sheet'?`<span class="cr cur sheetb" aria-current="step">${DOCIC} Scoresheet</span>`:`<button class="cr sheetb" onclick="goStep('sheet')">${DOCIC} Scoresheet</button>`;
-  return`<div class="crumbs" role="navigation" aria-label="Match steps"><ol><li><button class="cr back" onclick="tsBack()">\u2039 Matches</button></li>${li}<li class="sheetli">${sh}</li></ol></div>`}
-function showStep(m,k){S.sx=null;S.ts=null;S.rx=null;if(k==='match'){editSM(m.id);return}if(k==='roster'){openRoster(m.id);return}if(k==='toss'){openToss(m.id);return}if(k==='lineup'){openLineup(m.id);return}if(k==='board'){openBoard(m.id);return}if(k==='sheet'){openSheet(m.id);return}S.mv={id:m.id,step:k};render();scrollTo(0,0)}
+  return`<div class="crumbs" role="navigation" aria-label="Match steps"><ol><li><button class="cr back" onclick="tsBack()">\u2039 Matches</button></li>${li}<li class="sheetli">${sh}</li><li>${m?(cur==='log'?`<span class="cr cur" aria-current="step">Log</span>`:`<button class="cr" onclick="goStep('log')">Log</button>`):`<span class="cr off" aria-disabled="true">Log</span>`}</li></ol></div>`}
+function showStep(m,k){S.sx=null;S.ts=null;S.rx=null;if(k==='match'){editSM(m.id);return}if(k==='roster'){openRoster(m.id);return}if(k==='toss'){openToss(m.id);return}if(k==='lineup'){openLineup(m.id);return}if(k==='board'){openBoard(m.id);return}if(k==='sheet'){openSheet(m.id);return}if(k==='log'){openLog(m.id);return}S.mv={id:m.id,step:k};render();scrollTo(0,0)}
 function openMatch(id){const m=S.sm.find(x=>x.id===id);if(!m)return;const d=stepsDone(m),i=d.findIndex(x=>!x);showStep(m,STEPS[i<0?STEPS.length-1:i][0])}
-function goStep(k){const m=S.mv&&S.sm.find(x=>x.id===S.mv.id);if(!m)return;const i=STEPS.findIndex(x=>x[0]===k),d=stepsDone(m);if(i<0||(k!=='sheet'&&!(i===0||d[i-1])))return;showStep(m,k)}
+function goStep(k){const m=S.mv&&S.sm.find(x=>x.id===S.mv.id);if(!m)return;if(k==='log'){showStep(m,k);return}const i=STEPS.findIndex(x=>x[0]===k),d=stepsDone(m);if(i<0||(k!=='sheet'&&!(i===0||d[i-1])))return;showStep(m,k)}
 const stepHead=(m,k)=>`${crumbs(m,k)}<h1 style="margin-top:10px">${STEPS.find(x=>x[0]===k)[1]}</h1><div class="mut">${esc(m.a.name)} v ${esc(m.b.name)}</div>`;
 function stepSoon(m,k){return stepHead(m,k)+`<div class="card"><b>Not built yet.</b><div class="mut">This step comes in a later version.</div></div>`}
 const roLine=t=>t.pl.length?t.pl.map(p=>'#'+esc(p.n)+(p.name?' '+esc(p.name):'')+(p.cap?' (captain)':'')+(p.lib?' (libero)':'')).join(', '):'No roster.';
@@ -1200,7 +1215,7 @@ function bpPlace(n){const m=S.sm.find(x=>x.id===S.mv.id),set=bset(m),{t,p}=S.bp;
 function bpClear(){const m=S.sm.find(x=>x.id===S.mv.id),set=bset(m),{t,p}=S.bp;if(set.on)return;set.lu[t][p-1]=null;saveSM();render()}
 function startSetS(){const m=S.sm.find(x=>x.id===S.mv.id),set=bset(m);if(set.on)return;if(!lineupDone(m)){alert('Both teams need a full line-up: six players, or five where a team plays with five.');return}
   if(!confirm('Start set '+(m.cur+1)+' now? The start time is recorded, and the match details, rosters, toss and line-up are locked.'))return
-  set.on=true;set.t0=Date.now();S.bp=null;S.mv.step='board';saveSM();render();scrollTo(0,0)}
+  set.on=true;set.t0=Date.now();scLog(m,m.cur||0,{k:'start'});S.bp=null;S.mv.step='board';saveSM();render();scrollTo(0,0)}
 function spie(m,t,set,ro,serving,pos,five){const R=140,C=150,pt=(a,r)=>{const q=a*Math.PI/180;return[(C+r*Math.sin(q)).toFixed(1),(C-r*Math.cos(q)).toFixed(1)]},lu=pos||set.lu[t],nm=esc(m[t].name);
   const g=[1,2,3,4,5,6].map(p=>{const a=ANG[p],[x1,y1]=pt(a-30,R),[x2,y2]=pt(a+30,R),[tx,ty]=pt(a,R*.58),[lx,ly]=pt(a,R*.87),n=lu[p-1],pl=n&&m[t].pl.find(q=>q.n===n),sel=!!(S.bp&&S.bp.t===t&&S.bp.p===p),srv=!!(serving&&p===1&&n),cap=!!(pl&&pl.cap),off=p===6&&(five===undefined?f5(set,t):five),
     fill=off?'var(--line)':n?(srv?'var(--yel)':tcol(t)):'var(--card)',tc=n?(srv?'var(--onyel)':'var(--onc)'):'var(--mut)',inter=!ro&&!off,hnd=`bpPick('${t}',${p})`;
@@ -1220,36 +1235,145 @@ function lineupView(){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||!m.toss||!m.to
   else panel=`<div class="mut" style="margin-top:10px">Set ${i+1} has started, so its line-up can no longer be changed.</div>`;
   return`${crumbs(m,'lineup')}<div class="sbh">${head(L)}<div class="st">Set ${i+1}${startedTxt(set)}</div>${head(Rt)}</div><div class="sb">${col(L)}${col(Rt)}</div>${panel}`}
 /* ===== Scoring (score table): points, serve and rotation, replayed from the point log set.pts (the team that won each rally) ===== */
-function scState(m,i){const set=m.sets[i],lu={a:set.lu.a.slice(),b:set.lu.b.slice()},sl={a:0,b:0},n={a:0,b:0},five={a:f5(set,'a'),b:f5(set,'b')},ev=set.f5m||[],same=(x,y)=>x!=null&&String(x)===String(y);let srv=serveOfT(m,i),gh=null;
+function scState(m,i){const set=m.sets[i],lu={a:set.lu.a.slice(),b:set.lu.b.slice()},sl={a:0,b:0},n={a:0,b:0},five={a:f5(set,'a'),b:f5(set,'b')},ev=[...(set.f5m||[]).map(e=>Object.assign({k:'f'},e)),...(set.subs||[]).map(e=>Object.assign({k:'s'},e))].sort((x,y)=>(x.q||0)-(y.q||0)),same=(x,y)=>x!=null&&String(x)===String(y);let srv=serveOfT(m,i),gh=null;
+  /* sheet marks: every service turn takes the first free numbered cell in the column of its server (column = the server's starting position). A turn is opened with a dot, and closed by writing the team's score in it when the serve is lost. The receiving team's first cell in column I is crossed out at the start. */
+  const orig={a:set.lu.a.slice(),b:set.lu.b.slice()},used={a:{},b:{}},marks={a:{},b:{}},open={a:null,b:null},colMap={a:{},b:{}},subm={a:{},b:{}},colOf=(t,x)=>colMap[t][String(x)]||0,
+    mk=(t,c,k)=>{if(!c)return{};const o=(marks[t][c]=marks[t][c]||{});return o[k]=o[k]||{}},take=(t,c)=>{used[t][c]=(used[t][c]||0)+1;return used[t][c]};
+  /* substitutions: the substitute takes the column (starting position) of the player he replaces. A new substitute is written in the Player No row with the score at the change; the starter coming back only adds the second score. */
+  ['a','b'].forEach(t=>orig[t].forEach((x,j)=>{if(x!=null)colMap[t][String(x)]=j+1}));
+  const applySub=e=>{const p=lu[e.t],j=p.findIndex(x=>same(x,e.out));if(j<0)return;p[j]=e.inn;const c=colMap[e.t][String(e.out)];if(c)colMap[e.t][String(e.inn)]=c;
+    const o=e.t==='a'?'b':'a',txt=n[e.t]+':'+n[o],rec=(subm[e.t][c]=subm[e.t][c]||{});if(orig[e.t].some(x=>same(x,e.inn)))rec.b=txt;else{rec.no=e.inn;rec.a=txt}};
   /* a team that loses a player (injury, emergency leave, red card) goes on with five: the others keep their order and fill zones 1, 5, 4, 3, 2; the cycle restarts there */
-  const dec=k=>ev.forEach(e=>{if(e.at!==k||five[e.t])return;const p=lu[e.t];if(!p.some(x=>same(x,e.lost)))return;
+  const dec=k=>ev.forEach(e=>{if(e.at!==k)return;if(e.k==='s'){applySub(e);return}if(five[e.t])return;const p=lu[e.t];if(!p.some(x=>same(x,e.lost)))return;
     const ring=[0,5,4,3,2,1].map(j=>p[j]).filter(x=>x!=null&&!same(x,e.lost)),np=[null,null,null,null,null,null];[0,4,3,2,1].forEach((z,j)=>{np[z]=ring[j]==null?null:ring[j]});lu[e.t]=np;five[e.t]=true;sl[e.t]=0});
   dec(0);
+  {const r0=srv==='a'?'b':'a',c0=colOf(srv,lu[srv][0]),k0=take(srv,c0);mk(srv,c0,k0).dot=true;open[srv]={c:c0,k:k0};used[r0][1]=1;mk(r0,1,1).x=true}
   (set.pts||[]).forEach((w,idx)=>{gh=null;n[w]++;
     if(w!==srv){
       if(five[w]){sl[w]=(sl[w]+1)%6;if(sl[w]===5){gh=w;dec(idx+1);return}}
-      const q=lu[w];lu[w]=five[w]?[q[1],q[2],q[3],q[4],q[0],null]:[q[1],q[2],q[3],q[4],q[5],q[0]];srv=w}
+      {const o=open[srv];if(o)mk(srv,o.c,o.k).score=n[srv];open[srv]=null}
+      const q=lu[w];lu[w]=five[w]?[q[1],q[2],q[3],q[4],q[0],null]:[q[1],q[2],q[3],q[4],q[5],q[0]];srv=w;
+      {const c=colOf(w,lu[w][0]),k=take(w,c);mk(w,c,k).dot=true;open[w]={c,k}}}
     dec(idx+1)});
-  return{pts:n,pos:lu,srv,gh,slot:sl,five}}
-function scLeave(t,num,reason){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||!m.rule||!m.rule.five||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!set.on)return;
+  const tos={a:[],b:[]};(set.tos||[]).forEach(e=>{let x=0,y=0;(set.pts||[]).slice(0,e.at).forEach(w=>{if(w==='a')x++;else y++});tos[e.t].push(e.t==='a'?x+':'+y:y+':'+x)});
+  return{pts:n,pos:lu,srv,gh,slot:sl,five,marks,tos,subm,starts:orig,col:colMap}}
+const scToMax=m=>m.rule&&m.rule.to!=null&&!isNaN(+m.rule.to)?+m.rule.to:2;
+const scToLeft=(m,set,t)=>Math.max(0,scToMax(m)-(set.tos||[]).filter(e=>e.t===t).length);
+/* ===== Action log: separate from the scoresheet, append-only, kept with the match ===== */
+const hms=ms=>{const d=new Date(ms),p=n=>String(n).padStart(2,'0');return p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds())};
+const scSc=(m,i)=>{const x=scState(m,i);return[x.pts.a,x.pts.b]};
+function scLog(m,i,o){(m.alog=m.alog||[]).push(Object.assign({ts:Date.now(),set:i},o))}
+function scLogTxt(m,e){const n=t=>m[t].name,sc=q=>m.a.name+' '+q[0]+' : '+q[1]+' '+m.b.name;
+  switch(e.k){
+    case 'start':return 'Set '+(e.set+1)+' started';
+    case 'point':return 'Point to '+n(e.t)+'. Score '+sc(e.sc)+(e.gh?'. Ghost rotation: '+n(e.gh)+' has no server':(e.sv?'. '+n(e.sv)+' serving':''));
+    case 'undo':{const w=e.what==='point'?'point to '+n(e.t):e.what==='timeout'?'timeout for '+n(e.t):e.what==='sub'?'substitution for '+n(e.t)+' (#'+e.out+' out, #'+e.inn+' in)':'five-player entry for '+n(e.t)+' (#'+e.lost+' left)';return 'Undo: '+w+' cancelled. Score '+sc(e.sc)}
+    case 'remove':return 'Removed '+e.n+' point'+(e.n===1?'':'s')+' from '+n(e.t)+'. Score '+sc(e.sc0)+' became '+sc(e.sc);
+    case 'timeout':return 'Timeout '+n(e.t)+' at '+sc(e.sc)+' ('+e.left+' left)';
+    case 'sub':return 'Substitution '+n(e.t)+': #'+e.out+' out, #'+e.inn+' in at '+sc(e.sc)+' ('+e.left+' left)';
+    case 'five':return n(e.t)+' continues with 5 players: #'+e.lost+' left ('+e.reason+') at '+sc(e.sc);
+    case 'end':return 'Set '+(e.set+1)+' ended: '+n(e.w)+' won '+sc(e.sc)+(e.mw?'. Match won by '+n(e.mw):'');
+    case 'remark':return 'Remark'+(e.t?' about '+n(e.t):'')+': '+e.text+'. Score '+sc(e.sc);
+    case 'reopen':return 'Set '+(e.set+1)+' reopened at '+sc(e.sc);
+    default:return String(e.k)}}
+function scLogText(m){const L=m.alog||[];let out='Action log: '+m.a.name+' v '+m.b.name+'\n'+(m.rule&&m.rule.name?m.rule.name+', ':'')+(m.date||'')+'\n';
+  L.forEach(e=>{out+='\n'+hms(e.ts)+'  Set '+(e.set+1)+'  '+scLogTxt(m,e)});return out+'\n'}
+function openLog(id){const m=S.sm.find(x=>x.id===id);if(!m)return;S.sx=null;S.ts=null;S.rx=null;S.bp=null;S.lgmsg='';S.mv={id,step:'log'};render();scrollTo(0,0)}
+function logView(){const m=S.sm.find(x=>x.id===S.mv.id);if(!m){S.mv=null;return scorerMatches()}const L=m.alog||[];
+  let h=crumbs(m,'log')+`<h1 style="margin-top:10px">Action log</h1><div class="mut">${esc(m.a.name)} v ${esc(m.b.name)}</div><div class="mut" style="margin-top:6px">Every action is recorded here with its time, including points that were undone or removed. This log is separate from the scoresheet and its entries cannot be edited.</div><div class="row" style="margin:10px 0"><button class="pri" onclick="lgCopy()">Copy log</button><button onclick="lgDownload()">Download .txt</button></div>${S.lgmsg?`<div class="mut" role="status">${esc(S.lgmsg)}</div>`:''}`;
+  if(!L.length)return h+`<div class="card"><b>No actions yet.</b><div class="mut">Actions are logged from the start of the first set.</div></div>`;
+  let cur=-1;L.forEach(e=>{if(e.set!==cur){cur=e.set;h+=`<h2 style="margin:16px 0 4px">Set ${cur+1}</h2>`}h+=`<div class="lg"><span class="lgt">${hms(e.ts)}</span><span>${esc(scLogTxt(m,e))}</span></div>`});return h}
+function lgCopy(){const m=S.mv&&S.sm.find(x=>x.id===S.mv.id);if(!m)return;const txt=scLogText(m),done=()=>{S.lgmsg='Log copied to the clipboard.';render()},fail=()=>{S.lgmsg='Copy is not available here. Use Download .txt instead.';render()};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(done,fail);else fail()}
+function lgDownload(){const m=S.mv&&S.sm.find(x=>x.id===S.mv.id);if(!m)return;try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([scLogText(m)],{type:'text/plain'}));a.download='action-log-'+String(m.a.name+'-v-'+m.b.name+'-'+(m.date||'')).replace(/[^A-Za-z0-9_-]+/g,'-')+'.txt';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}catch(e){S.lgmsg='Download is not available here. Use Copy log instead.';render()}}
+/* ===== End of a set: points to win, two clear points, hard limit ===== */
+const scSetRule=(m,i)=>{const r=(m.rule&&m.rule.sets&&m.rule.sets[i])||{};return{win:+r.win||25,hard:+r.hard||0}};
+function scWinner(m,i){const set=m.sets&&m.sets[i];if(!set||!set.on||set.end)return null;const{win,hard}=scSetRule(m,i),x=scState(m,i).pts;
+  for(const t of['a','b']){const q=x[t],o=x[t==='a'?'b':'a'];if(q>=win&&(q-o>=2||(hard>0&&q>=hard)))return t}return null}
+const scCnt=(set,k,t)=>(set[k]||[]).filter(e=>e.t===t).length;
+const scSetsWon=(m,t)=>(m.sets||[]).filter(x=>x.end&&x.end.w===t).length;
+function scMatchWinner(m){const need=Math.floor(((m.rule&&m.rule.sets&&m.rule.sets.length)||3)/2)+1;return['a','b'].find(t=>scSetsWon(m,t)>=need)||null}
+const scEKey=(m,i)=>m.id+':'+i+':'+((m.sets[i].pts||[]).length);
+function scEndAsk(){S.sdis=null;render();const b=document.getElementById('se-c');if(b)b.focus()}
+function scEndCancel(){const m=S.sm.find(x=>x.id===S.mv.id);if(m)S.sdis=scEKey(m,m.cur||0);render()}
+function scEndConfirm(){const m=S.sm.find(x=>x.id===S.mv.id);if(!m)return;const i=m.cur||0,set=bset(m),w=scWinner(m,i);if(!w)return;const x=scState(m,i).pts;
+  set.end={ts:Date.now(),a:x.a,b:x.b,w};S.sdis=null;const mw=scMatchWinner(m);if(mw)m.res=Object.assign(m.res||{},{winner:mw});
+  saveSM();scLog(m,i,{k:'end',w,sc:[x.a,x.b],mw:mw||null});render();scrollTo(0,0)}
+function scReopen(){const m=S.sm.find(x=>x.id===S.mv.id);if(!m)return;const i=m.cur||0,set=bset(m);if(!set.end||m.sets.length>i+1)return;delete set.end;if(m.res)delete m.res.winner;
+  S.sdis=scEKey(m,i);saveSM();scLog(m,i,{k:'reopen',sc:scSc(m,i)});render()}
+function scNextSet(){const m=S.sm.find(x=>x.id===S.mv.id);if(!m)return;const i=m.cur||0,set=bset(m);if(!set.end||scMatchWinner(m)||m.sets.length>i+1)return;
+  m.sets.push({lu:{a:[null,null,null,null,null,null],b:[null,null,null,null,null,null]},on:false,pts:[]});m.cur=i+1;S.bp=null;S.sdis=null;S.mv.step='lineup';saveSM();render();scrollTo(0,0)}
+/* ===== Remarks: incidents and complaints, with the score at the moment they are requested ===== */
+function scRemAsk(){const m=S.sm.find(x=>x.id===S.mv.id);if(!m)return;const i=m.cur||0;bset(m);S.rmq={id:m.id,i,sc:scSc(m,i),t:null,text:''};render();const b=document.getElementById('rm-t');if(b)b.focus()}
+function scRemWho(t){const q=S.rmq;if(!q)return;const x=document.getElementById('rm-t');if(x)q.text=x.value;q.t=q.t===t?null:t;render();const b=document.getElementById('rm-t');if(b){b.focus();try{b.setSelectionRange(b.value.length,b.value.length)}catch(e){}}}
+function scRemCancel(){S.rmq=null;render();const b=document.getElementById('rm-btn');if(b)b.focus()}
+function scRemConfirm(){const q=S.rmq,m=q&&S.sm.find(x=>x.id===q.id);if(!m){S.rmq=null;render();return}const x=document.getElementById('rm-t'),text=String((x?x.value:q.text)||'').trim();if(!text)return;
+  S.rmq=null;(m.rem=m.rem||[]).push({ts:Date.now(),set:q.i,sc:q.sc,t:q.t,text});saveSM();scLog(m,q.i,{k:'remark',t:q.t,sc:q.sc,text});render();const b=document.getElementById('rm-btn');if(b)b.focus()}
+const scQ=set=>Math.max(Date.now(),Math.max(0,...[...(set.f5m||[]),...(set.tos||[]),...(set.subs||[])].map(e=>e.q||0))+1);
+const scSubMax=m=>m.rule&&m.rule.sub!=null&&!isNaN(+m.rule.sub)?+m.rule.sub:6;
+const scPn=(m,t,x)=>{const q=(m[t].pl||[]).find(p=>String(p.n)===String(x));return '#'+esc(x)+(q&&q.name?' '+esc(q.name):'')};
+/* who can leave and who can enter: a bench player enters once in a set; a substitute can only be replaced by the starter he replaced; a starter comes back once; the rule set limits the substitutions per set */
+function scSubOpts(m,set,t,st){const same=(x,y)=>x!=null&&String(x)===String(y),orig=st.starts[t],subm=st.subm[t],sub=(set.subs||[]).filter(e=>e.t===t),
+    lost=(set.f5m||[]).filter(e=>e.t===t).map(e=>String(e.lost)),usedIn=sub.map(e=>String(e.inn)),
+    bench=(m[t].pl||[]).filter(p=>!p.lib&&p.n!=null&&String(p.n)!==''&&!st.pos[t].some(x=>same(x,p.n))&&!orig.some(x=>same(x,p.n))&&!usedIn.includes(String(p.n))&&!lost.includes(String(p.n))).map(p=>String(p.n)),
+    max=scSubMax(m),left=Math.max(0,max-sub.length),outs=[],ins={};
+  if(left>0)st.pos[t].filter(x=>x!=null).forEach(x=>{const c=st.col[t][String(x)];if(!c)return;const rec=subm[c]||{};
+    if(orig.some(y=>same(y,x))){if(!rec.no&&bench.length){outs.push(String(x));ins[String(x)]=bench}}
+    else if(rec.a&&!rec.b){const w=orig[c-1];if(w!=null&&!lost.includes(String(w))){outs.push(String(x));ins[String(x)]=[String(w)]}}});
+  return{max,left,outs,ins}}
+function scSubAsk(t){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!set.on||set.end)return;if(!scSubOpts(m,set,t,scState(m,m.cur||0)).outs.length)return;S.sbq={id:m.id,t,out:null,inn:null};render();const b=document.getElementById('sb-c');if(b)b.focus()}
+function scSubPick(k,x){const q=S.sbq;if(!q)return;if(k==='o'){q.out=x;q.inn=null}else q.inn=x;render();const b=document.getElementById('sb-'+k+'-'+x);if(b)b.focus()}
+function scSubCancel(){const t=S.sbq&&S.sbq.t;S.sbq=null;render();const b=t&&document.getElementById('sb-btn-'+t);if(b&&!b.disabled)b.focus()}
+function scSubConfirm(){const q=S.sbq;S.sbq=null;if(!q||q.out==null||q.inn==null){render();return}scSub(q.t,q.out,q.inn);const b=document.getElementById('sb-btn-'+q.t);if(b&&!b.disabled)b.focus()}
+function scSub(t,out,inn){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!set.on||set.end)return;const o=scSubOpts(m,set,t,scState(m,m.cur||0));
+  if(!o.outs.includes(String(out))||!(o.ins[String(out)]||[]).includes(String(inn)))return;(set.subs=set.subs||[]).push({t,out:String(out),inn:String(inn),at:(set.pts||[]).length,q:scQ(set)});saveSM();scLog(m,m.cur||0,{k:'sub',t,out:String(out),inn:String(inn),sc:scSc(m,m.cur||0),left:Math.max(0,scSubMax(m)-set.subs.filter(e=>e.t===t).length)});render()}
+/* remove points from a team (rotation fault found a few points later): the team's last n points are taken out of the log wherever they are; timeouts, substitutions and five-player entries stay, moved back so that they keep their place among the remaining points */
+function scRemoveAsk(t){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!set.on||set.end||!scState(m,m.cur||0).pts[t])return;S.rpq={id:m.id,t,n:1};render();const b=document.getElementById('rp-c');if(b)b.focus()}
+function scRemoveN(d){const q=S.rpq,m=q&&S.sm.find(x=>x.id===q.id);if(!m)return;const mx=scState(m,m.cur||0).pts[q.t];q.n=Math.max(1,Math.min(mx,q.n+d));render();const b=document.getElementById(d<0?'rp-less':'rp-more');if(b)b.focus()}
+function scRemoveCancel(){const t=S.rpq&&S.rpq.t;S.rpq=null;render();const b=t&&document.getElementById('rp-btn-'+t);if(b&&!b.disabled)b.focus()}
+function scRemoveConfirm(){const q=S.rpq;S.rpq=null;if(!q){render();return}scRemove(q.t,q.n);const b=document.getElementById('rp-btn-'+q.t);if(b&&!b.disabled)b.focus()}
+function scRemove(t,n){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!set.on||set.end)return;const pts=set.pts||[],idx=[];
+  for(let j=pts.length-1;j>=0&&idx.length<(+n||1);j--)if(pts[j]===t)idx.push(j);if(!idx.length)return;
+  const sc0=scSc(m,m.cur||0),gone=new Set(idx);['f5m','tos','subs'].forEach(k=>(set[k]||[]).forEach(e=>{e.at=e.at-idx.filter(j=>j<e.at).length}));
+  set.pts=pts.filter((_,j)=>!gone.has(j));saveSM();scLog(m,m.cur||0,{k:'remove',t,n:idx.length,sc0,sc:scSc(m,m.cur||0)});render()}
+function scToAsk(t){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!set.on||set.end||scToLeft(m,set,t)<1)return;S.toc={id:m.id,t};render();const b=document.getElementById('to-c');if(b)b.focus()}
+function scToCancel(){const t=S.toc&&S.toc.t;S.toc=null;render();const b=t&&document.getElementById('to-btn-'+t);if(b&&!b.disabled)b.focus()}
+function scToConfirm(){const q=S.toc;S.toc=null;if(!q){render();return}scTo(q.t);const b=document.getElementById('to-btn-'+q.t);if(b&&!b.disabled)b.focus()}
+function scTo(t){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!set.on||set.end||scToLeft(m,set,t)<1)return;(set.tos=set.tos||[]).push({t,at:(set.pts||[]).length,q:scQ(set)});saveSM();scLog(m,m.cur||0,{k:'timeout',t,sc:scSc(m,m.cur||0),left:scToLeft(m,set,t)});render()}
+function scLeave(t,num,reason){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||!m.rule||!m.rule.five||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!set.on||set.end)return;
   const st=scState(m,m.cur||0);if(st.five[t]||!st.pos[t].some(x=>x!=null&&String(x)===String(num)))return;
-  (set.f5m=set.f5m||[]).push({t,at:(set.pts||[]).length,lost:num,reason:reason||'Injury',q:Date.now()});S.lv=null;saveSM();render()}
+  (set.f5m=set.f5m||[]).push({t,at:(set.pts||[]).length,lost:num,reason:reason||'Injury',q:Date.now()});S.lv=null;saveSM();scLog(m,m.cur||0,{k:'five',t,lost:num,reason:reason||'Injury',sc:scSc(m,m.cur||0)});render()}
 function scLvOpen(t){S.lv=S.lv&&S.lv.t===t?null:{t,reason:'Injury'};render()}
 function scLvReason(r){if(S.lv){S.lv.reason=r;render()}}
-function scPt(t){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!set.on)return;(set.pts=set.pts||[]).push(t);saveSM();render()}
-const scCanUndo=set=>!!(set&&set.on&&((set.pts&&set.pts.length)||(set.f5m&&set.f5m.length)));
+function scPt(t){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!set.on||set.end)return;(set.pts=set.pts||[]).push(t);saveSM();{const i=m.cur||0,x=scState(m,i);scLog(m,i,{k:'point',t,sc:[x.pts.a,x.pts.b],sv:x.srv,gh:x.gh||null})}render()}
+const scCanUndo=set=>!!(set&&set.on&&!set.end&&((set.pts&&set.pts.length)||(set.f5m&&set.f5m.length)||(set.tos&&set.tos.length)||(set.subs&&set.subs.length)));
 function scUndo(){const m=S.sm.find(x=>x.id===S.mv.id);if(!m)return;const set=bset(m);if(!scCanUndo(set))return;
-  const ev=set.f5m||[],last=ev[ev.length-1];
-  if(last&&last.at===(set.pts||[]).length){ev.pop();if(!ev.length)delete set.f5m}else set.pts.pop();saveSM();render()}
+  const K=(set.pts||[]).length,c=[];let u=null;(set.f5m||[]).forEach((e,j)=>{if(e.at===K)c.push({k:'f',j,q:e.q||0})});(set.tos||[]).forEach((e,j)=>{if(e.at===K)c.push({k:'t',j,q:e.q||0})});(set.subs||[]).forEach((e,j)=>{if(e.at===K)c.push({k:'s',j,q:e.q||0})});
+  if(c.length){c.sort((x,y)=>y.q-x.q);const t=c[0];if(t.k==='f'){const e=set.f5m[t.j];u={what:'five',t:e.t,lost:e.lost};set.f5m.splice(t.j,1);if(!set.f5m.length)delete set.f5m}else if(t.k==='s'){const e=set.subs[t.j];u={what:'sub',t:e.t,out:e.out,inn:e.inn};set.subs.splice(t.j,1);if(!set.subs.length)delete set.subs}else{const e=set.tos[t.j];u={what:'timeout',t:e.t};set.tos.splice(t.j,1);if(!set.tos.length)delete set.tos}}else{u={what:'point',t:set.pts[set.pts.length-1]};set.pts.pop()}
+  saveSM();scLog(m,m.cur||0,Object.assign({k:'undo'},u,{sc:scSc(m,m.cur||0)}));render()}
 function boardView(){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||!m.toss||!m.toss.serve){S.mv=null;return scorerMatches()}
   const{set,i,L,Rt}=sideInfo(m);if(!lineupDone(m)){S.mv.step='lineup';return lineupView()}
   const st=scState(m,i),srv=st.srv;
   const lvName=(t,x)=>{const q=(m[t].pl||[]).find(p=>String(p.n)===String(x));return '#'+esc(x)+(q&&q.name?' '+esc(q.name):'')};
   const left=k=>k===1?'The next side-out is a ghost rotation.':'Ghost rotation after '+k+' more side-outs.';
   const lvCard=set.on&&m.rule&&m.rule.five?`<div class="card" style="margin-top:10px"><b>Five-player rule</b><div style="margin-top:6px">${[L,Rt].map(t=>st.five[t]?`<div style="margin-top:6px">${esc(m[t].name)}: 5 players. ${left(st.slot[t]===5?6:5-st.slot[t])}${(set.f5m||[]).filter(e=>e.t===t).map(e=>' '+esc(e.reason)+': '+lvName(t,e.lost)+' left.').join('')}</div>`:`<div class="row sp" style="margin-top:6px"><span>${esc(m[t].name)}</span><button onclick="scLvOpen('${t}')" aria-expanded="${!!(S.lv&&S.lv.t===t)}">A player can't continue</button></div>${S.lv&&S.lv.t===t?`<div class="mut" style="margin-top:6px">Reason</div><div class="seg" role="group" aria-label="Reason" style="margin-top:4px">${['Injury','Emergency leave','Red card'].map(r=>`<button aria-pressed="${S.lv.reason===r}" onclick="scLvReason('${r}')">${r}</button>`).join('')}</div><div class="mut" style="margin-top:8px">Who leaves the court? The team then plays with 5 players.</div><div class="row" style="margin-top:6px">${st.pos[t].filter(x=>x!=null).map(x=>`<button onclick="scLeave('${t}','${esc(x)}','${S.lv.reason}')">${lvName(t,x)}</button>`).join('')}</div>`:''}`).join('')}</div></div>`:'';
-  const on=set.on,dis=on?'':' disabled',col=t=>`<div class="col">${spie(m,t,set,true,t===srv,st.pos[t],st.five[t])}${libLine(m,t)}<div class="row" style="flex-wrap:nowrap;gap:8px;margin-top:8px;align-items:stretch;${t===Rt?'flex-direction:row-reverse;':''}${on?'':'opacity:.45'}"><div class="big" style="background:${tcol(t)}" aria-label="${esc(m[t].name)} points"${on?'':' aria-disabled="true"'}>${st.pts[t]}</div><div class="sets" style="border-color:${tcol(t)}" aria-label="${esc(m[t].name)} sets won"><small>Sets</small>0</div></div><div class="acts"><button class="pri" style="min-height:56px;font-size:18px"${dis} onclick="scPt('${t}')" aria-label="Add a point for ${esc(m[t].name)}">+ Point</button><button${dis}>Substitution</button><button${dis}>Timeout</button></div></div>`;
+  const tks=t=>{const used=(set.tos||[]).filter(e=>e.t===t).length;return`<div class="tks" role="group" aria-label="Timeouts used by ${esc(m[t].name)}"><span>Timeouts</span>${Array.from({length:scToMax(m)},(_,j)=>`<i class="tkx${j<used?' on':''}" role="img" aria-label="Timeout ${j+1} ${j<used?'used':'not used'}"></i>`).join('')}</div>`};
+  const win=scWinner(m,i),ended=!!set.end,mw=scMatchWinner(m),ekey=scEKey(m,i),so=t=>scSubOpts(m,set,t,st);
+  const on=set.on&&!ended,dis=on?'':' disabled',col=t=>`<div class="col">${spie(m,t,set,true,t===srv,st.pos[t],st.five[t])}${libLine(m,t)}<div class="row" style="flex-wrap:nowrap;gap:8px;margin-top:8px;align-items:stretch;${t===Rt?'flex-direction:row-reverse;':''}${on?'':'opacity:.45'}"><div class="big" style="background:${tcol(t)}" aria-label="${esc(m[t].name)} points"${on?'':' aria-disabled="true"'}>${st.pts[t]}</div><div class="sets" style="border-color:${tcol(t)}" aria-label="${esc(m[t].name)} sets won"><small>Sets</small>${scSetsWon(m,t)}</div></div><div class="acts"><button class="pri" style="min-height:56px;font-size:18px"${dis} onclick="scPt('${t}')" aria-label="Add a point for ${esc(m[t].name)}">+ Point</button><button class="del" id="rp-btn-${t}"${on&&st.pts[t]>0?'':' disabled'} onclick="scRemoveAsk('${t}')" aria-label="Remove points from ${esc(m[t].name)}">Remove point</button><button id="sb-btn-${t}"${on&&so(t).outs.length?'':' disabled'} onclick="scSubAsk('${t}')">Substitution (${so(t).left} left)</button><button id="to-btn-${t}"${on&&scToLeft(m,set,t)>0?'':' disabled'} onclick="scToAsk('${t}')">Timeout (${scToLeft(m,set,t)} left)</button>${tks(t)}</div></div>`;
   const head=t=>`<div><div class="nm" style="color:${tcol(t)}">${esc(m[t].name)}</div><div class="mut" style="font-size:12px">${t===srv?'Serving':'Receiving'}${st.five[t]?' · 5 players':''}</div></div>`;
-  return`${crumbs(m,'board')}<div class="sbh">${head(L)}<div class="st">Set ${i+1}${startedTxt(set)}</div>${head(Rt)}</div><div class="sb">${col(L)}${col(Rt)}</div>${on?`${st.gh?`<div class="banner" role="status" style="margin-top:10px"><b>Ghost rotation.</b> ${esc(m[st.gh].name)} won the rally but has no server. The serve stays with ${esc(m[st.gh==='a'?'b':'a'].name)} and no point is awarded to them.</div>`:''}<div class="row" style="margin-top:10px"><button onclick="scUndo()"${scCanUndo(set)?'':' disabled'}>Undo last point</button></div>${lvCard}<div class="mut" style="margin-top:8px">Set ${i+1} is in progress. Points, serve and rotation are tracked here. The end of the set, substitutions and timeouts come in the next version.</div>`:`<div style="margin-top:12px"><button class="pri" onclick="startSetS()">Start set ${i+1}</button><div class="mut" style="margin-top:4px">The score and the buttons switch on when the set starts. The line-up can still be changed until then.</div></div>`}`}
+  const tq=S.toc&&S.toc.id===m.id&&set.on&&scToLeft(m,set,S.toc.t)>0?S.toc.t:null,
+    dlg=tq?`<div class="ov"><div class="dlg" role="alertdialog" aria-modal="true" aria-labelledby="to-t" aria-describedby="to-d" onkeydown="if(event.key==='Escape')scToCancel()"><b id="to-t" style="font-size:18px">Time out</b><div id="to-d" style="margin-top:8px"><div>Team: ${esc(m[tq].name)}</div><div>Score: ${st.pts[tq]} : ${st.pts[tq==='a'?'b':'a']}</div><div>Time out remaining: ${scToLeft(m,set,tq)}</div></div><div class="row" style="margin-top:14px;gap:8px;flex-wrap:nowrap"><button id="to-c" style="flex:1" onclick="scToCancel()">Cancel</button><button class="pri" style="flex:1" onclick="scToConfirm()">Confirm</button></div></div></div>`:'';
+  const sq=S.sbq&&S.sbq.id===m.id&&set.on?S.sbq:null,sop=sq?so(sq.t):null,
+    sdlg=sq&&sop&&sop.outs.length?`<div class="ov"><div class="dlg" style="max-height:88vh;overflow:auto" role="alertdialog" aria-modal="true" aria-labelledby="sb-t" aria-describedby="sb-d" onkeydown="if(event.key==='Escape')scSubCancel()"><b id="sb-t" style="font-size:18px">Substitution</b><div id="sb-d" style="margin-top:8px"><div>Team: ${esc(m[sq.t].name)}</div><div>Score: ${st.pts[sq.t]} : ${st.pts[sq.t==='a'?'b':'a']}</div><div>Substitutions remaining: ${sop.left}</div></div><div class="mut" style="margin-top:12px">Player out</div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">${sop.outs.map(x=>`<button id="sb-o-${esc(x)}" aria-pressed="${sq.out===x}" style="flex:1 1 30%;min-width:0;padding:8px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${sq.out===x?'background:var(--home);color:var(--onc);border-color:var(--home)':''}" onclick="scSubPick('o','${esc(x)}')">${scPn(m,sq.t,x)}</button>`).join('')}</div>${sq.out!=null&&sop.ins[sq.out]?`<div class="mut" style="margin-top:12px">Player in</div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">${sop.ins[sq.out].map(x=>`<button id="sb-i-${esc(x)}" aria-pressed="${sq.inn===x}" style="flex:1 1 30%;min-width:0;padding:8px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${sq.inn===x?'background:var(--home);color:var(--onc);border-color:var(--home)':''}" onclick="scSubPick('i','${esc(x)}')">${scPn(m,sq.t,x)}</button>`).join('')}</div>`:''}<div class="row" style="margin-top:14px;gap:8px;flex-wrap:nowrap"><button id="sb-c" style="flex:1" onclick="scSubCancel()">Cancel</button><button class="pri" style="flex:1"${sq.out!=null&&sq.inn!=null?'':' disabled'} onclick="scSubConfirm()">Confirm</button></div></div></div>`:'';
+  const rq=S.rpq&&S.rpq.id===m.id&&set.on&&st.pts[S.rpq.t]>0?S.rpq:null,rn=rq?Math.max(1,Math.min(st.pts[rq.t],rq.n)):0,
+    rdlg=rq?`<div class="ov"><div class="dlg" role="alertdialog" aria-modal="true" aria-labelledby="rp-t" aria-describedby="rp-d" onkeydown="if(event.key==='Escape')scRemoveCancel()"><b id="rp-t" style="font-size:18px">Remove points</b><div id="rp-d" style="margin-top:8px"><div>Team: ${esc(m[rq.t].name)}</div><div>Score: ${st.pts[rq.t]} : ${st.pts[rq.t==='a'?'b':'a']}</div></div><div class="mut" id="rp-l" style="margin-top:12px">Points to remove</div><div style="display:flex;align-items:center;justify-content:center;gap:18px;margin-top:6px"><button id="rp-less" aria-label="Fewer points" style="flex:none;width:56px" onclick="scRemoveN(-1)"${rn<=1?' disabled':''}>\u2212</button><b aria-live="polite" id="rp-n" style="min-width:28px;text-align:center;font-size:22px">${rn}</b><button id="rp-more" aria-label="More points" style="flex:none;width:56px" onclick="scRemoveN(1)"${rn>=st.pts[rq.t]?' disabled':''}>+</button></div><div style="margin-top:8px">Score after: ${st.pts[rq.t]-rn} : ${st.pts[rq.t==='a'?'b':'a']}</div><div class="mut" style="margin-top:6px">Timeouts, substitutions and other entries are kept.</div><div class="row" style="margin-top:14px;gap:8px;flex-wrap:nowrap"><button id="rp-c" style="flex:1" onclick="scRemoveCancel()">Cancel</button><button class="pri" style="flex:1" onclick="scRemoveConfirm()">Confirm</button></div></div></div>`:'';
+  const box=t=>`<div style="flex:1;min-width:0;border:1px solid var(--line);border-radius:12px;padding:10px"><b>${esc(m[t].name)}</b><div style="margin-top:6px">Points: ${st.pts[t]}</div><div>Timeouts: ${scCnt(set,'tos',t)}</div><div>Substitutions: ${scCnt(set,'subs',t)}</div></div>`,
+    edlg=win&&!ended&&S.sdis!==ekey?`<div class="ov"><div class="dlg" role="alertdialog" aria-modal="true" aria-labelledby="se-t" aria-describedby="se-d" style="max-height:92vh;overflow:auto" onkeydown="if(event.key==='Escape')scEndCancel()"><b id="se-t" style="font-size:18px">Set ${i+1} ended</b><div id="se-d" style="margin-top:6px"><div>${esc(m[win].name)} wins the set</div><div style="font-size:22px;font-weight:700;margin-top:4px">Final score: ${esc(m[L].name)} ${st.pts[L]} : ${st.pts[Rt]} ${esc(m[Rt].name)}</div></div><div style="display:flex;gap:10px;margin-top:12px">${box(L)}${box(Rt)}</div><div class="row" style="margin-top:14px;gap:8px;flex-wrap:nowrap"><button id="se-c" style="flex:1" onclick="scEndCancel()">Cancel</button><button class="pri" style="flex:1" onclick="scEndConfirm()">Confirm set end</button></div></div></div>`:'',
+    endCard=ended?`<div class="card" style="margin-top:12px"><b>Set ${i+1} ended</b><div style="margin-top:4px">${esc(m[set.end.w].name)} won ${esc(m.a.name)} ${set.end.a} : ${set.end.b} ${esc(m.b.name)}</div>${mw?`<div style="margin-top:6px"><b>Match won by ${esc(m[mw].name)}</b> (${scSetsWon(m,'a')} : ${scSetsWon(m,'b')} in sets)</div>`:''}<div class="row" style="margin-top:10px"><button onclick="scReopen()">Reopen set</button>${mw?'':'<button class="pri" onclick="scNextSet()">Next set</button>'}</div></div>`:'',
+    setPt=win?`<div class="banner" role="status" style="margin-top:10px"><b>${esc(m[win].name)} has met the winning conditions.</b><div class="row" style="margin-top:6px"><button class="pri" onclick="scEndAsk()">End set</button></div></div>`:'';
+  const mq=S.rmq&&S.rmq.id===m.id?S.rmq:null,
+    rmd=mq?`<div class="ov"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="rm-h" style="max-height:92vh;overflow:auto" onkeydown="if(event.key==='Escape')scRemCancel()"><b id="rm-h" style="font-size:18px">Remark</b><div style="margin-top:8px"><div>Set ${mq.i+1}</div><div>Score: ${esc(m.a.name)} ${mq.sc[0]} : ${mq.sc[1]} ${esc(m.b.name)}</div></div><div class="mut" style="margin-top:12px">About</div><div class="row" style="margin-top:4px" role="group" aria-label="Remark about">${[[null,'Match'],['a',m.a.name],['b',m.b.name]].map(([t,l])=>`<button aria-pressed="${mq.t===t}" style="flex:1 1 30%;min-width:0;padding:8px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${mq.t===t?'background:var(--home);color:var(--onc);border-color:var(--home)':''}" onclick="scRemWho(${t?"'"+t+"'":'null'})">${esc(l)}</button>`).join('')}</div><label for="rm-t" class="mut" style="display:block;margin-top:12px">What happened</label><textarea id="rm-t" rows="4" maxlength="400" placeholder="Incident, complaint, protest..." oninput="document.getElementById('rm-ok').disabled=!this.value.trim()">${esc(mq.text)}</textarea><div class="row" style="margin-top:14px;gap:8px;flex-wrap:nowrap"><button id="rm-c" style="flex:1" onclick="scRemCancel()">Cancel</button><button id="rm-ok" class="pri" style="flex:1"${mq.text.trim()?'':' disabled'} onclick="scRemConfirm()">Confirm</button></div></div></div>`:'';
+  return`${dlg}${sdlg}${rdlg}${edlg}${rmd}${crumbs(m,'board')}<div class="sbh">${head(L)}<div class="st">Set ${i+1}${startedTxt(set)}</div>${head(Rt)}</div><div class="sb">${col(L)}${col(Rt)}</div><div class="row" style="margin-top:10px"><button id="rm-btn" onclick="scRemAsk()">Remark${(m.rem||[]).length?' ('+m.rem.length+')':''}</button></div>${ended?endCard:on?`${win&&S.sdis===ekey?setPt:''}${st.gh?`<div class="banner" role="status" style="margin-top:10px"><b>Ghost rotation.</b> ${esc(m[st.gh].name)} won the rally but has no server. The serve stays with ${esc(m[st.gh==='a'?'b':'a'].name)} and no point is awarded to them.</div>`:''}<div class="row" style="margin-top:10px"><button onclick="scUndo()"${scCanUndo(set)?'':' disabled'}>Undo</button></div>${lvCard}<div class="mut" style="margin-top:8px">Set ${i+1} is in progress. Points, serve and rotation are tracked here.</div>`:`<div style="margin-top:12px"><button class="pri" onclick="startSetS()">Start set ${i+1}</button><div class="mut" style="margin-top:4px">The score and the buttons switch on when the set starts. The line-up can still be changed until then.</div></div>`}`}
 /* ===== Organiser (name or logo in the first cell of the sheet) ===== */
 const ORGK='vb-scout-org-v1';
 let ORG={name:'',logo:''};try{const r=JSON.parse(localStorage.getItem(ORGK)||'null');if(r&&typeof r==='object')ORG={name:String(r.name||''),logo:String(r.logo||'')}}catch(e){}
@@ -1271,7 +1395,7 @@ function sheetHtml(m){
   for(let i=0;i<rows;i++)body+=`<tr>${cell(P('a')[i])}${cell(P('b')[i])}</tr>`;
   let lib='';
   for(let i=0;i<lrows;i++)lib+=`<tr>${cell(Lb('a')[i],1)}${cell(Lb('b')[i],1)}</tr>`;
-  const table=`<table class="rt"><colgroup><col style="width:6mm"><col style="width:6mm"><col><col style="width:6mm"><col style="width:6mm"><col></colgroup>
+  const table=`<table class="rt"><colgroup><col style="width:7mm"><col style="width:5.5mm"><col><col style="width:7mm"><col style="width:5.5mm"><col></colgroup>
 <tr><th colspan="3" style="font-size:${fitPt('Team: '+m.a.name,34.4,7,5,1)}pt">Team: ${esc(m.a.name)}</th><th colspan="3" style="font-size:${fitPt('Team: '+m.b.name,34.4,7,5,1)}pt">Team: ${esc(m.b.name)}</th></tr>
 <tr class="h"><td>MVP</td><td>#</td><td>Name</td><td>MVP</td><td>#</td><td>Name</td></tr>${body}
 <tr class="sep"><td colspan="6">LIBERO PLAYERS</td></tr>${lib}
@@ -1279,7 +1403,7 @@ function sheetHtml(m){
 <tr class="sig"><td colspan="3">${sigSvg(m.sig&&m.sig.a,1)}</td><td colspan="3">${sigSvg(m.sig&&m.sig.b,1)}</td></tr></table>`;
   /* result table: a 24-unit grid so halves (12) and thirds (8) line up with the roster table */
   let setRows='';
-  for(let i=1;i<=N;i++)setRows+=`<tr><td colspan="3"></td><td colspan="4"></td><td colspan="3"></td><td colspan="4" class="n">Set ${i}</td><td colspan="3"></td><td colspan="4"></td><td colspan="3"></td></tr>`;
+  for(let i=1;i<=N;i++){const z=m.sets&&m.sets[i-1],e=z&&z.end;setRows+=`<tr><td colspan="3">${e?scCnt(z,'subs','a'):''}</td><td colspan="4">${e?scCnt(z,'tos','a'):''}</td><td colspan="3">${e?e.a:''}</td><td colspan="4" class="n">Set ${i}</td><td colspan="3">${e?e.b:''}</td><td colspan="4">${e?scCnt(z,'tos','b'):''}</td><td colspan="3">${e?scCnt(z,'subs','b'):''}</td></tr>`}
   const win=m.res&&m.res.winner&&m[m.res.winner]?esc(m[m.res.winner].name):'';
   const result=`<table class="rs"><colgroup>${'<col>'.repeat(24)}</colgroup>
 <tr class="h"><td colspan="3">Subs</td><td colspan="4">Timeouts</td><td colspan="3">Points</td><td colspan="4">Results</td><td colspan="3">Points</td><td colspan="4">Timeouts</td><td colspan="3">Subs</td></tr>${setRows}
@@ -1287,24 +1411,28 @@ function sheetHtml(m){
 <tr class="sep"><td colspan="24">SIGNATURES AFTER MATCH</td></tr>
 <tr class="sig"><td colspan="12"></td><td colspan="12"></td></tr>
 <tr class="rf"><td colspan="8"><span class="cp">1st referee</span></td><td colspan="8"><span class="cp">2nd referee</span></td><td colspan="8"><span class="cp">Scorer</span></td></tr></table>`;
-  const remarks='<table class="rm"><tr><td>REMARKS</td></tr></table>';
+  const remarks=`<table class="rm"><tr><td><span>REMARKS</span>${(m.rem||[]).length?`<div class="rmt">${m.rem.map(r=>`<div>S${r.set+1} ${r.sc[0]}:${r.sc[1]} ${r.t?esc(m[r.t].name)+': ':''}${esc(r.text)}</div>`).join('')}</div>`:''}</td></tr></table>`;
   const tabs=[],normal=N>=3?N-1:N,tm=(i)=>m.sets&&m.sets[i]&&m.sets[i].t0?hm(m.sets[i].t0):':';
-  const shr=(n)=>`<div class="shr"><span class="sm"><b>Start</b></span><span class="sm">${tm(n-1)}</span><span class="bg">SET ${n}</span><span class="sm"><b>End</b></span><span class="sm">:</span></div>`;
+  const tmE=(i)=>m.sets&&m.sets[i]&&m.sets[i].end?hm(m.sets[i].end.ts):':';
+  const shr=(n)=>`<div class="shr"><span class="sm"><b>Start</b></span><span class="sm">${tm(n-1)}</span><span class="bg">SET ${n}</span><span class="sm"><b>End</b></span><span class="sm">${tmE(n-1)}</span></div>`;
   /* second row of a set box: team names, with R and S (receive / serve) circled; the one that applies is filled. The deciding set needs its own toss, so it stays unmarked. */
   const srv=n=>(!m.toss||!m.toss.serve||(N>=3&&n===N))?null:serveOfT(m,n-1);
-  const LW=210-12-62-4;
+  const LW=210-12-57-4;
   const tn=(t,n,w)=>{const sv=srv(n),nm=t?m[t].name:'',fs=fitPt('Team: '+nm,(w*6/7.8-2-3.9)*.86,8,5,2);return`<div class="tn"><span class="tl"><span class="nm" style="font-size:${fs}pt"><b>Team:</b> ${esc(nm)}</span><span class="rs2"><i class="cir${t&&sv&&sv!==t?' on':''}">R</i><i class="cir${t&&sv===t?' on':''}">S</i></span></span><span class="pt"><b>POINTS</b></span></div>`};
   const grp=`<div class="sg">${['I','II','III','IV','V','VI',''].map(x=>`<span>${x}</span>`).join('')}</div>`;
   /* rows under the roman numbers: 2 empty, 2 with a colon, then rows with each cell split in two (4 for a set to 25, 3 for a lower limit such as 23). The 7th column stays open (the POINTS column). */
   const lim=n=>{const r=m.rule&&m.rule.sets&&m.rule.sets[n-1];return r?(+r.hard||+r.win||25):25};
-  const gcells=(k,r,R,d)=>{const f=d===2?'<span class="f2 tt">T</span>':d<2?'<span class="f2 co">:</span>':'<span class="f"><i></i><i></i><i></i></span>';
-    if(k==='h')return Array.from({length:6},(_,c)=>`<span class="hf"><i><b class="no">${r+1}</b></i><i><b class="no">${R+r+1}</b></i></span>`).join('')+f;const c=k==='c'?'<span class="co">:</span>':'<span></span>';return c.repeat(6)+f};
+  const XS='<svg class="xx" viewBox="0 0 10 8" preserveAspectRatio="none"><line x1="0" y1="8" x2="10" y2="0" stroke="#000" stroke-width="0.8"/></svg>';
+  const half=(num,mk)=>`<i${mk&&mk.x?' class="cx"':''}><b class="no">${num}</b>${mk&&mk.x?XS:''}${mk&&mk.dot?'<u class="dt"></u>':''}${mk&&mk.score!=null?`<s class="scn">${mk.score}</s>`:''}</i>`;
+  const gcells=(k,r,R,d,tm,tt,tx)=>{const to=d<2&&tt&&tt[1-d],f=d===2?'<span class="f2 tt">T</span>':d<2?(to?`<span class="f2 co ts">${to}</span>`:'<span class="f2 co">:</span>'):'<span class="f"><i></i><i></i><i></i></span>';
+    if(k==='h')return Array.from({length:6},(_,c)=>{const col=(tm&&tm[c+1])||{};return`<span class="hf">${half(r+1,col[r+1])}${half(R+r+1,col[R+r+1])}</span>`}).join('')+f;return Array.from({length:6},(_,j)=>{const x=tx?tx(j+1):'';return k==='c'?(x?`<span class="co ts">${x}</span>`:'<span class="co">:</span>'):`<span${x?' class="nn"':''}>${x}</span>`}).join('')+f};
   /* label column (Starting players, Player No, Score at change, Subs) and the printed point numbers over the open part of the 7th column: three columns of equal length, 8/8/7 for a set to 21 (23), 6/6/5 for a set to 15 (17), 12 each up to 36 for a set to 25; the numbers from the winning score on are bold */
   const lbl=i=>i===0?'<span class="lb lw">Starting players</span>':i===1?'<span class="lb ls"></span><span class="lb lt">Player No</span>':i===2?'<span class="lb ls nt"></span><span class="lb lt">Score at</span>':i===3?'<span class="lb ls nt"></span><span class="lb lt">change</span>':'<span class="lb lw"></span>';
-  const sgrid=(n,q)=>{const R=lim(n)>=25?4:3,ks=['e','e','c','c'].concat(Array(R).fill('h')),T=ks.length,rs=(m.rule&&m.rule.sets&&m.rule.sets[n-1])||{},win=+rs.win||25,M=win>=25?36:Math.max(win+2,+rs.hard||0),per=Math.ceil(M/3),fs=per>=12?3.3:per>=8?3.7:4,
-    cols=Array.from({length:3},(_,c)=>`<span class="pcol">${Array.from({length:per},(_,j)=>{const v=c*per+j+1;return v<=M?`<b${v>=win?' class="pb"':''}>${v}</b>`:'<b></b>'}).join('')}</span>`).join(''),
-    blk=`<div class="pnb"><span class="pns"></span><span class="pnc">${cols}</span></div>`;
-    return`<div class="sgw"><div class="sgrid">${ks.map((k,i)=>`<div class="gr">${lbl(i)}${Array(q||2).fill(0).map(()=>`<div class="sg">${gcells(k,i-4,R,T-1-i)}</div>`).join('')}</div>`).join('')}</div><div class="pnr" style="height:${(100*(T-3)/T).toFixed(3)}%;font-size:${fs}pt"><span class="pl"></span>${Array(q||2).fill(blk).join('')}</div><div class="ovs" style="top:${(100/T).toFixed(3)}%;height:${(300/T).toFixed(3)}%"><b>Subs</b></div></div>`};
+  const sgrid=(n,q)=>{const set=m.sets&&m.sets[n-1],stt=set&&set.on&&m.toss&&m.toss.serve?scState(m,n-1):null,R=lim(n)>=25?4:3,ks=['e','e','c','c'].concat(Array(R).fill('h')),T=ks.length,rs=(m.rule&&m.rule.sets&&m.rule.sets[n-1])||{},win=+rs.win||25,M=win>=25?36:Math.max(win+2,+rs.hard||0),per=Math.ceil(M/3),fs=per>=12?3.3:per>=8?3.7:4,
+    tm=bi=>bi<2?['a','b'][bi]:null,
+    txf=(t,i)=>c=>{const x=(stt&&stt.subm[t][c])||{},v=i===0?set.lu[t][c-1]:i===1?x.no:i===2?x.a:x.b;return v==null?'':esc(String(v))},
+    blk=t=>{const pts=stt&&t?stt.pts[t]:0,cols=Array.from({length:3},(_,c)=>`<span class="pcol">${Array.from({length:per},(_,j)=>{const v=c*per+j+1;return v<=M?`<b class="${[v>=win?'pb':'',v<=pts?'cx':''].join(' ').trim()}">${v}</b>`:'<b></b>'}).join('')}</span>`).join('');return`<div class="pnb"><span class="pns"></span><span class="pnc">${cols}</span></div>`};
+    return`<div class="sgw"><div class="sgrid">${ks.map((k,i)=>`<div class="gr">${lbl(i)}${Array(q||2).fill(0).map((_,bi)=>`<div class="sg">${gcells(k,i-4,R,T-1-i,stt&&tm(bi)?stt.marks[tm(bi)]:null,stt&&tm(bi)?stt.tos[tm(bi)]:null,i<4&&tm(bi)&&set&&set.lu?txf(tm(bi),i):null)}</div>`).join('')}</div>`).join('')}</div><div class="pnr" style="height:${(100*(T-3)/T).toFixed(3)}%;font-size:${fs}pt"><span class="pl"></span>${Array.from({length:q||2},(_,bi)=>blk(tm(bi))).join('')}</div><div class="ovs" style="top:${(100/T).toFixed(3)}%;height:${(300/T).toFixed(3)}%"><b>Subs</b></div></div>`};
   /* normal set boxes hold 2 teams; the tie break table holds 3 team blocks (the third repeats the first team: the teams change courts at 8 points) */
   const shs=(n,k)=>{const ts=k===3?['a','b','a']:['a','b'],w=k===3?(LW-.5-6.6)/3:((LW-2)/2-.5-6.6)/2;return`<div class="shs"><span class="lb lw"></span>${ts.map(t=>tn(t,n,w)).join('')}</div><div class="sv"><span class="lb lw">Service Order</span>${ts.map(()=>grp).join('')}</div>`};
   for(let i=0;i<normal;i+=2){const a=i+1,b=i+2<=normal?i+2:0;tabs.push(`<div class="stable" data-sets="${a}${b?','+b:''}"><div class="sbox">${shr(a)}${shs(a)}${sgrid(a)}</div><div class="sbox${b?'':' none'}">${b?shr(b)+shs(b)+sgrid(b):''}</div></div>`)}
