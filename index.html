@@ -317,34 +317,42 @@ function subPickPid(pid){const m=get(S.cur);if(!S.sb||m.done)return;const cl=cur
 function sbRole(m,out,inn){const v=S.sb&&S.sb.role;if(v==='own')return'';if(v)return v;const eo=m.lu.h.find(x=>x.pid===out),ei=m.lu.h.find(x=>x.pid===inn),ro=curLU(m,m.n).rl[out]||(eo&&eo.role)||'';return(ro==='Libero'||(ei&&ei.role==='Libero'))?'':ro}
 function subOut(pid){if(S.sb){S.sb.out=pid;render()}}
 const pnp=(m,pid)=>{const e=m.lu.h.find(x=>x.pid===pid);return e?(e.num?'#'+e.num:e.name):'?'};
-function subState(m,si){const rep={},repBy={},done=new Set(),spent=new Set(),lrep={},lrepBy={};
-  (m.sb||[]).filter(x=>x.s===si).forEach(x=>{
+/* ===== Shared: substitution rules. Used by the coach view and the score table. Players are opaque ids (a pid in the coach view, a shirt number in the score table); events are the substitutions of one team in one set, in order: {out,in,lib,em}. ===== */
+function subRep(events){const rep={},repBy={},done=new Set(),spent=new Set(),lrep={},lrepBy={};
+  events.forEach(x=>{
     if(x.em){if(rep[x.out]!==undefined){delete repBy[rep[x.out]];delete rep[x.out]}if(repBy[x.out]!==undefined){delete rep[repBy[x.out]];delete repBy[x.out]}if(repBy[x.in]!==undefined){delete rep[repBy[x.in]];delete repBy[x.in]}if(rep[x.in]!==undefined){delete repBy[rep[x.in]];delete rep[x.in]}}
     else if(x.lib){if(lrep[x.out]!==undefined&&x.in===lrep[x.out]){delete lrepBy[x.in];delete lrep[x.out]}else{lrepBy[x.out]=x.in;lrep[x.in]=x.out}}
     else if(rep[x.out]!==undefined&&x.in===rep[x.out]){delete repBy[x.in];delete rep[x.out];done.add(x.in);spent.add(x.out)}
     else{repBy[x.out]=x.in;rep[x.in]=x.out}});
   return{rep,repBy,done,spent,lrep,lrepBy}}
+/* why A cannot be replaced by B (regular substitution): '' when it is allowed. lab(id) names a player, inj is the set of players who cannot come back (injured) */
+function subWhy(st,A,B,lab,inj){
+  if(inj.has(B))return lab(B)+' was injured and cannot return to the match.';
+  if(st.done.has(A))return lab(A)+' has already returned to the court and cannot be substituted again in this set.';
+  if(st.rep[A]!==undefined&&B!==st.rep[A])return lab(A)+' can only be replaced by '+lab(st.rep[A])+', the player they replaced.';
+  if(st.repBy[B]!==undefined&&st.repBy[B]!==A)return lab(B)+' was substituted and can only return for '+lab(st.repBy[B])+'.';
+  if(st.spent.has(B))return lab(B)+' has already played as a substitute and cannot enter again in this set.';
+  if(st.lrepBy[B]!==undefined)return lab(B)+' was replaced by the libero and can only return for the libero, '+lab(st.lrepBy[B])+'.';
+  return''}
+/* libero replacement (one of the two is the libero) */
+function libWhy(st,A,B,lab,inj,bIsLib){
+  if(inj.has(B))return lab(B)+' was injured and cannot return to the match.';
+  if(st.lrep[A]!==undefined&&B!==st.lrep[A])return lab(A)+' can only be replaced by '+lab(st.lrep[A])+', the player they replaced.';
+  if(!bIsLib&&st.lrepBy[B]!==undefined&&st.lrepBy[B]!==A)return lab(B)+' was replaced by the libero and can only return for '+lab(st.lrepBy[B])+'.';
+  return''}
+/* exceptional substitution (injury): f.aLib / f.bLib say whether A or B is a libero */
+function emWhy(st,A,B,lab,inj,f){
+  if(f.aLib)return'A libero cannot be replaced by an exceptional substitution.';
+  if(f.bLib)return'The libero cannot come in as an exceptional substitute.';
+  if(inj.has(B))return lab(B)+' was injured and cannot return to the match.';
+  if(st.lrepBy[B]!==undefined)return lab(B)+' was replaced by the libero and cannot be used for an exceptional substitution.';
+  return''}
+function subState(m,si){return subRep((m.sb||[]).filter(x=>x.s===si))}
 const roleIn=(m,si,id)=>curLU(m,si).rl[id]||((m.lu.h.find(x=>x.pid===id)||{}).role)||'';
 const injured=m=>new Set((m.sb||[]).filter(x=>x.em).map(x=>x.out));
-function emCheck(m,out,inn,r){const st=subState(m,m.n),ei=m.lu.h.find(x=>x.pid===inn);
-  if(roleIn(m,m.n,out)==='Libero')return'A libero cannot be replaced by an exceptional substitution.';
-  if(roleIn(m,m.n,inn)==='Libero'||(ei&&ei.role==='Libero')||r==='Libero')return'The libero cannot come in as an exceptional substitute.';
-  if(injured(m).has(inn))return pnp(m,inn)+' was injured and cannot return to the match.';
-  if(st.lrepBy[inn]!==undefined)return pnp(m,inn)+' was replaced by the libero and cannot be used for an exceptional substitution.';
-  return''}
-function subCheck(m,si,A,B){const st=subState(m,si);
-  if(injured(m).has(B))return pnp(m,B)+' was injured and cannot return to the match.';
-  if(st.done.has(A))return pnp(m,A)+' has already returned to the court and cannot be substituted again in this set.';
-  if(st.rep[A]!==undefined&&B!==st.rep[A])return pnp(m,A)+' can only be replaced by '+pnp(m,st.rep[A])+', the player they replaced.';
-  if(st.repBy[B]!==undefined&&st.repBy[B]!==A)return pnp(m,B)+' was substituted and can only return for '+pnp(m,st.repBy[B])+'.';
-  if(st.spent.has(B))return pnp(m,B)+' has already played as a substitute and cannot enter again in this set.';
-  if(st.lrepBy[B]!==undefined)return pnp(m,B)+' was replaced by the libero and can only return for the libero, '+pnp(m,st.lrepBy[B])+'.';
-  return''}
-function libCheck(m,si,A,B){const st=subState(m,si);
-  if(injured(m).has(B))return pnp(m,B)+' was injured and cannot return to the match.';
-  if(st.lrep[A]!==undefined&&B!==st.lrep[A])return pnp(m,A)+' can only be replaced by '+pnp(m,st.lrep[A])+', the player they replaced.';
-  if(roleIn(m,si,B)!=='Libero'&&st.lrepBy[B]!==undefined&&st.lrepBy[B]!==A)return pnp(m,B)+' was replaced by the libero and can only return for '+pnp(m,st.lrepBy[B])+'.';
-  return''}
+function emCheck(m,out,inn,r){const ei=m.lu.h.find(x=>x.pid===inn);return emWhy(subState(m,m.n),out,inn,id=>pnp(m,id),injured(m),{aLib:roleIn(m,m.n,out)==='Libero',bLib:roleIn(m,m.n,inn)==='Libero'||!!(ei&&ei.role==='Libero')||r==='Libero'})}
+function subCheck(m,si,A,B){return subWhy(subState(m,si),A,B,id=>pnp(m,id),injured(m))}
+function libCheck(m,si,A,B){return libWhy(subState(m,si),A,B,id=>pnp(m,id),injured(m),roleIn(m,si,B)==='Libero')}
 function subIn(pid){const m=get(S.cur);if(m.done||!S.sb||!S.sb.out)return;const cl=curLU(m,m.n);
   if(!cl.pos.includes(S.sb.out)||cl.pos.includes(pid))return;const r=sbRole(m,S.sb.out,pid);
   if(S.sb.em){const msg=emCheck(m,S.sb.out,pid,r);if(msg){alert(msg);return}pushSub(m,S.sb.out,pid,false,r,true);S.sb=null;S.pm=null;save();render();return}
@@ -1010,7 +1018,7 @@ function statsView(){
   <div class="mut" style="margin-top:8px">Errors given: ${r.given}. Share of points from attack: ${r.pf?Math.round(r.kill/r.pf*100):0}%, from serve: ${r.pf?Math.round(r.ace/r.pf*100):0}%.</div></div>`});
   return h}
 
-const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 1.58.0</div>';
+const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 1.59.0</div>';
 const FXK='vb-scout-fx-v1';let fx={flash:true,sound:true};try{const r=JSON.parse(localStorage.getItem(FXK)||'null');if(r&&typeof r==='object')fx=Object.assign(fx,r)}catch(e){}
 function setFx(k,v){fx[k]=!!v;try{localStorage.setItem(FXK,JSON.stringify(fx))}catch(e){}render()}
 let actx=null;
@@ -1440,13 +1448,10 @@ const scQ=set=>Math.max(Date.now(),Math.max(0,...[...(set.f5m||[]),...(set.tos||
 const scSubMax=m=>m.rule&&m.rule.sub!=null&&!isNaN(+m.rule.sub)?+m.rule.sub:6;
 const scPn=(m,t,x)=>{const q=(m[t].pl||[]).find(p=>String(p.n)===String(x));return '#'+esc(x)+(q&&q.name?' '+esc(q.name):'')};
 /* who can leave and who can enter: a bench player enters once in a set; a substitute can only be replaced by the starter he replaced; a starter comes back once; the rule set limits the substitutions per set */
-function scSubOpts(m,set,t,st){const same=(x,y)=>x!=null&&String(x)===String(y),orig=st.starts[t],subm=st.subm[t],sub=(set.subs||[]).filter(e=>e.t===t),
-    lost=(set.f5m||[]).filter(e=>e.t===t).map(e=>String(e.lost)),usedIn=sub.map(e=>String(e.inn)),
-    bench=(m[t].pl||[]).filter(p=>!p.lib&&p.n!=null&&String(p.n)!==''&&!st.pos[t].some(x=>same(x,p.n))&&!orig.some(x=>same(x,p.n))&&!usedIn.includes(String(p.n))&&!lost.includes(String(p.n))).map(p=>String(p.n)),
+function scSubOpts(m,set,t,st){const sub=(set.subs||[]).filter(e=>e.t===t),inj=new Set((set.f5m||[]).filter(e=>e.t===t).map(e=>String(e.lost))),rs=subRep(sub.map(e=>({out:String(e.out),in:String(e.inn)}))),
+    court=st.pos[t].filter(x=>x!=null).map(String),pool=(m[t].pl||[]).filter(p=>!p.lib&&p.n!=null&&String(p.n)!=='').map(p=>String(p.n)).filter(x=>!court.includes(x)),
     max=scSubMax(m),left=Math.max(0,max-sub.length),outs=[],ins={};
-  if(left>0)st.pos[t].filter(x=>x!=null).forEach(x=>{const c=st.col[t][String(x)];if(!c)return;const rec=subm[c]||{};
-    if(orig.some(y=>same(y,x))){if(!rec.no&&bench.length){outs.push(String(x));ins[String(x)]=bench}}
-    else if(rec.a&&!rec.b){const w=orig[c-1];if(w!=null&&!lost.includes(String(w))){outs.push(String(x));ins[String(x)]=[String(w)]}}});
+  if(left>0)court.forEach(A=>{if(!st.col[t][A])return;const ok=pool.filter(B=>!subWhy(rs,A,B,String,inj));if(ok.length){outs.push(A);ins[A]=ok}});
   return{max,left,outs,ins}}
 function scSubAsk(t){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!set.on||set.end||m.fin)return;if(!scSubOpts(m,set,t,scState(m,m.cur||0)).outs.length)return;S.sbq={id:m.id,t,out:null,inn:null};render();const b=document.getElementById('sb-c');if(b)b.focus()}
 function scSubPick(k,x){const q=S.sbq;if(!q)return;if(k==='o'){q.out=x;q.inn=null;q.cap=null;const m=S.sm.find(z=>z.id===S.mv.id);if(m){const ins=scSubOpts(m,bset(m),q.t,scState(m,m.cur||0)).ins[String(x)]||[];if(ins.length===1)q.inn=ins[0]}}else if(k==='c')q.cap=x;else{q.inn=x;q.cap=null}render();const b=document.getElementById('sb-'+k+'-'+x);if(b)b.focus()}
