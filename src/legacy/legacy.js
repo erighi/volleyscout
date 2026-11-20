@@ -1,24 +1,24 @@
 /* legacy: everything that has not been moved into a class yet. Pieces leave this file one by one (see docs/migration-map.md); when it is empty the file is deleted. Loaded after all classes, started by App.start(). */
-const K='vb-scout-v1';
+const K=Store.key('matches');
 const T=[['kill','Attack'],['ace','Ace'],['block','Block'],['err','Opp. error']];
 const TH=T.filter(x=>x[0]!=='ace'),TA=T.map(([k,l])=>k==='err'?[k,'My team error']:[k,l]);
 const G=k=>k==='--'?'<span class="dd" role="img" aria-label="minus minus"><i></i><i></i></span>':esc(k);
-const PK='vb-scout-players-v1',TK='vb-scout-teams-v1';
+const PK=Store.key('players'),TK=Store.key('teams');
 const ROLES=['Setter','Outside hitter','Opposite','Middle blocker','Libero','Defensive specialist'];
 let S={pv:'cur',m:[],p:[],t:[],r:[],rd:null,cur:null,tab:'teams',form:false,edit:null,team:null,tform:false};
-try{const r=localStorage.getItem(K);if(r)S.m=JSON.parse(r)||[]}catch(e){}
-try{const r=localStorage.getItem(PK);if(r)S.p=JSON.parse(r)||[]}catch(e){}
-try{const r=localStorage.getItem(TK);if(r)S.t=JSON.parse(r)||[]}catch(e){}
-const THK='vb-scout-theme-v1';
-let themeMode='auto';try{const r=localStorage.getItem(THK);if(r==='light'||r==='dark')themeMode=r}catch(e){}
+S.m=Store.read(K,[]);
+S.p=Store.read(PK,[]);
+S.t=Store.read(TK,[]);
+const THK=Store.key('theme');
+let themeMode='auto';{const r=Store.text(THK);if(r==='light'||r==='dark')themeMode=r}
 function applyTheme(){const d=document.documentElement;if(themeMode==='auto')d.removeAttribute('data-theme');else d.setAttribute('data-theme',themeMode);
   const dk=themeMode==='dark'||(themeMode==='auto'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches),mt=document.querySelector('meta[name=theme-color]');if(mt)mt.setAttribute('content',dk?'#0c1a1d':'#0e6b73')}
-function setTheme(k){themeMode=k;try{if(k==='auto')localStorage.removeItem(THK);else localStorage.setItem(THK,k)}catch(e){}applyTheme();render()}
+function setTheme(k){themeMode=k;if(k==='auto')Store.remove(THK);else Store.setText(THK,k);applyTheme();render()}
 try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(themeMode==='auto')applyTheme()})}catch(e){}
 applyTheme();
-const saveP=()=>{try{localStorage.setItem(PK,JSON.stringify(S.p))}catch(e){}};
-const saveT=()=>{try{localStorage.setItem(TK,JSON.stringify(S.t))}catch(e){}};
-const save=()=>{try{localStorage.setItem(K,JSON.stringify(S.m))}catch(e){}};
+const saveP=()=>{Store.write(PK,S.p)};
+const saveT=()=>{Store.write(TK,S.t)};
+const save=()=>{Store.write(K,S.m)};
 if(S.p.some(p=>!p.teamId)){let t=S.t.find(x=>x.mine);if(!t){t={id:'t-mine',name:'My team',mine:true};S.t.push(t)}S.p.forEach(p=>{if(!p.teamId)p.teamId=t.id});saveT();saveP()}
 const myTeam=()=>S.t.find(t=>t.mine);
 const myTeams=()=>S.t.filter(t=>t.mine),inTeam=(p,id)=>p.teamId===id||(p.also||[]).includes(id);
@@ -27,33 +27,33 @@ const pNum=(p,t)=>pTm(p,t).num,pRole=(p,t)=>pTm(p,t).role,tv=(p,t)=>({...p,num:p
 const prefsOf=p=>Array.isArray(p.prefs)?p.prefs:(p.role?[p.role]:[]);
 function freezeTm(p){p.tm=p.tm||{};[p.teamId,...(p.also||[])].forEach(t=>{if(!p.tm[t])p.tm[t]={num:p.num||'',role:p.role||''}})}
 function syncPrimary(p){const t=pTm(p,p.teamId);p.num=t.num;p.role=t.role}
-const ordn=i=>['1st','2nd','3rd'][i]||(i+1)+'th';
+const ordn=i=>Fmt.ordinal(i);
 function prefSlots(cur){return`<div id="pf-box">${[0,1,2,3,4,5].map(i=>`<div class="row" id="pf-row${i}" style="margin-top:6px;flex-wrap:nowrap;align-items:center${i>cur.length?';display:none':''}"><span class="mut" style="width:64px;flex:none">${ordn(i)}</span><select id="pf-s${i}" class="pf-r" aria-label="${ordn(i)} preferred role" style="flex:1" onchange="pfChg()"><option value="">${i?'None':'Choose a role'}</option>${ROLES.map(r=>`<option${cur[i]===r?' selected':''}>${r}</option>`).join('')}</select></div>`).join('')}</div>`}
 function pfChg(){const sel=[...document.querySelectorAll('.pf-r')];if(!sel.length)return;const vals=[];sel.forEach(e=>{if(e.value&&!vals.includes(e.value))vals.push(e.value)});
   sel.forEach((e,i)=>{e.value=vals[i]||'';const row=document.getElementById('pf-row'+i);if(row)row.style.display=i<=vals.length?'':'none';[...e.options].forEach(o=>{o.disabled=!!o.value&&vals.includes(o.value)&&o.value!==vals[i]})});
   const pr=document.getElementById('p-r'),o=pr&&pr.querySelector('option[value="__pref"]');if(o)o.textContent=vals[0]?'First preference ('+vals[0]+')':'First preference (none set)'}
 function roleOptsHtml(ed,tid){const pf=ed?prefsOf(ed):[],er=ed?pRole(ed,tid):'';return`<option value="__pref"${ed?'':' selected'}>${pf[0]?'First preference ('+esc(pf[0])+')':'First preference (none set)'}</option><option value=""${ed&&!er?' selected':''}>None</option>${ROLES.map(r=>`<option${ed&&er===r?' selected':''}>${r}</option>`).join('')}`}
 const SCDEF=[{k:'--',n:'Error',d:'Ball out or on the net. Point to the opponents'},{k:'-',n:'Easy',d:'Easy ball to pass. The opponent setter gets the perfect ball in their hands'},{k:'0',n:'Medium',d:'Ball received, but the opponent setter must move and some setting options are not available'},{k:'+',n:'Tough',d:'The service puts the opponent team in trouble and we get a free ball'},{k:'++',n:'Ace',d:'Ace. Point for us'}];
-const SK='vb-scout-scale-v1';
+const SK=Store.key('scale');
 let SC=JSON.parse(JSON.stringify(SCDEF));
-try{const r=localStorage.getItem(SK);if(r){const a=JSON.parse(r);if(Array.isArray(a)&&a.length===5)SC=a.map((x,i)=>({k:SCDEF[i].k,n:x.n||SCDEF[i].n,d:x.d||SCDEF[i].d}))}}catch(e){}
+try{const a=Store.read(SK,null);if(Array.isArray(a)&&a.length===5)SC=a.map((x,i)=>({k:SCDEF[i].k,n:x.n||SCDEF[i].n,d:x.d||SCDEF[i].d}))}catch(e){}
 const SKN={serve:'Serve',pass:'Pass',set:'Set',attack:'Attack',block:'Block'};
 const SKXDEF={
 pass:[{n:'Ace against',d:'Service ace for the opponents. Point to them'},{n:'Poor',d:'Ball not playable. The setter cannot set and we send a free ball over'},{n:'Medium',d:'Setter must move and some attack options are not available'},{n:'Good',d:'Setter reaches the ball with most attack options open'},{n:'Perfect',d:'Perfect pass to the setter. All attack options open'}],
 set:[{n:'Error',d:'Double touch, lift or net error. Point to the opponents'},{n:'Poor',d:'Hitter has no real attack and must play an easy ball'},{n:'Medium',d:'Hitter attacks against a ready block with limited options'},{n:'Good',d:'Good set. Hitter attacks with a clear option'},{n:'Perfect',d:'Perfect set. Hitter has full options against a poor block'}],
 attack:[{n:'Error',d:'Ball out, on the net or blocked for a point. Point to the opponents'},{n:'Poor',d:'Easy ball for the opponents to counter-attack'},{n:'Medium',d:'Defended. The opponents attack with limited options'},{n:'Good',d:'Hard to defend. The opponents are out of system'},{n:'Kill',d:'Point for us'}],
 block:[{n:'Error',d:'Net touch, out or block fault. Point to the opponents'},{n:'Poor',d:'Block does not touch the ball or does not help. The opponent scores'},{n:'Touch',d:'Touch that does not stop the attack. The ball is defended or lost'},{n:'Soft',d:'Block slows the ball and we get an easy counter'},{n:'Stuff',d:'Block point for us'}]};
-const SKXK='vb-scout-skills-v1',GRK=['--','-','0','+','++'];
+const SKXK=Store.key('skills'),GRK=['--','-','0','+','++'];
 let SKX=JSON.parse(JSON.stringify(SKXDEF));
 function setSkx(o){Object.keys(SKXDEF).forEach(k=>{if(o&&Array.isArray(o[k])&&o[k].length===5)SKX[k]=o[k].map((x,i)=>({n:x.n||SKXDEF[k][i].n,d:x.d||SKXDEF[k][i].d}))})}
-try{const r=localStorage.getItem(SKXK);if(r)setSkx(JSON.parse(r))}catch(e){}
-function saveSkx(){try{localStorage.setItem(SKXK,JSON.stringify(SKX))}catch(e){}}
+try{const o=Store.read(SKXK,null);if(o)setSkx(o)}catch(e){}
+function saveSkx(){Store.write(SKXK,SKX)}
 const gScale=sk=>sk==='serve'?SC:SKX[sk].map((x,i)=>({k:GRK[i],n:x.n,d:x.d}));
 function saveScale(sk){sk=sk||'serve';const rd=i=>({n:document.getElementById('g-'+sk+'-n'+i).value.trim().slice(0,12),d:document.getElementById('g-'+sk+'-d'+i).value.trim()});
-  if(sk==='serve'){SC=SC.map((x,i)=>{const v=rd(i);return{k:x.k,n:v.n||SCDEF[i].n,d:v.d||SCDEF[i].d}});try{localStorage.setItem(SK,JSON.stringify(SC))}catch(e){}}
+  if(sk==='serve'){SC=SC.map((x,i)=>{const v=rd(i);return{k:x.k,n:v.n||SCDEF[i].n,d:v.d||SCDEF[i].d}});Store.write(SK,SC)}
   else{SKX[sk]=SKX[sk].map((x,i)=>{const v=rd(i);return{n:v.n||SKXDEF[sk][i].n,d:v.d||SKXDEF[sk][i].d}});saveSkx()}
   render()}
-function resetScale(sk){sk=sk||'serve';if(sk==='serve'){SC=JSON.parse(JSON.stringify(SCDEF));try{localStorage.removeItem(SK)}catch(e){}}else{SKX[sk]=JSON.parse(JSON.stringify(SKXDEF[sk]));saveSkx()}render()}
+function resetScale(sk){sk=sk||'serve';if(sk==='serve'){SC=JSON.parse(JSON.stringify(SCDEF));Store.remove(SK);}else{SKX[sk]=JSON.parse(JSON.stringify(SKXDEF[sk]));saveSkx()}render()}
 function serve(g){const m=get(S.cur);if(m.done)return;const cl=curLU(m,m.n);if(!cl.serving||!cl.pos[0])return;const L=m.log.length,sl=m.sl=m.sl||[],ls=sl[sl.length-1];if(ls&&ls.s===m.n&&ls.at===L)return;
   sl.push({s:m.n,pid:cl.pos[0],g,at:L,q:(m.q=(m.q||0)+1)});
   if(g==='--')m.log.push({t:'a',type:'err',s:m.n,a:1});else if(g==='++')m.log.push({t:'h',type:'ace',s:m.n,a:1});
@@ -137,9 +137,9 @@ function libSetup(m,lk){const L=libsOf(m);if(!L.length)return'';const al=alOf(m)
   return`<h2 style="margin-top:8px">Libero</h2><div class="card"><div class="row sp"><b>Auto swap libero</b><div class="seg" role="group" aria-label="Auto libero">${[[true,'On'],[false,'Off']].map(([v,l])=>`<button aria-pressed="${al.on===v}" onclick="setAL('on',${v})"${lk?' disabled':''}>${l}</button>`).join('')}</div></div><label for="al-r">Libero replaces</label><select id="al-r"${lk?' disabled':''} onchange="setAL('role',this.value)">${ROLES.filter(r=>r!=='Libero').map(r=>`<option${al.role===r?' selected':''}>${r}</option>`).join('')}</select>${L.length>1?`<label for="al-l">Libero</label><select id="al-l"${lk?' disabled':''} onchange="setAL('lib',this.value)">${L.map(x=>`<option value="${x.pid}"${x.pid===sel.pid?' selected':''}>${x.num?'#'+esc(x.num)+' ':''}${esc(x.name)}</option>`).join('')}</select>`:''}<div class="mut" style="margin-top:8px">The libero comes on for the chosen role when that player is in the back row, and goes off when the rotation brings the slot to the front row. The server is not replaced while your team is serving. Libero swaps do not count as substitutions. On the Scout page you can change any swap by hand.</div></div>`}
 function libCard(m){const L=libsOf(m);if(!L.length||m.done)return'';const al=alOf(m),cl=curLU(m,m.n),on=cl.pos.find(id=>L.some(x=>x.pid===id)),back=on&&(cl.was[on]||[]).slice(-1)[0];
   return`<div class="card"><div class="row sp"><b>Libero</b><div class="seg" role="group" aria-label="Auto libero">${[[true,'Auto on'],[false,'Auto off']].map(([v,l])=>`<button aria-pressed="${al.on===v}" onclick="setAL('on',${v})">${l}</button>`).join('')}</div></div><div class="mut" style="margin:6px 0">${al.on?'Swaps for '+esc(al.role)+'. ':''}${on?pnum(m,on)+' is on court.':'The libero is off court.'} Libero swaps are not counted as substitutions.</div>${on&&back&&!cl.pos.includes(back)?`<button onclick="libOut()">Libero off, ${pnum(m,back)} back on</button>`:''}</div>`}
-const IC_L='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M9.5 7v10h5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-IC_S='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>',
-IC_V='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const IC_L=Html.icon('libero'),
+IC_S=Html.icon('swap'),
+IC_V=Html.icon('view');
 function togglePM(k){const m=get(S.cur);if(S.pm===k){S.pm=null;if(k==='sub')S.sb=null}else{if(S.pm==='sub')S.sb=null;S.pm=k;if(k==='sub'&&!m.done)S.sb={out:null}}render()}
 const panelBox=h=>h.replace('<div class="card">','<div style="margin-top:10px;border-top:1px solid var(--line);padding-top:10px">');
 function pieBox(m){const L=libsOf(m),lim=ruleSub(ruleOf(m)),al=alOf(m),pm=S.pm,cur=S.pv==='cur',used=subsUsed(m,m.n),showL=L.length&&!m.done;
@@ -171,23 +171,24 @@ function serveCard(m){const cl=curLU(m,m.n);if(m.done)return'';const adv=scoutMo
 function serveTable(m){const sl=m.sl||[];if(!sl.length)return'';const by={};sl.forEach(e=>{const r=by[e.pid]=by[e.pid]||{};r[e.g]=(r[e.g]||0)+1});
   const rows=Object.keys(by).map(pid=>{const e=m.lu.h.find(x=>x.pid===pid),r=by[pid],t=SC.reduce((a,x)=>a+(r[x.k]||0),0);return`<tr><td>${e?(e.num?'#'+esc(e.num)+' ':'')+esc(e.name):'Player'}</td>${SC.map(x=>`<td>${r[x.k]||0}</td>`).join('')}<td>${t}</td></tr>`}).join('');
   return`<h2>Serve grades</h2><div class="card sc"><table><tr><th></th>${SC.map(x=>`<th>${G(x.k)}</th>`).join('')}<th>All</th></tr>${rows}</table></div>`}
-const RK='vb-scout-rules-v1';
-try{const r=localStorage.getItem(RK);if(r)S.r=JSON.parse(r)||[]}catch(e){}
-const saveR=()=>{try{localStorage.setItem(RK,JSON.stringify(S.r))}catch(e){}};
-const BUILT=[{id:'local',name:'Local tournament',roster:false,sets:[{win:25},{win:25},{win:25},{win:25},{win:15}]},{id:'fivb',name:'Official FIVB',roster:true,sets:[{win:25},{win:25},{win:25},{win:25},{win:15}]}];
-const allRules=()=>[...BUILT,...S.r];
-const getRule=id=>allRules().find(r=>r.id===id)||BUILT[0];
-const ruleOf=m=>m.rule||BUILT.find(r=>r.id===m.fmt)||BUILT[0];
+const RK=Store.key('rules');
+S.r=Store.read(RK,[]);
+const saveR=()=>{Store.write(RK,S.r)};
+const BOOK=new RuleBook(()=>S.r);
+const BUILT=BOOK.builtIn();
+const allRules=()=>BOOK.all();
+const getRule=id=>BOOK.get(id).data();
+const ruleOf=m=>BOOK.forMatch(m).data();
 const copy=o=>JSON.parse(JSON.stringify(o));
-const setRule=(m,si)=>{const R=ruleOf(m);return R.sets[Math.min(si,R.sets.length-1)]};
-const ruleText=r=>r.sets.map(s=>s.win+(s.hard?' hard '+s.hard:' win by 2')).join(' | ')+(ruleMin(r)?' | match time '+ruleMin(r)+' min':'');
-const fmtT=ms=>{const t=Math.max(0,Math.ceil(ms/1000));return Math.floor(t/60)+':'+String(t%60).padStart(2,'0')};
+const setRule=(m,si)=>BOOK.forMatch(m).setRule(si);
+const ruleText=r=>new RuleSet(r).text();
+const fmtT=ms=>Fmt.minutes(ms);
 /* ===== Shared: timeouts. The limit per set comes from the rule; both views count what a team has used. The interaction differs (the coach view toggles a box, the score table asks to confirm and writes the log), so only the rule and the counting are shared. ===== */
 const toLimit=r=>new TimeoutRules(r).limit();
 const toUsed=(list,t)=>new TimeoutRules().used(list,t);
 const toLeft=(rule,list,t)=>new TimeoutRules(rule).left(list,t);
 const ruleTO=toLimit;
-const ruleSub=r=>r.sub==null?8:r.sub;
+const ruleSub=r=>new RuleSet(r).substitutionsPerSet();
 function callTO(t,i){const m=get(S.cur);if(m.done)return;m.to=m.to||[];const mine=m.to.filter(e=>e.s===m.n&&e.t===t);
   if(mine[i]){m.to.splice(m.to.indexOf(mine[i]),1)}
   else{if(mine.length>=ruleTO(ruleOf(m)))return;const[x,y]=sc(m,m.n);m.to.push({s:m.n,t,sc:[x,y]})}
@@ -199,17 +200,17 @@ function compactTop(m,x,y){const n=ruleTO(ruleOf(m));
 function toReport(m){const L=m.to||[];if(!L.length)return'';const top=Math.max(m.n,...L.map(e=>e.s));
   const rows=Array.from({length:top+1},(_,si)=>L.filter(e=>e.s===si).map(e=>`<tr><td>Set ${si+1}</td><td>${esc(e.t==='h'?m.home:m.away)}</td><td>${e.sc[0]}–${e.sc[1]}</td></tr>`).join('')).join('');
   return`<h2>Timeouts</h2><div class="card sc"><table><tr><th>Set</th><th>Called by</th><th>Score</th></tr>${rows}</table><div class="mut" style="font-size:13px;margin-top:6px">Score when the timeout was recorded: ${esc(m.home)} first, then ${esc(m.away)}.</div></div>`}
-const TBK='vb-scout-board-v1',TBC=['#111827','#d33','#1f6feb','#16a34a'];let TB=null,tbEl=null;
+const TBK=Store.key('board'),TBC=['#111827','#d33','#1f6feb','#16a34a'];let TB=null,tbEl=null;
 const tbDark=()=>themeMode==='dark'||(themeMode==='auto'&&!!window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches);
 const tbIc=c=>tbDark()&&c==='#111827'?'#f1f5f9':c;
 const tbHome=[null,[260,520],[260,370],[180,370],[100,370],[100,520],[180,520]];
 function tbDefault(){const m=S.cur&&get(S.cur);let pos=[];try{if(m)pos=curLU(m,m.n).pos}catch(e){}
   const tok={};for(let p=1;p<=6;p++){const e=m&&m.lu.h.find(x=>x.pid===pos[p-1]),[x,y]=tbHome[p];tok['h'+p]={x,y,n:e&&e.num?String(e.num):'P'+p};tok['a'+p]={x:360-x,y:630-y,n:String(p)}}
   tok.b={x:180,y:315,n:''};return tok}
-function tbLoad(){let sv=null;try{sv=JSON.parse(localStorage.getItem(TBK)||'null')}catch(e){}
+function tbLoad(){const sv=Store.read(TBK,null);
   const d=tbDefault();if(sv&&sv.tok&&Array.isArray(sv.ink)){Object.keys(d).forEach(k=>{if(sv.tok[k]&&isFinite(sv.tok[k].x)&&isFinite(sv.tok[k].y)){d[k].x=sv.tok[k].x;d[k].y=sv.tok[k].y}});return{tok:d,ink:sv.ink,tool:'move',col:TBC[0]}}
   return{tok:d,ink:[],tool:'move',col:TBC[0]}}
-function tbSave(){try{localStorage.setItem(TBK,JSON.stringify({tok:TB.tok,ink:TB.ink}))}catch(e){}}
+function tbSave(){Store.write(TBK,{tok:TB.tok,ink:TB.ink})}
 const tbKey=e=>{if(e.key==='Escape')closeTB()};
 function openTB(){if(tbEl)return;TB=tbLoad();tbEl=document.createElement('div');tbEl.id='tb';tbEl.className='tbx';tbEl.setAttribute('role','dialog');tbEl.setAttribute('aria-modal','true');tbEl.setAttribute('aria-label','Tactical board');
   document.body.appendChild(tbEl);document.body.style.overflow='hidden';document.addEventListener('keydown',tbKey);tbDraw()}
@@ -249,7 +250,7 @@ function toBoxes(m){const n=ruleTO(ruleOf(m));if(!n||m.done)return'';
   const col=(t,nm)=>{const used=(m.to||[]).filter(e=>e.s===m.n&&e.t===t),c=t==='h'?'var(--home)':'var(--away)';
     return`<div style="flex:1;min-width:0"><div class="mut" style="font-size:13px;margin-bottom:4px;overflow-wrap:anywhere">${esc(nm)}</div><div class="row" style="gap:6px;flex-wrap:nowrap">${Array.from({length:n},(_,i)=>{const e=used[i];return`<button aria-pressed="${!!e}" aria-label="${esc(nm)} timeout ${i+1}${e?', called at '+e.sc[0]+' '+e.sc[1]:', not used'}" style="flex:1;min-width:0;min-height:46px;padding:4px;border-color:${c}${e?';background:'+c+';color:var(--onc);font-weight:600':''}" onclick="callTO('${t}',${i})">${e?e.sc[0]+'–'+e.sc[1]:''}</button>`}).join('')}</div></div>`};
   return`<div style="margin:10px 0"><div class="mut" style="margin-bottom:4px">Timeouts, set ${m.n+1}. Tap a box to record one, tap it again to remove it.</div><div class="row" style="gap:12px;align-items:flex-start;flex-wrap:nowrap">${col('h',m.home)}${col('a',m.away)}</div></div>`}
-const ruleMin=r=>r.min||((r.sets||[]).find(x=>x.min)||{}).min||null;
+const ruleMin=r=>new RuleSet(r).timeLimit();
 const tmOf=m=>m.tm&&typeof m.tm.acc==='number'?m.tm:null;
 function elapsed(m){const t=tmOf(m);return t?t.acc+(t.run?Date.now()-t.run:0):0}
 function timeLeft(m){const n=ruleMin(ruleOf(m));return n?n*60000-elapsed(m):Infinity}
@@ -264,7 +265,7 @@ const byNum=(a,b)=>(parseInt(a.num,10)||999)-(parseInt(b.num,10)||999)||a.name.l
 const teamByName=n=>S.t.find(t=>t.name.toLowerCase()===n.toLowerCase());
 function ensureTeam(n){let t=teamByName(n);if(!t){t={id:'t'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name:n,mine:false};S.t.push(t);saveT()}return t}
 const snap=t=>S.p.filter(p=>inTeam(p,t.id)&&!p.arch).map(p=>({pid:p.id,name:p.name,num:pNum(p,t.id),role:pRole(p,t.id)}));
-const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const esc=s=>Html.esc(s);
 const get=id=>S.m.find(m=>m.id===id);
 const sc=(m,i)=>{let h=0,a=0;m.log.forEach(e=>{if(e.s===i){e.t==='h'?h++:a++}});return[h,a]};
 const target=(m)=>m.n>=4?15:25;
@@ -338,7 +339,7 @@ function luGuest(s){const m=get(S.cur);if(matchBusy(m))return;const n=(prompt('P
 function setDate(v){const m=get(S.cur);if(v)m.date=v;save();render()}
 function setFmt(v){const m=get(S.cur);m.fmt=v;m.rule=copy(getRule(v));save();render()}
 function luRow(s,x,i,lead,rm,lk,lkr){return`<div class="row" style="margin-top:8px;flex-wrap:nowrap">${lead}<input aria-label="Shirt number for ${esc(x.name)}" style="width:60px" inputmode="numeric" maxlength="3" value="${esc(x.num)}" onchange="luSet('${s}',${i},'num',this.value)"${lk?' disabled':''}><select aria-label="Role for ${esc(x.name)}" style="width:auto;max-width:42%" onchange="luSet('${s}',${i},'role',this.value)"${(lkr===undefined?lk:lkr)?' disabled':''}><option value="">None</option>${ROLES.map(r=>`<option${x.role===r?' selected':''}>${r}</option>`).join('')}</select>${rm?`<button aria-label="Remove ${esc(x.name)}" onclick="luDel('${s}',${i})"${lk?' disabled':''}>✕</button>`:''}</div>`}
-function luHtml(m,s){const lk=matchBusy(m),lkr=!canRoleEdit(m),inj=injured(m),L=m.lu[s],id=s==='h'?m.hid:m.aid,fv=ruleOf(m).roster,c=cnt(L),ro=S.p.filter(p=>inTeam(p,id)&&(!p.arch||L.some(x=>x.pid===p.id))).map(p=>tv(p,id)).sort((a,b)=>(parseInt(a.num,10)||999)-(parseInt(b.num,10)||999)||a.name.localeCompare(b.name));
+function luHtml(m,s){const lk=matchBusy(m),lkr=!canRoleEdit(m),inj=injured(m),L=m.lu[s],id=s==='h'?m.hid:m.aid,fv=ruleRoster(ruleOf(m)),c=cnt(L),ro=S.p.filter(p=>inTeam(p,id)&&(!p.arch||L.some(x=>x.pid===p.id))).map(p=>tv(p,id)).sort((a,b)=>(parseInt(a.num,10)||999)-(parseInt(b.num,10)||999)||a.name.localeCompare(b.name));
   const st=fv?`${c.pl} of 12 players, ${c.lib} of 2 liberos${c.lib<1?'. Add at least 1 libero.':''}`:`${L.length} attending`;
   let h=`<div style="border-top:1px solid var(--line);margin-top:12px;padding-top:10px"><div class="row sp"><b>${esc(s==='h'?m.home:m.away)}</b><span class="mut" ${over(m,L)||(fv&&c.lib<1)?'style="color:var(--bad)"':''}>${st}</span></div>`;
   ro.forEach(p=>{const i=L.findIndex(x=>x.pid===p.id);const lead=`<label style="display:flex;gap:8px;align-items:center;color:var(--fg);font-size:16px;margin:0;flex:1;min-width:0"><input type="checkbox" style="width:22px;height:22px;flex:none" ${i>=0?'checked':''}${lk?' disabled':''} onchange="luToggle('${s}','${p.id}',this.checked)"><span style="overflow-wrap:anywhere">${esc(p.name)}${inj.has(p.id)?' <span class="mut">(injured, out for the match)</span>':''}</span></label>`;
@@ -390,14 +391,14 @@ function setSetView(i){S.setv=i;S.pick=null;render()}
 function setPos(p,pid){const m=get(S.cur),si=curSet(m);if(setStarted(m,si))return;if(p===6&&f5s(m,si))return;const a=m.st[si]=m.st[si]||[null,null,null,null,null,null];a[p-1]=pid||null;if(pid)autoFill(m,si);reAuto(m,si);save();
   const nx=[1,2,3,4,5,6].find(q=>!a[q-1]&&!(q===6&&f5s(m,si)));S.pick=pid&&nx?nx:null;render()}
 function copyPrev(){const m=get(S.cur),si=curSet(m);if(setStarted(m,si))return;const inj=injured(m);m.st[si]=(m.st[si-1]||[]).map(id=>inj.has(id)?null:id);if(f5s(m,si))m.st[si][5]=null;reAuto(m,si);save();S.pick=null;render()}
-function setFive(v){const m=get(S.cur),si=curSet(m);if(!m||setStarted(m,si)||!ruleOf(m).five)return;const f=((m.f5=m.f5||{})[si]=m.f5[si]||{});
+function setFive(v){const m=get(S.cur),si=curSet(m);if(!m||setStarted(m,si)||!ruleFive(ruleOf(m)))return;const f=((m.f5=m.f5||{})[si]=m.f5[si]||{});
   if(v){f.h={at:0,q:(m.q=(m.q||0)+1)};const a=m.st[si]=m.st[si]||[null,null,null,null,null,null];a[5]=null}else if(f.h&&!f.h.lost)delete f.h;
   reAuto(m,si);save();S.pick=null;render()}
-function declF5(side,pid){const m=get(S.cur);if(!m||m.done||!ruleOf(m).five)return;const f=((m.f5=m.f5||{})[m.n]=m.f5[m.n]||{}),K=m.log.filter(e=>e.s===m.n).length;
+function declF5(side,pid){const m=get(S.cur);if(!m||m.done||!ruleFive(ruleOf(m)))return;const f=((m.f5=m.f5||{})[m.n]=m.f5[m.n]||{}),K=m.log.filter(e=>e.s===m.n).length;
   if(side==='h'){if(f.h||!pid||!curLU(m,m.n).pos.includes(pid))return;if(!confirm(m.home+' continues with 5 players without '+pnum(m,pid).replace('&#39;',"'")+'. Zone 6 is greyed out and every sixth rotation is a ghost rotation. Continue?'))return;f.h={at:K,lost:pid,reason:S.f5r||'Injury',q:(m.q=(m.q||0)+1)}}
   else{if(f.a)return;if(!confirm(m.away+' plays with 5 players from now on. Every sixth side-out of theirs is a ghost rotation. Continue?'))return;f.a={at:K,q:(m.q=(m.q||0)+1)}}
   S.f5pick=false;save();render()}
-function f5Card(m){const cl=curLU(m,m.n);if(!ruleOf(m).five&&!cl.f5.h&&!cl.f5.a)return'';
+function f5Card(m){const cl=curLU(m,m.n);if(!ruleFive(ruleOf(m))&&!cl.f5.h&&!cl.f5.a)return'';
   const left=n=>n===1?'The next side-out is a ghost rotation.':'Ghost rotation after '+n+' more side-outs.',nH=cl.f5.sh===5?6:5-cl.f5.sh,nA=cl.f5.sa===5?6:5-cl.f5.sa;
   const ban=cl.gh?`<div class="banner" role="status"><b>Ghost rotation.</b> ${cl.gh==='h'?esc(m.home)+' won the rally but has no server. The serve is lost automatically and no point goes to '+esc(m.away)+'.':esc(m.away)+' won the rally but has no server. The serve goes back to '+esc(m.home)+' and no point is awarded.'}</div>`:'';
   const our=cl.f5.h?`<div>${esc(m.home)}: 5 players. ${left(nH)}</div>`:m.done?'':`<div class="row sp"><span>${esc(m.home)}</span><button onclick="S.f5pick=!S.f5pick;render()" aria-expanded="${!!S.f5pick}">A player can't continue</button></div>${S.f5pick?`<div class="mut" style="margin-top:6px">Reason</div><div class="seg" role="group" aria-label="Reason" style="margin-top:4px">${['Injury','Emergency leave','Red card'].map(r=>`<button aria-pressed="${(S.f5r||'Injury')===r}" onclick="S.f5r='${r}';render()">${r}</button>`).join('')}</div><div class="mut" style="margin-top:8px">Who leaves the court? The team then plays with 5 players.</div><div class="row" style="margin-top:6px">${cl.pos.filter(Boolean).map(id=>`<button onclick="declF5('h','${id}')">${pnum(m,id)}</button>`).join('')}</div>`:''}`;
@@ -512,9 +513,9 @@ function tabsHtml(m){return`<div class="seg" role="tablist" style="margin:12px 0
 function tally(m){const r={h:{},a:{}};m.log.forEach(e=>{r[e.t][e.type]=(r[e.t][e.type]||0)+1});return r}
 function setsWon(m){let h=0,a=0;for(let i=0;i<=m.n;i++){const[x,y]=sc(m,i);if(i<m.n||m.done){if(x>y)h++;else if(y>x)a++}}return[h,a]}
 
-const TNK='vb-scout-tournaments-v1';
-try{S.tn=JSON.parse(localStorage.getItem(TNK)||'[]');if(!Array.isArray(S.tn))S.tn=[]}catch(e){S.tn=[]}
-function saveTn(){try{localStorage.setItem(TNK,JSON.stringify(S.tn))}catch(e){}}
+const TNK=Store.key('tournaments');
+S.tn=Store.read(TNK,[]);if(!Array.isArray(S.tn))S.tn=[];
+function saveTn(){Store.write(TNK,S.tn)}
 const newTn=(name,fmt,teams)=>{let t=S.tn.find(x=>x.name.toLowerCase()===name.toLowerCase());if(!t){t={id:'t'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name};if(fmt&&allRules().some(r=>r.id===fmt))t.fmt=fmt;if(Array.isArray(teams)){const ids=[...new Set(teams)].filter(id=>S.t.some(x=>x.id===id));if(ids.length)t.teams=ids}S.tn.push(t);saveTn()}return t};
 const tnTeams=t=>(t.teams||[]).filter(id=>S.t.some(x=>x.id===id));
 const tnTeamIds=(t,ms)=>{const ids=[...tnTeams(t)];ms.forEach(m=>{if(m.hid&&!ids.includes(m.hid)&&S.t.some(x=>x.id===m.hid))ids.push(m.hid)});const ix=id=>S.t.findIndex(x=>x.id===id);return ids.sort((a,b)=>ix(a)-ix(b))};
@@ -573,15 +574,15 @@ function listView(){
     h+=gs.map(g=>g.bx.map(x=>grp(x.t,x.team,x.ms)).join('')).join('')+(none.length?grp(null,'',none):'')}
   return h}
 
-const MDK='vb-scout-mode-v1',ADVK=['block','pass','set','attack'];
-const DMK='vb-scout-defmode-v1';let defMode='simple';try{if(localStorage.getItem(DMK)==='adv')defMode='adv';localStorage.removeItem(MDK)}catch(e){}
+const MDK=Store.key('oldMode'),ADVK=['block','pass','set','attack'];
+const DMK=Store.key('defMode');let defMode='simple';if(Store.text(DMK)==='adv')defMode='adv';Store.remove(MDK);
 let scoutMode=defMode;
 function setMode(k){scoutMode=k==='adv'?'adv':'simple';S.lm=false;render()}
-function setDefMode(k){defMode=k==='adv'?'adv':'simple';scoutMode=defMode;try{localStorage.setItem(DMK,defMode)}catch(e){}render()}
+function setDefMode(k){defMode=k==='adv'?'adv':'simple';scoutMode=defMode;Store.setText(DMK,defMode);render()}
 const LVL=[['simple','Basic'],['adv','Enhanced']],COG='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
-const LYK='vb-scout-layout-v1';let layoutMode='extended';try{if(localStorage.getItem(LYK)==='compact')layoutMode='compact'}catch(e){}
+const LYK=Store.key('layout');let layoutMode='extended';if(Store.text(LYK)==='compact')layoutMode='compact';
 function applyLayout(){document.documentElement.setAttribute('data-layout',layoutMode)}
-function setLayout(k){layoutMode=k==='compact'?'compact':'extended';try{localStorage.setItem(LYK,layoutMode)}catch(e){}S.lm=false;applyLayout();render()}
+function setLayout(k){layoutMode=k==='compact'?'compact':'extended';Store.setText(LYK,layoutMode);S.lm=false;applyLayout();render()}
 applyLayout();
 const LAYOUTS=[['extended','Extended'],['compact','Compact']];
 const layoutPick=()=>`<div role="group" aria-label="Scout layout" style="margin:8px 0 0"><div class="mut" style="font-size:13px;margin-bottom:4px">Layout</div><div class="seg">${LAYOUTS.map(([k,l])=>`<button aria-pressed="${layoutMode===k}" onclick="setLayout('${k}')">${l}</button>`).join('')}</div></div>`;
@@ -664,7 +665,7 @@ function applyBackup(d,mode){
   if(mode==='replace'){S.sm=d.scorer||[]}else{(d.scorer||[]).forEach(x=>{if(!S.sm.some(y=>y.id===x.id))S.sm.push(x)})}saveSM();
   if(mode==='replace'){S.stt=d.scorerTours||[]}else{(d.scorerTours||[]).forEach(t=>{if(!S.stt.some(y=>y.id===t.id))S.stt.push(t)})}saveStt();
   if(mode==='replace'){S.m=d.matches;S.p=d.players;S.t=d.teams;S.r=d.rules;S.tn=d.tournaments||[];
-    if(d.scale){SC=d.scale.map((x,i)=>({k:SCDEF[i].k,n:x.n||SCDEF[i].n,d:x.d||SCDEF[i].d}));try{localStorage.setItem(SK,JSON.stringify(SC))}catch(e){}}
+    if(d.scale){SC=d.scale.map((x,i)=>({k:SCDEF[i].k,n:x.n||SCDEF[i].n,d:x.d||SCDEF[i].d}));Store.write(SK,SC)}
     if(d.skills){setSkx(d.skills);saveSkx()}}
   else{const map={},tmap={},fresh=new Set();
     (d.tournaments||[]).forEach(t=>{const l=S.tn.find(x=>x.name.toLowerCase()===String(t.name).toLowerCase());if(l)tmap[t.id]=l.id;else{const n=S.tn.some(x=>x.id===t.id)?{...t,id:'t'+Date.now().toString(36)+Math.random().toString(36).slice(2,5)}:{...t};S.tn.push(n);fresh.add(n.id);tmap[t.id]=n.id}});
@@ -684,7 +685,7 @@ function importFile(inp){const f=inp.files&&inp.files[0];if(!f)return;const r=ne
 function rulesHtml(){
   let rules=`<div class="mut">A rule set defines the number of sets, the points to win, hard limits and time limits. You pick one when you create a match.</div>`;
   allRules().forEach(r=>{const bi=BUILT.some(b=>b.id===r.id);
-    rules+=`<div class="card"><div class="row sp"><b>${esc(r.name)}</b>${bi?'<span class="mut">Built in</span>':`<button onclick="editRule('${r.id}')">Edit</button>`}</div>${r.sets.map((x,i)=>`<div class="mut">Set ${i+1}: ${x.win} to win${x.hard?', hard limit '+x.hard:', win by 2'}</div>`).join('')}${ruleMin(r)?`<div class="mut">Match time: ${ruleMin(r)} minutes</div>`:''}<div class="mut">Timeouts: ${ruleTO(r)} per team per set</div><div class="mut">Substitutions: ${ruleSub(r)} per team per set</div>${r.roster?'<div class="mut">Roster limit: 12 players + 1 or 2 liberos</div>':''}${r.five?'<div class="mut">Teams may play with 5 players</div>':''}${r.pts?`<div class="mut" style="white-space:pre-line">Tournament points: ${esc(r.pts)}</div>`:''}</div>`});
+    rules+=`<div class="card"><div class="row sp"><b>${esc(r.name)}</b>${bi?'<span class="mut">Built in</span>':`<button onclick="editRule('${r.id}')">Edit</button>`}</div>${r.sets.map((x,i)=>`<div class="mut">Set ${i+1}: ${x.win} to win${x.hard?', hard limit '+x.hard:', win by 2'}</div>`).join('')}${ruleMin(r)?`<div class="mut">Match time: ${ruleMin(r)} minutes</div>`:''}<div class="mut">Timeouts: ${ruleTO(r)} per team per set</div><div class="mut">Substitutions: ${ruleSub(r)} per team per set</div>${ruleRoster(r)?'<div class="mut">Roster limit: 12 players + 1 or 2 liberos</div>':''}${r.five?'<div class="mut">Teams may play with 5 players</div>':''}${r.pts?`<div class="mut" style="white-space:pre-line">Tournament points: ${esc(r.pts)}</div>`:''}</div>`});
   rules+=`<button class="pri" onclick="newRule()">Create rule set</button>`;
   return rules}
 function backupHtml(){return `<div class="mut">Data lives only on this device. Export a file, send it to your other device (AirDrop, email, messages, cloud drive) and import it there. Export also works as a backup.</div><div class="row" style="margin-top:12px"><button class="pri" onclick="exportData()">Export data</button></div><div class="row" style="margin-top:10px"><button onclick="pickImport('replace')">Import and replace</button><button onclick="pickImport('merge')">Import and add</button></div><div class="mut" style="margin-top:8px"><b>Replace</b> makes this device match the file. <b>Add</b> keeps what is here and adds the matches, teams and players that are missing.</div><input id="imp" type="file" accept=".json,application/json" style="display:none" onchange="importFile(this)">`}
@@ -706,28 +707,26 @@ const SETTINGS=[
 const settingsBox=(id,title,hint,body)=>`<details class="card" ${S.sopen&&S.sopen[id]?'open':''} ontoggle="(S.sopen=S.sopen||{})['${id}']=this.open"><summary style="cursor:pointer"><b>${title}</b>${hint?` <span class="mut">\u00b7 ${esc(hint)}</span>`:''}</summary><div style="margin-top:10px">${body}</div></details>`;
 function settingsPage(view){return`<h1>Settings</h1>${SETTINGS.filter(g=>g.views.includes(view)).map(g=>settingsBox(g.id,g.title,g.hint(view),g.body(view))).join('')}<div class="card"><div class="row sp"><div><b>View</b><div class="mut">${view==='coach'?'Coach view':'Score table'}</div></div><button onclick="changeView()">Change view</button></div></div>`}
 function settingsView(){if(S.rd)return ruleForm();return settingsPage('coach')}
-const RD0=()=>({id:null,name:'',min:null,to:2,sub:8,pl:12,lib:2,roster:false,five:false,swap8:true,mvp:true,pts:'',sets:[{win:21,hard:23},{win:21,hard:23},{win:15,hard:15}]});
+const RD0=()=>RuleSet.blank().data();
 function newRule(){S.rd=RD0();render()}
-function editRule(id){S.rd=copy(S.r.find(r=>r.id===id));S.rd.min=ruleMin(S.rd);S.rd.to=ruleTO(S.rd);S.rd.sub=ruleSub(S.rd);S.rd.pl=rulePl(S.rd);S.rd.lib=ruleLib(S.rd);S.rd.sets.forEach(x=>{delete x.min});render()}
+function editRule(id){S.rd=new RuleSet(S.r.find(r=>r.id===id)).editable().data();render()}
 function syncRule(){const d=S.rd,g=i=>document.getElementById(i);if(!g('r-n'))return;d.name=g('r-n').value.trim();d.roster=g('r-ro').checked;d.min=parseInt(g('r-t').value,10)||null;{const v=g('r-to').value.trim();d.to=v===''?2:Math.max(0,Math.min(9,parseInt(v,10)||0))}{const v=g('r-sb').value.trim();d.sub=v===''?8:Math.max(0,Math.min(99,parseInt(v,10)||0))}{const v=g('r-pl').value.trim();d.pl=v===''?12:Math.max(6,Math.min(30,parseInt(v,10)||12))}{const v=g('r-lb').value.trim();d.lib=v===''?2:Math.max(0,Math.min(6,parseInt(v,10)||0))}
   {const e=g('r-pts');d.pts=e?e.value.trim():(d.pts||'')}
   {const e=g('r-f5');if(e)d.five=e.checked}
   {const e=g('r-sw8');if(e)d.swap8=e.checked}
   {const e=g('r-mvp');if(e)d.mvp=e.checked}
   d.sets=d.sets.map((x,i)=>({win:parseInt(g('r-w'+i).value,10)||0,hard:parseInt(g('r-h'+i).value,10)||null}))}
-function ruleCount(n){syncRule();const d=S.rd;n=Math.max(1,Math.min(5,n));while(d.sets.length<n)d.sets.push({...d.sets[d.sets.length-1]});d.sets.length=n;render()}
-function saveRule(){syncRule();const d=S.rd;
-  if(!d.name){alert('Give the rule set a name.');return}
-  if(allRules().some(r=>r.id!==d.id&&r.name.toLowerCase()===d.name.toLowerCase())){alert('A rule set with that name already exists.');return}
-  for(let i=0;i<d.sets.length;i++){const x=d.sets[i];if(x.win<1){alert('Set '+(i+1)+': enter the points needed to win.');return}if(x.hard&&x.hard<x.win){alert('Set '+(i+1)+': the hard limit cannot be lower than the points to win.');return}}
-  if(d.id){S.r[S.r.findIndex(r=>r.id===d.id)]=d}else{d.id='r'+Date.now().toString(36);S.r.push(d)}saveR();S.rd=null;render()}
-function delRule(){const d=S.rd;if(d.id&&confirm('Delete this rule set? Matches already created keep their own copy.')){S.r=S.r.filter(r=>r.id!==d.id);saveR()}S.rd=null;render()}
+function ruleCount(n){syncRule();new RuleSet(S.rd).resizeSets(n);render()}
+function saveRule(){syncRule();const d=S.rd,msg=BOOK.problem(new RuleSet(d));
+  if(msg){alert(msg);return}
+  BOOK.save(new RuleSet(d));saveR();S.rd=null;render()}
+function delRule(){const d=S.rd;if(d.id&&confirm('Delete this rule set? Matches already created keep their own copy.')){BOOK.remove(d.id);saveR()}S.rd=null;render()}
 function ruleForm(){const d=S.rd;
   return`<div class="row sp"><button onclick="S.rd=null;render()">Back</button>${d.id?'<button class="del" onclick="delRule()">Delete</button>':''}</div><h1 style="margin-top:10px">${d.id?'Edit rule set':'New rule set'}</h1>
   <div class="card"><label for="r-n">Name</label><input id="r-n" autocomplete="off" value="${esc(d.name)}" placeholder="For example SADVA"><label for="r-c">Number of sets</label><select id="r-c" onchange="ruleCount(+this.value)">${[1,2,3,4,5].map(n=>`<option${n===d.sets.length?' selected':''}>${n}</option>`).join('')}</select>
   <label for="r-t">Match time in minutes (optional)</label><input id="r-t" inputmode="numeric" placeholder="untimed" value="${d.min||''}"><label for="r-to">Timeouts per team per set</label><input id="r-to" inputmode="numeric" value="${d.to==null?2:d.to}"><label for="r-sb">Substitutions per team per set (0 hides the counter)</label><input id="r-sb" inputmode="numeric" value="${d.sub==null?8:d.sub}"><label for="r-pl">Players on a team roster (score table, 12 if empty)</label><input id="r-pl" inputmode="numeric" value="${d.pl==null?12:d.pl}"><label for="r-lb">Liberos on a team roster (score table, 2 if empty)</label><input id="r-lb" inputmode="numeric" value="${d.lib==null?2:d.lib}">
-  <label style="display:flex;gap:8px;align-items:center;color:var(--fg);font-size:16px;margin-top:14px"><input id="r-ro" type="checkbox" style="width:22px;height:22px;flex:none" ${d.roster?'checked':''}>Limit the roster to 12 players + 1 or 2 liberos</label>
-  <label style="display:flex;gap:8px;align-items:center;color:var(--fg);font-size:16px;margin-top:14px"><input id="r-f5" type="checkbox" style="width:22px;height:22px;flex:none" ${d.five?'checked':''}>Teams may play with 5 players</label><div class="mut" style="margin-top:4px">Score table. Zone 6 is greyed out for a five-player team, and every sixth rotation becomes a ghost rotation.</div>
+  <label style="display:flex;gap:8px;align-items:center;color:var(--fg);font-size:16px;margin-top:14px"><input id="r-ro" type="checkbox" style="width:22px;height:22px;flex:none" ${ruleRoster(d)?'checked':''}>Limit the roster to 12 players + 1 or 2 liberos</label>
+  <label style="display:flex;gap:8px;align-items:center;color:var(--fg);font-size:16px;margin-top:14px"><input id="r-f5" type="checkbox" style="width:22px;height:22px;flex:none" ${ruleFive(d)?'checked':''}>Teams may play with 5 players</label><div class="mut" style="margin-top:4px">Score table. Zone 6 is greyed out for a five-player team, and every sixth rotation becomes a ghost rotation.</div>
   <label style="display:flex;gap:8px;align-items:center;color:var(--fg);font-size:16px;margin-top:14px"><input id="r-sw8" type="checkbox" style="width:22px;height:22px;flex:none" ${swapRule(d)?'checked':''}>Teams change courts at 8 points in the deciding set</label><div class="mut" style="margin-top:4px">Score table. On for every rule unless you switch it off.</div>
   <label style="display:flex;gap:8px;align-items:center;color:var(--fg);font-size:16px;margin-top:14px"><input id="r-mvp" type="checkbox" style="width:22px;height:22px;flex:none" ${mvpRule(d)?'checked':''}>Each team nominates an MVP of the other team at the end of the match</label><div class="mut" style="margin-top:4px">Score table. Asked with the signatures when the match is played out. The nominations are written in the remarks of the scoresheet.</div></div>
   <div class="card"><label for="r-pts">How teams earn points in a tournament</label><textarea id="r-pts" rows="4" placeholder="Example: win 3-0 or 3-1 = 3 points; win 3-2 = 2 points; loss 2-3 = 1 point; loss 0-3 or 1-3 = 0 points">${esc(d.pts||'')}</textarea><div class="mut" style="margin-top:6px">A note for now. Tournament standings are not calculated yet.</div></div>
@@ -783,9 +782,9 @@ function statsView(){
   <div class="mut" style="margin-top:8px">Errors given: ${r.given}. Share of points from attack: ${r.pf?Math.round(r.kill/r.pf*100):0}%, from serve: ${r.pf?Math.round(r.ace/r.pf*100):0}%.</div></div>`});
   return h}
 
-const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 1.60.0</div>';
-const FXK='vb-scout-fx-v1';let fx={flash:true,sound:true};try{const r=JSON.parse(localStorage.getItem(FXK)||'null');if(r&&typeof r==='object')fx=Object.assign(fx,r)}catch(e){}
-function setFx(k,v){fx[k]=!!v;try{localStorage.setItem(FXK,JSON.stringify(fx))}catch(e){}render()}
+const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 1.61.0</div>';
+const FXK=Store.key('fx');let fx={flash:true,sound:true};{const r=Store.read(FXK,null);if(r&&typeof r==='object')fx=Object.assign(fx,r)}
+function setFx(k,v){fx[k]=!!v;Store.write(FXK,fx);render()}
 let actx=null;
 function clickSound(){if(!fx.sound)return;try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;actx=actx||new AC();if(actx.state==='suspended')actx.resume();const o=actx.createOscillator(),g=actx.createGain(),t=actx.currentTime;o.type='square';o.frequency.value=1000;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.12,t+.004);g.gain.exponentialRampToValueAtTime(.0001,t+.05);o.connect(g);g.connect(actx.destination);o.start(t);o.stop(t+.06)}catch(e){}}
 document.addEventListener('click',e=>{const b=e.target&&e.target.closest?e.target.closest('button[onclick]'):null;if(!b||b.disabled)return;const k=b.getAttribute('onclick');if(!/^(serve|advGrade|point)\(/.test(k))return;clickSound();S.fx=fx.flash?{k,t:Date.now()}:null},true);
@@ -799,26 +798,27 @@ function renderCoach(){
   ['matches','teams','stats','settings'].forEach(t=>{const b=document.getElementById('t-'+t);if((S.tab===t||(t==='teams'&&S.tab==='opps'))&&!m)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});nrStatus();applyFx()}
 
 /* ===== Views: picker, Score table (VolleyScore) ===== */
-const APPK='vb-scout-appmode-v1',SCK='vb-scout-score-v1';
-let appMode=null;try{const r=localStorage.getItem(APPK);if(r==='coach'||r==='scorer')appMode=r}catch(e){}
-S.sm=[];try{const r=localStorage.getItem(SCK);if(r)S.sm=JSON.parse(r)||[]}catch(e){}
+const APPK=Store.key('appMode'),SCK=Store.key('scoreMatches');
+let appMode=null;{const r=Store.text(APPK);if(r==='coach'||r==='scorer')appMode=r}
+S.sm=Store.read(SCK,[]);
 S.stab='matches';S.sx=null;S.ts=null;S.mv=null;
-const saveSM=()=>{try{localStorage.setItem(SCK,JSON.stringify(S.sm))}catch(e){}};
-const STK='vb-scout-stour-v1';
-S.stt=[];try{const r=JSON.parse(localStorage.getItem(STK)||'[]');if(Array.isArray(r))S.stt=r.filter(t=>t&&t.id&&t.name)}catch(e){}
+const saveSM=()=>{Store.write(SCK,S.sm)};
+const STK=Store.key('scoreTournaments');
+S.stt=[];{const r=Store.read(STK,[]);if(Array.isArray(r))try{S.stt=r.filter(t=>t&&t.id&&t.name)}catch(e){}}
 S.td=null;
-const saveStt=()=>{try{localStorage.setItem(STK,JSON.stringify(S.stt))}catch(e){}};
+const saveStt=()=>{Store.write(STK,S.stt)};
 const sttOf=id=>(id&&S.stt.find(t=>t.id===id))||null;
 const sttRule=t=>(t&&t.rule&&allRules().find(r=>r.id===t.rule))||null;
 const NAV_COACH=document.getElementById('mainnav').innerHTML;
 const NAV_SCORER='<button id="t-smatches" onclick="goS(\'matches\')">Matches</button><button id="t-stournaments" onclick="goS(\'tournaments\')">Tournaments</button><button id="t-srules" onclick="goS(\'rules\')">Rules</button><button id="t-ssettings" onclick="goS(\'settings\')">Settings</button>';
-function setApp(m){appMode=m;try{localStorage.setItem(APPK,m)}catch(e){}S.cur=null;S.tab=m==='coach'?'teams':'matches';S.stab='matches';S.sx=null;S.mv=null;S.rd=null;render();scrollTo(0,0)}
-function changeView(){appMode=null;try{localStorage.removeItem(APPK)}catch(e){}S.cur=null;S.sx=null;S.rd=null;render();scrollTo(0,0)}
+function setApp(m){appMode=m;Store.setText(APPK,m);S.cur=null;S.tab=m==='coach'?'teams':'matches';S.stab='matches';S.sx=null;S.mv=null;S.rd=null;render();scrollTo(0,0)}
+function changeView(){appMode=null;Store.remove(APPK);S.cur=null;S.sx=null;S.rd=null;render();scrollTo(0,0)}
 function goS(t){S.stab=t;S.td=null;S.lv=null;S.toc=null;S.sbq=null;S.rpq=null;S.sx=null;S.ts=null;S.rx=null;S.mv=null;S.rd=null;render();scrollTo(0,0)}
 function pickView(){const b=(k,t,d)=>`<button onclick="setApp('${k}')" style="display:block;width:100%;text-align:left;padding:16px;margin:12px 0;font-size:16px"><b style="font-size:18px">${t}</b><div class="mut" style="margin-top:4px">${d}</div></button>`;
   return`<h1>VolleyScout</h1><div class="mut">Choose how this device will be used. The choice is remembered. You can change it later in Settings.</div>${b('coach','Coach view','Your own team: roster, line-ups, rotation, substitutions and scouting.')}${b('scorer','Score table','Official scoring of a match between two teams. Set the match up in advance, then score it.')}`}
-const todayS=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
-const rulePl=r=>r.pl==null?12:r.pl,ruleLib=r=>r.lib==null?2:r.lib;
+const todayS=()=>Fmt.today();
+const rulePl=r=>new RuleSet(r).rosterPlayers(),ruleLib=r=>new RuleSet(r).rosterLiberos();
+const ruleFive=r=>new RuleSet(r).fivePlayerAllowed(),ruleRoster=r=>new RuleSet(r).rosterLimited();
 const HDF=[['venue','Venue'],['match','Match'],['no','Match #'],['court','Court'],['ref','Referee Team']];
 const HD0=()=>({venue:'',match:'',no:'',court:'',ref:''});
 const SX0=()=>({id:null,tid:'',rule:'local',date:todayS(),keep:null,a:{name:''},b:{name:''},hd:HD0()});
@@ -990,7 +990,7 @@ const lineupDone=m=>{const x=m.sets&&m.sets[m.cur||0];return !!(x&&['a','b'].eve
 function bpCap(t,n){const m=S.sm.find(x=>x.id===S.mv.id),set=bset(m);if(set.on)return;(set.cap=set.cap||{})[t]=String(n);saveSM();if(lineupDone(m)){S.bp=null;S.mv.step='board';render();scrollTo(0,0);return}render()}
 function stepsDone(m){return[true,rosterDone(m),!!(m.toss&&m.toss.serve),lineupDone(m),false,false]}
 function editLocked(m,k){if(k!=='match'&&k!=='roster'&&k!=='toss')return false;return boardStarted(m)||stepsDone(m).slice(4).some(Boolean)}
-const DOCIC='<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 13h8M9 17h8"/></svg>';
+const DOCIC=Html.icon('doc');
 function crumbs(m,cur){const d=m?stepsDone(m):STEPS.map(()=>false),main=STEPS.filter(x=>x[0]!=='sheet');
   const li=main.map(([k,l],i)=>{const on=m?(i===0||d[i-1]):i===0,mark=d[i]&&m?'\u2713 ':'',lab=`<span class="cn">${i+1}</span> ${mark}${l}`;
     return`<li>${k===cur?`<span class="cr cur" aria-current="step">${lab}</span>`:on?`<button class="cr${d[i]?'':' rdy'}" onclick="goStep('${k}')">${lab}</button>`:`<span class="cr off" aria-disabled="true">${lab}</span>`}</li>`}).join('');
@@ -1009,14 +1009,14 @@ function matchRO(m){return stepHead(m,'match')+`<div class="card"><b>${esc(m.rul
 function rosterRO(m){return stepHead(m,'roster')+`<div class="card"><b>${esc(m.a.name)}</b><div class="mut">${roLine(m.a)}</div>${teamSigned(m,'a')?`<div class="sgbox">${sigSvg(m.sig.a)}</div>`:''}</div><div class="card"><b>${esc(m.b.name)}</b><div class="mut">${roLine(m.b)}</div>${teamSigned(m,'b')?`<div class="sgbox">${sigSvg(m.sig.b)}</div>`:''}</div>`+roNote('rosters')}
 function tossRO(m,tb){const t=tb?m.toss2:m.toss;return(tb?crumbs(m,'tbtoss')+`<h1 style="margin-top:10px">Tie-break toss</h1><div class="mut">${esc(m.a.name)} v ${esc(m.b.name)}</div>`:stepHead(m,'toss'))+`<div class="card"><b>Result</b><div style="margin-top:6px">${t&&t.serve?esc(tossText(m,t)):'No toss recorded.'}</div></div>`+(tb?'<div class="mut">Read-only: the deciding set has started, so the toss can no longer be changed.</div>':roNote('toss'))}
 /* ===== Scoreboard ===== */
-const hm=ms=>{const d=new Date(ms);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
+const hm=ms=>Fmt.clock(ms);
 const lockedM=(id,k)=>{const m=S.sm.find(x=>x.id===id);return !!(m&&editLocked(m,k))};
 const libLine=(m,t)=>{const L=m[t].pl.filter(p=>p.lib),any=['a','b'].some(k=>m[k].pl.some(p=>p.lib));return L.length?`<div class="libs" aria-label="${esc(m[t].name)} libero numbers">Libero${L.length>1?'s':''}${L.map(p=>` <b>#${esc(p.n)}</b>`).join('')}</div>`:any?`<div class="libs" aria-hidden="true" style="visibility:hidden">Libero <b>#00</b></div>`:''};
 const startedTxt=set=>set&&set.on&&set.t0?`<small>Started ${hm(set.t0)}</small>`:'';
 /* the deciding set (tie break) has its own toss, m.toss2; without it the sides and the serve alternate as in the other sets */
 const isTB=(m,i)=>{const N=(m.rule&&m.rule.sets&&m.rule.sets.length)||3;return N>=3&&i===N-1};
 /* change of courts in the deciding set: when the first team reaches 8 points the teams swap courts (rule option, on unless switched off). Derived from the point log, so undo and remove points keep it right. */
-const swapRule=r=>!(r&&r.swap8===false);
+const swapRule=r=>new RuleSet(r).swapAtEight();
 const tbSwapAt=(m,i)=>{const z=m.sets&&m.sets[i];if(!z)return 0;let a=0,b=0;const p=z.pts||[];for(let k=0;k<p.length;k++){if(p[k]==='a')a++;else b++;if(Math.max(a,b)===8)return k+1}return 0};
 const tbSwapped=(m,i)=>isTB(m,i)&&swapRule(m.rule)&&tbSwapAt(m,i)>0;
 const tbTossOk=m=>!!(m.toss2&&m.toss2.serve);
@@ -1029,7 +1029,7 @@ function bset(m){if(!m.sets)m.sets=[{lu:{a:[null,null,null,null,null,null],b:[nu
 function openLineup(id){const m=S.sm.find(x=>x.id===id);if(!m)return;bset(m);S.sx=null;S.ts=null;S.rx=null;S.bp=null;S.mv={id,step:'lineup'};render();scrollTo(0,0)}
 function openBoard(id){const m=S.sm.find(x=>x.id===id);if(!m)return;bset(m);S.sx=null;S.ts=null;S.rx=null;S.bp=null;S.mv={id,step:'board'};render();scrollTo(0,0)}
 function bpPick(t,p){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||bset(m).on||(p===6&&f5(bset(m),t)))return;S.bp={t,p};render()}
-function bpFive(t){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||!m.rule||!m.rule.five)return;const set=bset(m);if(set.on)return;
+function bpFive(t){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||!m.rule||!ruleFive(m.rule))return;const set=bset(m);if(set.on)return;
   set.f5=set.f5||{a:false,b:false};set.f5[t]=!set.f5[t];if(set.f5[t]){set.lu[t][5]=null;if(S.bp&&S.bp.t===t&&S.bp.p===6)S.bp=null}saveSM();render()}
 function bpPlace(n){const m=S.sm.find(x=>x.id===S.mv.id),set=bset(m),{t,p}=S.bp;if(set.on)return;
   set.lu[t]=set.lu[t].map(x=>x===n?null:x);set.lu[t][p-1]=n;
@@ -1094,7 +1094,7 @@ function scState(m,i){const set=m.sets[i],lu={a:set.lu.a.slice(),b:set.lu.b.slic
 const scToMax=m=>toLimit(m.rule);
 const scToLeft=(m,set,t)=>toLeft(m.rule,set.tos,t);
 /* ===== Action log: separate from the scoresheet, append-only, kept with the match ===== */
-const hms=ms=>{const d=new Date(ms),p=n=>String(n).padStart(2,'0');return p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds())};
+const hms=ms=>Fmt.clockSeconds(ms);
 const scSc=(m,i)=>{const x=scState(m,i);return[x.pts.a,x.pts.b]};
 function scLog(m,i,o){(m.alog=m.alog||[]).push(Object.assign({ts:Date.now(),set:i},o))}
 function scLogTxt(m,e){const n=t=>m[t].name,sc=q=>m.a.name+' '+q[0]+' : '+q[1]+' '+m.b.name;
@@ -1127,7 +1127,7 @@ function lgCopy(){const m=S.mv&&S.sm.find(x=>x.id===S.mv.id);if(!m)return;const 
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(done,fail);else fail()}
 function lgDownload(){const m=S.mv&&S.sm.find(x=>x.id===S.mv.id);if(!m)return;try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([scLogText(m)],{type:'text/plain'}));a.download='action-log-'+String(m.a.name+'-v-'+m.b.name+'-'+(m.date||'')).replace(/[^A-Za-z0-9_-]+/g,'-')+'.txt';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}catch(e){S.lgmsg='Download is not available here. Use Copy log instead.';render()}}
 /* ===== End of a set: points to win, two clear points, hard limit ===== */
-const scSetRule=(m,i)=>{const r=(m.rule&&m.rule.sets&&m.rule.sets[i])||{};return{win:+r.win||25,hard:+r.hard||0}};
+const scSetRule=(m,i)=>new RuleSet(m.rule).setLimits(i);
 function scWinner(m,i){const set=m.sets&&m.sets[i];if(!set||!set.on||set.end)return null;const{win,hard}=scSetRule(m,i),x=scState(m,i).pts;
   for(const t of['a','b']){const q=x[t],o=x[t==='a'?'b':'a'];if(q>=win&&(q-o>=2||(hard>0&&q>=hard)))return t}return null}
 const scCnt=(set,k,t)=>(set[k]||[]).filter(e=>e.t===t).length;
@@ -1163,7 +1163,7 @@ function scRemConfirm(){const q=S.rmq,m=q&&S.sm.find(x=>x.id===q.id);if(!m){S.rm
 const FINREQ=['ca','cb','r1','sc'];
 /* MVP: at the end of a match that was played out, each team nominates a player of the other team (m.mvp[t] = number of the nominated player, or '-' for no nomination) */
 /* rule option: on for custom rules unless switched off; the built-in rules do not ask for it */
-const mvpRule=r=>r&&r.mvp!=null?!!r.mvp:!(r&&(r.id==='fivb'||r.id==='local'));
+const mvpRule=r=>new RuleSet(r).mvpRequired();
 const mvpNeeded=m=>!!(m.fin&&(m.fin.reason==='win'||m.fin.reason==='time')&&mvpRule(m.rule));
 const mvpDone=m=>!mvpNeeded(m)||['a','b'].every(t=>m.mvp&&m.mvp[t]!=null);
 const mvpTxt=m=>m.mvp&&m.fin?['a','b'].map(t=>{const v=m.mvp[t],o=t==='a'?'b':'a';return v!=null&&v!=='-'?'MVP nominated by '+esc(m[t].name)+': '+scPn(m,o,v)+' ('+esc(m[o].name)+')':null}).filter(Boolean).join('; '):'';
@@ -1237,7 +1237,7 @@ function scToAsk(t){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||(t!=='a'&&t!=='b
 function scToCancel(){const t=S.toc&&S.toc.t;S.toc=null;render();const b=t&&document.getElementById('to-btn-'+t);if(b&&!b.disabled)b.focus()}
 function scToConfirm(){const q=S.toc;S.toc=null;if(!q){render();return}scTo(q.t);const b=document.getElementById('to-btn-'+q.t);if(b&&!b.disabled)b.focus()}
 function scTo(t){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!set.on||set.end||m.fin||scToLeft(m,set,t)<1)return;(set.tos=set.tos||[]).push({t,at:(set.pts||[]).length,q:scQ(set)});saveSM();scLog(m,m.cur||0,{k:'timeout',t,sc:scSc(m,m.cur||0),left:scToLeft(m,set,t)});render()}
-function scLeave(t,num,reason,cap){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||!m.rule||!m.rule.five||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!set.on||set.end||m.fin)return;
+function scLeave(t,num,reason,cap){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||!m.rule||!ruleFive(m.rule)||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!set.on||set.end||m.fin)return;
   const st=scState(m,m.cur||0);if(st.five[t]||!st.pos[t].some(x=>x!=null&&String(x)===String(num)))return;
   const cn=scCapNeed(m,t,st,num,null);if(cn.need&&!(cap!=null&&cn.opts.includes(String(cap))))return;(set.f5m=set.f5m||[]).push(Object.assign({t,at:(set.pts||[]).length,lost:num,reason:reason||'Injury',q:Date.now()},cn.need?{cap:String(cap)}:{}));S.lv=null;saveSM();scLog(m,m.cur||0,{k:'five',t,lost:num,reason:reason||'Injury',sc:scSc(m,m.cur||0)});render()}
 function scLvOpen(t){S.lv=S.lv&&S.lv.t===t?null:{t,reason:'Injury'};render()}
@@ -1260,7 +1260,7 @@ function boardView(){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||!m.toss||!m.tos
     swdlg=swp?`<div class="ov"><div class="dlg" role="alertdialog" aria-modal="true" aria-labelledby="sw-t" aria-describedby="sw-d"><b id="sw-t" style="font-size:18px">Change of courts</b><div id="sw-d" style="margin-top:8px"><div>${esc(m[w8].name)} reached 8 points.</div><div>Score: ${esc(m[L].name)} ${st.pts[L]} : ${st.pts[Rt]} ${esc(m[Rt].name)}</div><div style="margin-top:6px"><b>The teams must swap courts.</b></div><div>${esc(m[srv].name)} serves next. The serve does not change.</div></div><div class="row" style="margin-top:14px"><button id="sw-c" class="pri" style="flex:1" onclick="scSwapOk()">Teams have swapped</button></div></div></div>`:'';
   const lvName=(t,x)=>{const q=(m[t].pl||[]).find(p=>String(p.n)===String(x));return '#'+esc(x)+(q&&q.name?' '+esc(q.name):'')};
   const left=k=>k===1?'The next side-out is a ghost rotation.':'Ghost rotation after '+k+' more side-outs.';
-  const lvCard=set.on&&m.rule&&m.rule.five?`<div class="card" style="margin-top:10px"><b>Five-player rule</b><div style="margin-top:6px">${[L,Rt].map(t=>st.five[t]?`<div style="margin-top:6px">${esc(m[t].name)}: 5 players. ${left(st.slot[t]===5?6:5-st.slot[t])}${(set.f5m||[]).filter(e=>e.t===t).map(e=>' '+esc(e.reason)+': '+lvName(t,e.lost)+' left.').join('')}</div>`:`<div class="row sp" style="margin-top:6px"><span>${esc(m[t].name)}</span><button onclick="scLvOpen('${t}')" aria-expanded="${!!(S.lv&&S.lv.t===t)}">A player can't continue</button></div>${S.lv&&S.lv.t===t?`<div class="mut" style="margin-top:6px">Reason</div><div class="seg" role="group" aria-label="Reason" style="margin-top:4px">${['Injury','Emergency leave','Red card'].map(r=>`<button aria-pressed="${S.lv.reason===r}" onclick="scLvReason('${r}')">${r}</button>`).join('')}</div>${S.lv.out!=null?`<div class="mut" style="margin-top:8px">${lvName(t,S.lv.out)} is the captain and leaves the court. The coach declares the game captain.</div><div class="row" style="margin-top:6px" role="group" aria-label="New game captain">${scCapNeed(m,t,st,S.lv.out,null).opts.map(x=>`<button onclick="scLeave('${t}','${esc(S.lv.out)}','${S.lv.reason}','${esc(x)}')">${lvName(t,x)}</button>`).join('')}<button onclick="scLvBack()">Back</button></div>`:`<div class="mut" style="margin-top:8px">Who leaves the court? The team then plays with 5 players.</div><div class="row" style="margin-top:6px">${st.pos[t].filter(x=>x!=null).map(x=>`<button onclick="scLvWho('${t}','${esc(x)}')">${lvName(t,x)}</button>`).join('')}</div>`}`:''}`).join('')}</div></div>`:'';
+  const lvCard=set.on&&m.rule&&ruleFive(m.rule)?`<div class="card" style="margin-top:10px"><b>Five-player rule</b><div style="margin-top:6px">${[L,Rt].map(t=>st.five[t]?`<div style="margin-top:6px">${esc(m[t].name)}: 5 players. ${left(st.slot[t]===5?6:5-st.slot[t])}${(set.f5m||[]).filter(e=>e.t===t).map(e=>' '+esc(e.reason)+': '+lvName(t,e.lost)+' left.').join('')}</div>`:`<div class="row sp" style="margin-top:6px"><span>${esc(m[t].name)}</span><button onclick="scLvOpen('${t}')" aria-expanded="${!!(S.lv&&S.lv.t===t)}">A player can't continue</button></div>${S.lv&&S.lv.t===t?`<div class="mut" style="margin-top:6px">Reason</div><div class="seg" role="group" aria-label="Reason" style="margin-top:4px">${['Injury','Emergency leave','Red card'].map(r=>`<button aria-pressed="${S.lv.reason===r}" onclick="scLvReason('${r}')">${r}</button>`).join('')}</div>${S.lv.out!=null?`<div class="mut" style="margin-top:8px">${lvName(t,S.lv.out)} is the captain and leaves the court. The coach declares the game captain.</div><div class="row" style="margin-top:6px" role="group" aria-label="New game captain">${scCapNeed(m,t,st,S.lv.out,null).opts.map(x=>`<button onclick="scLeave('${t}','${esc(S.lv.out)}','${S.lv.reason}','${esc(x)}')">${lvName(t,x)}</button>`).join('')}<button onclick="scLvBack()">Back</button></div>`:`<div class="mut" style="margin-top:8px">Who leaves the court? The team then plays with 5 players.</div><div class="row" style="margin-top:6px">${st.pos[t].filter(x=>x!=null).map(x=>`<button onclick="scLvWho('${t}','${esc(x)}')">${lvName(t,x)}</button>`).join('')}</div>`}`:''}`).join('')}</div></div>`:'';
   const tks=t=>{const used=toUsed(set.tos,t);return`<div class="tks" role="group" aria-label="Timeouts used by ${esc(m[t].name)}"><span>T/O</span>${Array.from({length:scToMax(m)},(_,j)=>`<i class="tkx${j<used?' on':''}" role="img" aria-label="Timeout ${j+1} ${j<used?'used':'not used'}"></i>`).join('')}</div>`};
   const win=scWinner(m,i),ended=!!set.end,mw=scMatchWinner(m),ekey=scEKey(m,i),so=t=>scSubOpts(m,set,t,st);
   const on=set.on&&!ended&&!m.fin,sa=S.sbq&&S.sbq.id===m.id&&on&&so(S.sbq.t).outs.length?S.sbq:null,dis=on&&!sa?'':' disabled',
@@ -1288,9 +1288,9 @@ function boardView(){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||!m.toss||!m.tos
     sfdlg=sq2?`<div class="ov"><div class="dlg" role="alertdialog" aria-modal="true" aria-labelledby="sf-t" aria-describedby="sf-d" style="max-height:92vh;overflow:auto" onkeydown="if(event.key==='Escape')scSetFfCancel()"><b id="sf-t" style="font-size:18px">End of set ${i+1}</b><div id="sf-d" style="margin-top:8px"><div>Score: ${esc(m[L].name)} ${st.pts[L]} : ${st.pts[Rt]} ${esc(m[Rt].name)}</div><div class="mut" style="margin-top:10px">Reason</div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px" role="group" aria-label="Reason">${['a','b'].map(t=>`<button id="sf-r-${t}" aria-pressed="${sq2.reason===t}" style="flex:1 1 45%;min-width:0;padding:8px 4px;${sq2.reason===t?'background:var(--home);color:var(--onc);border-color:var(--home)':''}" onclick="scSetFfPick('${t}')">${esc(m[t].name)} forfeits the set</button>`).join('')}<button id="sf-r-susp" aria-pressed="${sq2.reason==='susp'}" style="flex:1 1 100%;min-width:0;padding:8px 4px;${sq2.reason==='susp'?'background:var(--home);color:var(--onc);border-color:var(--home)':''}" onclick="scSetFfPick('susp')">Court unavailable (hazard)</button></div>${sq2.reason==='susp'?`<div style="margin-top:12px"><b>No winner</b></div><div class="mut">No point is awarded to any team. The match is suspended and replayed another day.</div>`:''}${sfr?`<div style="margin-top:12px"><b>${esc(m[sfr.w].name)} wins the set ${sfr.a} : ${sfr.b}</b></div><div class="mut">${esc(m[sfr.f].name)} keeps its points. The next set can still be played.</div>`:''}</div><div class="row" style="margin-top:14px;gap:8px;flex-wrap:nowrap"><button id="sf-c" style="flex:1" onclick="scSetFfCancel()">Cancel</button><button class="pri" style="flex:1"${sq2.reason?'':' disabled'} onclick="scSetFfConfirm()">${sq2.reason==='susp'?'Suspend match':'Confirm set end'}</button></div><div class="row" style="margin-top:10px"><button style="flex:1" onclick="scSetFfMatch()">End match</button></div></div></div>`:'';
   return`${swdlg}${dlg}${sdlg}${rdlg}${edlg}${rmd}${fdlg}${sfdlg}${crumbs(m,'board')}<div class="sbh">${head(L)}<div class="st">Set ${i+1}${startedTxt(set)}</div>${head(Rt)}</div><div class="sb">${col(L)}${col(Rt)}</div>${timeUp}<div class="row" style="margin-top:10px"><button id="rm-btn" onclick="scRemAsk()">Remark${(m.rem||[]).length?' ('+m.rem.length+')':''}</button>${m.fin?'':set.on&&!ended?'<button id="es-btn" onclick="scSetEndAsk()">End set</button>':''}</div>${m.fin?finCard:ended?endCard:on?`${win&&S.sdis===ekey?setPt:''}${st.gh?`<div class="banner" role="status" style="margin-top:10px"><b>Ghost rotation.</b> ${esc(m[st.gh].name)} won the rally but has no server. The serve stays with ${esc(m[st.gh==='a'?'b':'a'].name)} and no point is awarded to them.</div>`:''}<div class="row" style="margin-top:10px"><button onclick="scUndo()"${scCanUndo(set)&&!m.fin?'':' disabled'}>Undo</button></div>${lvCard}<div class="mut" style="margin-top:8px">Set ${i+1} is in progress. Points, serve and rotation are tracked here.</div>`:`<div style="margin-top:12px"><button class="pri" onclick="startSetS()">Start set ${i+1}</button><div class="row" style="margin-top:8px"><button onclick="scFinAsk()">End match</button></div><div class="mut" style="margin-top:4px">The score and the buttons switch on when the set starts. The line-up can still be changed until then.</div></div>`}`}
 /* ===== Organiser (name or logo in the first cell of the sheet) ===== */
-const ORGK='vb-scout-org-v1';
-let ORG={name:'',logo:''};try{const r=JSON.parse(localStorage.getItem(ORGK)||'null');if(r&&typeof r==='object')ORG={name:String(r.name||''),logo:String(r.logo||'')}}catch(e){}
-const orgSave=()=>{try{localStorage.setItem(ORGK,JSON.stringify(ORG))}catch(e){}};
+const ORGK=Store.key('organiser');
+let ORG={name:'',logo:''};{const r=Store.read(ORGK,null);if(r&&typeof r==='object')ORG={name:String(r.name||''),logo:String(r.logo||'')}}
+const orgSave=()=>{Store.write(ORGK,ORG)};
 const orgLogoOk=()=>/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(ORG.logo);
 function orgSetName(v){ORG.name=String(v).slice(0,60);orgSave()}
 function orgClearLogo(){ORG.logo='';orgSave();render()}
