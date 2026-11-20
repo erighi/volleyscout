@@ -48,22 +48,19 @@ The first piece is already moved as a pilot: `TimeoutRules`.
 
 * `static method(name)` (throws "<name> is not migrated yet")
 
-**Html**: Small helpers that build html strings: escaping, attributes, icons.
+**Html** (migrated in 1.60.1): Small helpers that build html strings: escaping, attributes, icons.
 
 * `static esc(text)` (escapes text for html)
-* `static attrs(map)` (builds an attribute string)
-* `static icon(name)` (svg icons used in the screens)
+* `static attrs(map)` (builds an attribute string; false and null are left out)
+* `static icon(name)` (svg icons: libero, swap, view, doc)
 
-**Fmt**: Formats numbers, times and scores for display (same text in both views).
+**Fmt** (migrated in 1.60.1): Formats numbers, times and dates for display (same text in both views).
 
-* `static clock(ms)` (hh:mm from a timestamp)
-* `static minutes(ms)` (mm:ss)
-* `static score(a, b)` ("12 : 10")
-* `static ordinal(n)` (1st, 2nd ...)
-* `static today()` (today as yyyy-mm-dd)
-
-
-### domain
+* `static ordinal(index)` (zero based: 0 gives 1st)
+* `static minutes(ms)` (countdown m:ss)
+* `static today()` (yyyy-mm-dd)
+* `static clock(ms)` (hh:mm)
+* `static clockSeconds(ms)` (hh:mm:ss)
 
 **Player**: A player: id, shirt number, name, preferred roles in order, libero flag, captain flag.
 
@@ -89,25 +86,18 @@ The first piece is already moved as a pilot: `TimeoutRules`.
 * `sign(drawing)` (the team signs once the roster is complete)
 * `isSigned()`
 
-**RuleSet**: One rule set as a value object. Every rule is a method, so no view reads rule fields directly.
+**RuleSet** (migrated in 1.60.2): One rule set as a value object over its plain data (the same plain object that is saved and copied into each match). A missing rule set behaves like an empty one.
 
-* `constructor(data)`
-* `setRule(index)` ({win, hard} points for a set; the last set is the tie break)
-* `timeoutsPerSet()` (replaces toLimit/ruleTO/scToMax)
-* `substitutionsPerSet()`
-* `fivePlayerAllowed()`
-* `swapAtEight()` (teams change courts at 8 in the deciding set)
-* `mvpRequired()` (each team nominates an MVP of the other team)
-* `timeLimit()` (minutes, or null)
-* `rosterSize()` (players and liberos)
+* `data()`, `id()`, `name()`, `static blank()` (defaults of the New rule set form)
+* `sets()`, `setCount()`, `setRule(index)` (coach view: sets after the last use the last set), `setLimits(index)` (score table: `{win, hard}` as numbers, 25 and 0 when not set, no clamping)
+* `timeoutsPerSet()`, `substitutionsPerSet()`, `timeLimit()`, `rosterPlayers()`, `rosterLiberos()`, `rosterLimited()`
+* `fivePlayerAllowed()`, `swapAtEight()`, `mvpRequired()`
+* `text()` (one line summary), `editable()` (copy with defaults written in), `resizeSets(n)`, `problem(nameTaken)` (first thing wrong, as a message)
 
-**RuleBook**: All rule sets: built in and custom. Same book for both views.
+**RuleBook** (migrated in 1.60.2): All rule sets, built-in (Local tournament, Official FIVB, HVA and SADVA since 1.61.0) and custom, for both views. An instance, created with a function that gives the live list of custom rules (`new RuleBook(() => S.r)`), because a domain class cannot use `Store`; saving the list to the device stays with the caller.
 
-* `static all()`
-* `static get(id)`
-* `static save(ruleSet)`
-* `static remove(id)`
-* `static builtIn()` (Local tournament, Official FIVB)
+* `builtIn()`, `all()` (plain data), `get(id)`, `forMatch(match)` (RuleSet)
+* `nameTaken(name, exceptId)`, `problem(ruleSet)`, `save(ruleSet)`, `remove(id)`
 
 **Tournament**: A group of matches with the participating teams and a default rule set.
 
@@ -197,11 +187,11 @@ The first piece is already moved as a pilot: `TimeoutRules`.
 
 ### infra
 
-**Store**: The only place that touches localStorage: load and save JSON by key, one key per kind of data.
+**Store** (migrated in 1.60.1): The only place that touches localStorage. Every access is guarded, so a blocked or full storage never stops the app.
 
-* `static load(key, fallback)`
-* `static save(key, value)`
-* `static keys()` (all keys used by the app (for backup))
+* `static key(name)` and `static keys()` (the 17 storage keys by name)
+* `static read(key, fallback)` / `static write(key, value)` (JSON)
+* `static text(key)` / `static setText(key, value)` / `static remove(key)` (plain text values)
 
 **Backup**: Export, import and transfer of all data between devices.
 

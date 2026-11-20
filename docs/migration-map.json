@@ -2164,6 +2164,18 @@
   "render": {
    "cls": "App",
    "decide": false
+  },
+  "BOOK": {
+   "cls": "RuleBook",
+   "decide": false
+  },
+  "ruleFive": {
+   "cls": "RuleSet",
+   "decide": false
+  },
+  "ruleRoster": {
+   "cls": "RuleSet",
+   "decide": false
   }
  }
 }

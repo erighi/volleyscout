@@ -1,4 +1,7 @@
 # Migration map (generated)
+> **Done in 1.60.1:** Html, Fmt and Store. `legacy.js` keeps one line aliases for them (`esc`, `ordn`, `fmtT`, `todayS`, `hm`, `hms`, `IC_L`, `IC_S`, `IC_V`, `DOCIC`, the key constants `K`, `PK` ... `ORGK` and the `saveP`/`saveT`/`save`/`saveR`/`saveSM`/`saveStt`/`saveTn`/`saveSkx`/`orgSave`/`tbSave` writers). They are removed when their callers are updated to call the classes directly.
+>
+> **Done in 1.60.2:** RuleSet and RuleBook. `legacy.js` keeps one-line aliases (`BOOK`, `BUILT`, `allRules`, `getRule`, `ruleOf`, `setRule`, `ruleText`, `ruleSub`, `ruleMin`, `rulePl`, `ruleLib`, `ruleFive`, `ruleRoster`, `swapRule`, `scSetRule`, `mvpRule`, `RD0`). The rule form screens (`ruleForm`, `syncRule`, `editRule`, `saveRule`, `delRule`, `ruleCount`) stay in legacy until `RuleEditor` is built; they now call the classes for the rules. The two views still read a set's rule differently (`setRule` clamps to the last set, `setLimits` does not); behaviour kept as it was.
 
 Where every piece of the current code (`src/legacy/legacy.js`) would go. This is a **proposal**: edit the lists in `classify.js` (or tell me) and it is regenerated.
 
