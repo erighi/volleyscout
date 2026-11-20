@@ -1,0 +1,2169 @@
+{
+ "version": "1.60.0",
+ "pieces": {
+  "legacyStart": {
+   "cls": "App",
+   "decide": false
+  },
+  "K": {
+   "cls": "Store",
+   "decide": false
+  },
+  "T": {
+   "cls": "ScoutStats",
+   "decide": false
+  },
+  "TH": {
+   "cls": "ScoutStats",
+   "decide": false
+  },
+  "TA": {
+   "cls": "ScoutStats",
+   "decide": false
+  },
+  "G": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "PK": {
+   "cls": "Store",
+   "decide": false
+  },
+  "TK": {
+   "cls": "Store",
+   "decide": false
+  },
+  "ROLES": {
+   "cls": "Player",
+   "decide": false
+  },
+  "S": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "THK": {
+   "cls": "Store",
+   "decide": false
+  },
+  "themeMode": {
+   "cls": "Theme",
+   "decide": false
+  },
+  "applyTheme": {
+   "cls": "Theme",
+   "decide": false
+  },
+  "setTheme": {
+   "cls": "Theme",
+   "decide": false
+  },
+  "saveP": {
+   "cls": "Store",
+   "decide": false
+  },
+  "saveT": {
+   "cls": "Store",
+   "decide": false
+  },
+  "save": {
+   "cls": "Store",
+   "decide": false
+  },
+  "myTeam": {
+   "cls": "Team",
+   "decide": false
+  },
+  "myTeams": {
+   "cls": "Team",
+   "decide": false
+  },
+  "inTeam": {
+   "cls": "Team",
+   "decide": false
+  },
+  "pTm": {
+   "cls": "Player",
+   "decide": false
+  },
+  "pNum": {
+   "cls": "Player",
+   "decide": false
+  },
+  "pRole": {
+   "cls": "Player",
+   "decide": false
+  },
+  "tv": {
+   "cls": "Player",
+   "decide": false
+  },
+  "prefsOf": {
+   "cls": "Player",
+   "decide": false
+  },
+  "freezeTm": {
+   "cls": "Player",
+   "decide": false
+  },
+  "syncPrimary": {
+   "cls": "Player",
+   "decide": false
+  },
+  "ordn": {
+   "cls": "Fmt",
+   "decide": false
+  },
+  "prefSlots": {
+   "cls": "Player",
+   "decide": false
+  },
+  "pfChg": {
+   "cls": "Player",
+   "decide": false
+  },
+  "roleOptsHtml": {
+   "cls": "Player",
+   "decide": false
+  },
+  "SCDEF": {
+   "cls": "ScoutStats",
+   "decide": false
+  },
+  "SK": {
+   "cls": "Store",
+   "decide": false
+  },
+  "SC": {
+   "cls": "ScoutStats",
+   "decide": false
+  },
+  "SKN": {
+   "cls": "ScoutStats",
+   "decide": false
+  },
+  "SKXDEF": {
+   "cls": "ScoutStats",
+   "decide": false
+  },
+  "SKXK": {
+   "cls": "Store",
+   "decide": false
+  },
+  "GRK": {
+   "cls": "Store",
+   "decide": false
+  },
+  "SKX": {
+   "cls": "ScoutStats",
+   "decide": false
+  },
+  "setSkx": {
+   "cls": "ScoutStats",
+   "decide": false
+  },
+  "saveSkx": {
+   "cls": "ScoutStats",
+   "decide": false
+  },
+  "gScale": {
+   "cls": "ScoutStats",
+   "decide": false
+  },
+  "saveScale": {
+   "cls": "ScoutStats",
+   "decide": false
+  },
+  "resetScale": {
+   "cls": "ScoutStats",
+   "decide": false
+  },
+  "serve": {
+   "cls": "ScoutStats",
+   "decide": false
+  },
+  "undo": {
+   "cls": "ScoutStats",
+   "decide": false
+  },
+  "subsUsed": {
+   "cls": "SubstitutionRules",
+   "decide": false
+  },
+  "pnum": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "subOpen": {
+   "cls": "SubstitutionRules",
+   "decide": false
+  },
+  "subPickPid": {
+   "cls": "SubstitutionRules",
+   "decide": false
+  },
+  "sbRole": {
+   "cls": "SubstitutionRules",
+   "decide": false
+  },
+  "subOut": {
+   "cls": "SubstitutionRules",
+   "decide": false
+  },
+  "pnp": {
+   "cls": "SubstitutionRules",
+   "decide": false
+  },
+  "subRep": {
+   "cls": "SubstitutionRules",
+   "decide": false
+  },
+  "subWhy": {
+   "cls": "SubstitutionRules",
+   "decide": false
+  },
+  "libWhy": {
+   "cls": "SubstitutionRules",
+   "decide": false
+  },
+  "emWhy": {
+   "cls": "SubstitutionRules",
+   "decide": false
+  },
+  "subState": {
+   "cls": "SubstitutionRules",
+   "decide": false
+  },
+  "roleIn": {
+   "cls": "SubstitutionRules",
+   "decide": false
+  },
+  "injured": {
+   "cls": "SubstitutionRules",
+   "decide": false
+  },
+  "emCheck": {
+   "cls": "SubstitutionRules",
+   "decide": false
+  },
+  "subCheck": {
+   "cls": "SubstitutionRules",
+   "decide": false
+  },
+  "libCheck": {
+   "cls": "SubstitutionRules",
+   "decide": false
+  },
+  "subIn": {
+   "cls": "SubstitutionRules",
+   "decide": false
+  },
+  "libsOf": {
+   "cls": "SubstitutionRules",
+   "decide": false
+  },
+  "alOf": {
+   "cls": "SubstitutionRules",
+   "decide": false
+  },
+  "setAL": {
+   "cls": "SubstitutionRules",
+   "decide": false
+  },
+  "libSwap": {
+   "cls": "SubstitutionRules",
+   "decide": false
+  },
+  "pushSub": {
+   "cls": "SubstitutionRules",
+   "decide": false
+  },
+  "autoLib": {
+   "cls": "SubstitutionRules",
+   "decide": false
+  },
+  "rallyDone": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "libOut": {
+   "cls": "SubstitutionRules",
+   "decide": false
+  },
+  "libSetup": {
+   "cls": "SubstitutionRules",
+   "decide": false
+  },
+  "libCard": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "IC_L": {
+   "cls": "Html",
+   "decide": false
+  },
+  "IC_S": {
+   "cls": "Html",
+   "decide": false
+  },
+  "IC_V": {
+   "cls": "Html",
+   "decide": false
+  },
+  "togglePM": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "panelBox": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "pieBox": {
+   "cls": "PieView",
+   "decide": false
+  },
+  "subLog": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "subCard": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "homePts": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "lockBtns": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "serveGate": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "gateBtns": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "serveCard": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "serveTable": {
+   "cls": "ScoutStats",
+   "decide": false
+  },
+  "RK": {
+   "cls": "Store",
+   "decide": false
+  },
+  "saveR": {
+   "cls": "Store",
+   "decide": false
+  },
+  "BUILT": {
+   "cls": "RuleBook",
+   "decide": false
+  },
+  "allRules": {
+   "cls": "RuleBook",
+   "decide": false
+  },
+  "getRule": {
+   "cls": "RuleSet",
+   "decide": false
+  },
+  "ruleOf": {
+   "cls": "RuleSet",
+   "decide": false
+  },
+  "copy": {
+   "cls": "RuleBook",
+   "decide": false
+  },
+  "setRule": {
+   "cls": "RuleBook",
+   "decide": false
+  },
+  "ruleText": {
+   "cls": "RuleSet",
+   "decide": false
+  },
+  "fmtT": {
+   "cls": "Fmt",
+   "decide": false
+  },
+  "toLimit": {
+   "cls": "TimeoutRules",
+   "decide": false
+  },
+  "toUsed": {
+   "cls": "TimeoutRules",
+   "decide": false
+  },
+  "toLeft": {
+   "cls": "TimeoutRules",
+   "decide": false
+  },
+  "ruleTO": {
+   "cls": "TimeoutRules",
+   "decide": false
+  },
+  "ruleSub": {
+   "cls": "RuleSet",
+   "decide": false
+  },
+  "callTO": {
+   "cls": "TimeoutRules",
+   "decide": false
+  },
+  "compactTop": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "toReport": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "TBK": {
+   "cls": "Store",
+   "decide": false
+  },
+  "TBC": {
+   "cls": "Store",
+   "decide": false
+  },
+  "TB": {
+   "cls": "TacticalBoard",
+   "decide": false
+  },
+  "tbEl": {
+   "cls": "TacticalBoard",
+   "decide": false
+  },
+  "tbDark": {
+   "cls": "TacticalBoard",
+   "decide": false
+  },
+  "tbIc": {
+   "cls": "TacticalBoard",
+   "decide": false
+  },
+  "tbHome": {
+   "cls": "TacticalBoard",
+   "decide": false
+  },
+  "tbDefault": {
+   "cls": "TacticalBoard",
+   "decide": false
+  },
+  "tbLoad": {
+   "cls": "TacticalBoard",
+   "decide": false
+  },
+  "tbSave": {
+   "cls": "Store",
+   "decide": false
+  },
+  "tbKey": {
+   "cls": "TacticalBoard",
+   "decide": false
+  },
+  "openTB": {
+   "cls": "TacticalBoard",
+   "decide": false
+  },
+  "closeTB": {
+   "cls": "TacticalBoard",
+   "decide": false
+  },
+  "tbInk": {
+   "cls": "TacticalBoard",
+   "decide": false
+  },
+  "tbTok": {
+   "cls": "TacticalBoard",
+   "decide": false
+  },
+  "tbDraw": {
+   "cls": "TacticalBoard",
+   "decide": false
+  },
+  "tbBind": {
+   "cls": "TacticalBoard",
+   "decide": false
+  },
+  "tbTool": {
+   "cls": "TacticalBoard",
+   "decide": false
+  },
+  "tbCol": {
+   "cls": "TacticalBoard",
+   "decide": false
+  },
+  "tbUndo": {
+   "cls": "TacticalBoard",
+   "decide": false
+  },
+  "tbClear": {
+   "cls": "TacticalBoard",
+   "decide": false
+  },
+  "tbReset": {
+   "cls": "TacticalBoard",
+   "decide": false
+  },
+  "toBoxes": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "ruleMin": {
+   "cls": "RuleSet",
+   "decide": false
+  },
+  "tmOf": {
+   "cls": "Team",
+   "decide": false
+  },
+  "elapsed": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "timeLeft": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "setWin": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "toggleTimer": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "byNum": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "teamByName": {
+   "cls": "Team",
+   "decide": false
+  },
+  "ensureTeam": {
+   "cls": "Team",
+   "decide": false
+  },
+  "snap": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "esc": {
+   "cls": "Html",
+   "decide": false
+  },
+  "get": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "sc": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "target": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "go": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "open_": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "nrSel": {
+   "cls": "Roster",
+   "decide": false
+  },
+  "nrStatus": {
+   "cls": "Roster",
+   "decide": false
+  },
+  "addMatch": {
+   "cls": "Match",
+   "decide": false
+  },
+  "point": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "autoServe": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "setPd": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "endPopup": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "endSet": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "finish": {
+   "cls": "Match",
+   "decide": false
+  },
+  "note": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "del": {
+   "cls": "Match",
+   "decide": false
+  },
+  "savePlayer": {
+   "cls": "Player",
+   "decide": false
+  },
+  "shareIn": {
+   "cls": "Player",
+   "decide": false
+  },
+  "editPlayer": {
+   "cls": "Player",
+   "decide": false
+  },
+  "archivePlayer": {
+   "cls": "Player",
+   "decide": false
+  },
+  "delPlayer": {
+   "cls": "Player",
+   "decide": false
+  },
+  "addTeam": {
+   "cls": "Team",
+   "decide": false
+  },
+  "openTeam": {
+   "cls": "Team",
+   "decide": false
+  },
+  "toggleMine": {
+   "cls": "Team",
+   "decide": false
+  },
+  "renameTeam": {
+   "cls": "Team",
+   "decide": false
+  },
+  "delTeam": {
+   "cls": "Team",
+   "decide": false
+  },
+  "cnt": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "over": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "luSet": {
+   "cls": "Roster",
+   "decide": false
+  },
+  "unplace": {
+   "cls": "Roster",
+   "decide": false
+  },
+  "luDel": {
+   "cls": "Roster",
+   "decide": false
+  },
+  "luToggle": {
+   "cls": "Roster",
+   "decide": false
+  },
+  "luGuest": {
+   "cls": "Roster",
+   "decide": false
+  },
+  "setDate": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "setFmt": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "luRow": {
+   "cls": "Roster",
+   "decide": false
+  },
+  "luHtml": {
+   "cls": "Roster",
+   "decide": false
+  },
+  "rosterView": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "ANG": {
+   "cls": "PieView",
+   "decide": false
+  },
+  "RL": {
+   "cls": "PieView",
+   "decide": false
+  },
+  "curSet": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "setReady": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "startSet": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "curLU": {
+   "cls": "Rotation",
+   "decide": false
+  },
+  "f5s": {
+   "cls": "Lineup",
+   "decide": false
+  },
+  "f5Mid": {
+   "cls": "Lineup",
+   "decide": false
+  },
+  "scoutPie": {
+   "cls": "PieView",
+   "decide": false
+  },
+  "setStarted": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "reAuto": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "setSys": {
+   "cls": "Lineup",
+   "decide": false
+  },
+  "setServe": {
+   "cls": "Lineup",
+   "decide": false
+  },
+  "pickPos": {
+   "cls": "Lineup",
+   "decide": false
+  },
+  "setSetView": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "setPos": {
+   "cls": "Lineup",
+   "decide": false
+  },
+  "copyPrev": {
+   "cls": "Lineup",
+   "decide": false
+  },
+  "setFive": {
+   "cls": "Lineup",
+   "decide": false
+  },
+  "declF5": {
+   "cls": "Lineup",
+   "decide": false
+  },
+  "f5Card": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "rotLU": {
+   "cls": "Rotation",
+   "decide": false
+  },
+  "clearSet": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "lockIcon": {
+   "cls": "PieView",
+   "decide": false
+  },
+  "PIE_R": {
+   "cls": "PieView",
+   "decide": false
+  },
+  "PIE_C": {
+   "cls": "PieView",
+   "decide": false
+  },
+  "PIE_F": {
+   "cls": "PieView",
+   "decide": false
+  },
+  "pieGeom": {
+   "cls": "PieView",
+   "decide": false
+  },
+  "pieCorner": {
+   "cls": "PieView",
+   "decide": false
+  },
+  "pieSlice": {
+   "cls": "PieView",
+   "decide": false
+  },
+  "pieSvg": {
+   "cls": "PieView",
+   "decide": false
+  },
+  "pie": {
+   "cls": "PieView",
+   "decide": false
+  },
+  "SYSP": {
+   "cls": "Lineup",
+   "decide": false
+  },
+  "RC": {
+   "cls": "Player",
+   "decide": false
+  },
+  "RN": {
+   "cls": "Player",
+   "decide": false
+  },
+  "slotOk": {
+   "cls": "Lineup",
+   "decide": false
+  },
+  "sysSlots": {
+   "cls": "Lineup",
+   "decide": false
+  },
+  "sysFit": {
+   "cls": "Lineup",
+   "decide": false
+  },
+  "autoFill": {
+   "cls": "Lineup",
+   "decide": false
+  },
+  "sysEval": {
+   "cls": "Lineup",
+   "decide": false
+  },
+  "sysCheck": {
+   "cls": "Lineup",
+   "decide": false
+  },
+  "setBusy": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "canResetSet": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "resetSet": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "resetBtn": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "reopenSet": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "reopenBtn": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "pastSetView": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "listPick": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "sideList": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "setView": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "tabsHtml": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "tally": {
+   "cls": "Match",
+   "decide": false
+  },
+  "setsWon": {
+   "cls": "Match",
+   "decide": false
+  },
+  "TNK": {
+   "cls": "Tournament",
+   "decide": false
+  },
+  "saveTn": {
+   "cls": "Tournament",
+   "decide": false
+  },
+  "newTn": {
+   "cls": "Tournament",
+   "decide": false
+  },
+  "tnTeams": {
+   "cls": "Tournament",
+   "decide": false
+  },
+  "tnTeamIds": {
+   "cls": "Tournament",
+   "decide": false
+  },
+  "setTnTeam": {
+   "cls": "Tournament",
+   "decide": false
+  },
+  "canRoleEdit": {
+   "cls": "Player",
+   "decide": false
+  },
+  "matchBusy": {
+   "cls": "Tournament",
+   "decide": false
+  },
+  "tnFmt": {
+   "cls": "Tournament",
+   "decide": false
+  },
+  "tnPick": {
+   "cls": "Tournament",
+   "decide": false
+  },
+  "setTnFmt": {
+   "cls": "Tournament",
+   "decide": false
+  },
+  "addTn": {
+   "cls": "Tournament",
+   "decide": false
+  },
+  "tnAddMatch": {
+   "cls": "Tournament",
+   "decide": false
+  },
+  "renameTn": {
+   "cls": "Tournament",
+   "decide": false
+  },
+  "delTn": {
+   "cls": "Tournament",
+   "decide": false
+  },
+  "setTn": {
+   "cls": "Tournament",
+   "decide": false
+  },
+  "tnOpts": {
+   "cls": "Tournament",
+   "decide": false
+  },
+  "listView": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "MDK": {
+   "cls": "Store",
+   "decide": false
+  },
+  "ADVK": {
+   "cls": "Store",
+   "decide": false
+  },
+  "DMK": {
+   "cls": "Store",
+   "decide": false
+  },
+  "defMode": {
+   "cls": "Settings",
+   "decide": false
+  },
+  "scoutMode": {
+   "cls": "Settings",
+   "decide": false
+  },
+  "setMode": {
+   "cls": "Settings",
+   "decide": false
+  },
+  "setDefMode": {
+   "cls": "Settings",
+   "decide": false
+  },
+  "LVL": {
+   "cls": "Settings",
+   "decide": false
+  },
+  "COG": {
+   "cls": "Settings",
+   "decide": false
+  },
+  "LYK": {
+   "cls": "Store",
+   "decide": false
+  },
+  "layoutMode": {
+   "cls": "Settings",
+   "decide": false
+  },
+  "applyLayout": {
+   "cls": "Settings",
+   "decide": false
+  },
+  "setLayout": {
+   "cls": "Settings",
+   "decide": false
+  },
+  "LAYOUTS": {
+   "cls": "Settings",
+   "decide": false
+  },
+  "layoutPick": {
+   "cls": "SettingsPage",
+   "decide": false
+  },
+  "toggleLM": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "lvlHead": {
+   "cls": "SettingsPage",
+   "decide": false
+  },
+  "lvlMenu": {
+   "cls": "SettingsPage",
+   "decide": false
+  },
+  "advGrade": {
+   "cls": "ScoutStats",
+   "decide": false
+  },
+  "actRow": {
+   "cls": "ScoutStats",
+   "decide": false
+  },
+  "actCount": {
+   "cls": "ScoutStats",
+   "decide": false
+  },
+  "lostTable": {
+   "cls": "ScoutStats",
+   "decide": false
+  },
+  "matchView": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "teamsView": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "buildBackup": {
+   "cls": "Backup",
+   "decide": false
+  },
+  "exportData": {
+   "cls": "Backup",
+   "decide": false
+  },
+  "parseBackup": {
+   "cls": "Backup",
+   "decide": false
+  },
+  "applyBackup": {
+   "cls": "Backup",
+   "decide": false
+  },
+  "impMode": {
+   "cls": "Backup",
+   "decide": false
+  },
+  "pickImport": {
+   "cls": "Backup",
+   "decide": false
+  },
+  "importFile": {
+   "cls": "Backup",
+   "decide": false
+  },
+  "rulesHtml": {
+   "cls": "RuleEditor",
+   "decide": false
+  },
+  "backupHtml": {
+   "cls": "SettingsPage",
+   "decide": false
+  },
+  "settingsNm": {
+   "cls": "SettingsPage",
+   "decide": false
+  },
+  "SET_THEMES": {
+   "cls": "Theme",
+   "decide": false
+  },
+  "settingsThemeHtml": {
+   "cls": "SettingsPage",
+   "decide": false
+  },
+  "settingsLayoutHtml": {
+   "cls": "SettingsPage",
+   "decide": false
+  },
+  "settingsScoutHtml": {
+   "cls": "SettingsPage",
+   "decide": false
+  },
+  "settingsGradesHtml": {
+   "cls": "SettingsPage",
+   "decide": false
+  },
+  "SETTINGS": {
+   "cls": "SettingsPage",
+   "decide": false
+  },
+  "settingsBox": {
+   "cls": "SettingsPage",
+   "decide": false
+  },
+  "settingsPage": {
+   "cls": "SettingsPage",
+   "decide": false
+  },
+  "settingsView": {
+   "cls": "SettingsPage",
+   "decide": false
+  },
+  "RD0": {
+   "cls": "RuleEditor",
+   "decide": false
+  },
+  "newRule": {
+   "cls": "RuleEditor",
+   "decide": false
+  },
+  "editRule": {
+   "cls": "RuleEditor",
+   "decide": false
+  },
+  "syncRule": {
+   "cls": "RuleEditor",
+   "decide": false
+  },
+  "ruleCount": {
+   "cls": "RuleBook",
+   "decide": false
+  },
+  "saveRule": {
+   "cls": "RuleBook",
+   "decide": false
+  },
+  "delRule": {
+   "cls": "RuleBook",
+   "decide": false
+  },
+  "ruleForm": {
+   "cls": "RuleEditor",
+   "decide": false
+  },
+  "serveStats": {
+   "cls": "ScoutStats",
+   "decide": false
+  },
+  "statsFilter": {
+   "cls": "ScoutStats",
+   "decide": false
+  },
+  "fOk": {
+   "cls": "ScoutStats",
+   "decide": false
+  },
+  "attendStats": {
+   "cls": "ScoutStats",
+   "decide": false
+  },
+  "statsView": {
+   "cls": "CoachView",
+   "decide": true
+  },
+  "VER": {
+   "cls": "App",
+   "decide": false
+  },
+  "FXK": {
+   "cls": "Store",
+   "decide": false
+  },
+  "fx": {
+   "cls": "Feedback",
+   "decide": false
+  },
+  "setFx": {
+   "cls": "Feedback",
+   "decide": false
+  },
+  "actx": {
+   "cls": "Feedback",
+   "decide": false
+  },
+  "clickSound": {
+   "cls": "Feedback",
+   "decide": false
+  },
+  "applyFx": {
+   "cls": "Feedback",
+   "decide": false
+  },
+  "renderCoach": {
+   "cls": "App",
+   "decide": false
+  },
+  "APPK": {
+   "cls": "Store",
+   "decide": false
+  },
+  "SCK": {
+   "cls": "Store",
+   "decide": false
+  },
+  "appMode": {
+   "cls": "App",
+   "decide": false
+  },
+  "saveSM": {
+   "cls": "Store",
+   "decide": false
+  },
+  "STK": {
+   "cls": "Store",
+   "decide": false
+  },
+  "saveStt": {
+   "cls": "Store",
+   "decide": false
+  },
+  "sttOf": {
+   "cls": "Tournament",
+   "decide": false
+  },
+  "sttRule": {
+   "cls": "Tournament",
+   "decide": false
+  },
+  "NAV_COACH": {
+   "cls": "App",
+   "decide": false
+  },
+  "NAV_SCORER": {
+   "cls": "App",
+   "decide": false
+  },
+  "setApp": {
+   "cls": "App",
+   "decide": false
+  },
+  "changeView": {
+   "cls": "App",
+   "decide": false
+  },
+  "goS": {
+   "cls": "App",
+   "decide": false
+  },
+  "pickView": {
+   "cls": "App",
+   "decide": false
+  },
+  "todayS": {
+   "cls": "Fmt",
+   "decide": false
+  },
+  "rulePl": {
+   "cls": "RuleSet",
+   "decide": false
+  },
+  "ruleLib": {
+   "cls": "RuleSet",
+   "decide": false
+  },
+  "HDF": {
+   "cls": "Match",
+   "decide": false
+  },
+  "HD0": {
+   "cls": "Match",
+   "decide": false
+  },
+  "SX0": {
+   "cls": "Match",
+   "decide": false
+  },
+  "newSM": {
+   "cls": "Match",
+   "decide": false
+  },
+  "editSM": {
+   "cls": "Match",
+   "decide": false
+  },
+  "syncSx": {
+   "cls": "Match",
+   "decide": false
+  },
+  "smTnPick": {
+   "cls": "Match",
+   "decide": false
+  },
+  "newSMT": {
+   "cls": "Match",
+   "decide": false
+  },
+  "sxCancel": {
+   "cls": "Match",
+   "decide": false
+  },
+  "saveSMatch": {
+   "cls": "Match",
+   "decide": false
+  },
+  "delSMatch": {
+   "cls": "Match",
+   "decide": false
+  },
+  "smForm": {
+   "cls": "Match",
+   "decide": false
+  },
+  "SGW": {
+   "cls": "SignaturePad",
+   "decide": false
+  },
+  "SGH": {
+   "cls": "SignaturePad",
+   "decide": false
+  },
+  "teamSigned": {
+   "cls": "Roster",
+   "decide": false
+  },
+  "teamDone": {
+   "cls": "Roster",
+   "decide": false
+  },
+  "rosterDone": {
+   "cls": "Roster",
+   "decide": false
+  },
+  "sigSvg": {
+   "cls": "SignaturePad",
+   "decide": false
+  },
+  "sgPad": {
+   "cls": "SignaturePad",
+   "decide": false
+  },
+  "sgBind": {
+   "cls": "SignaturePad",
+   "decide": false
+  },
+  "sgClear": {
+   "cls": "SignaturePad",
+   "decide": false
+  },
+  "sgRedo": {
+   "cls": "SignaturePad",
+   "decide": false
+  },
+  "sgSave": {
+   "cls": "SignaturePad",
+   "decide": false
+  },
+  "rxNext": {
+   "cls": "Roster",
+   "decide": false
+  },
+  "rxSide": {
+   "cls": "Roster",
+   "decide": false
+  },
+  "openRoster": {
+   "cls": "Roster",
+   "decide": false
+  },
+  "syncRx": {
+   "cls": "Roster",
+   "decide": false
+  },
+  "commitTeam": {
+   "cls": "Roster",
+   "decide": false
+  },
+  "rxTeam": {
+   "cls": "Roster",
+   "decide": false
+  },
+  "saveRoster": {
+   "cls": "Roster",
+   "decide": false
+  },
+  "rosterViewS": {
+   "cls": "ScorerView",
+   "decide": true
+  },
+  "STD0": {
+   "cls": "Tournament",
+   "decide": false
+  },
+  "newStt": {
+   "cls": "Tournament",
+   "decide": false
+  },
+  "editStt": {
+   "cls": "Tournament",
+   "decide": false
+  },
+  "syncStt": {
+   "cls": "Tournament",
+   "decide": false
+  },
+  "sttRulePick": {
+   "cls": "Tournament",
+   "decide": false
+  },
+  "saveSttForm": {
+   "cls": "Tournament",
+   "decide": false
+  },
+  "delStt": {
+   "cls": "Tournament",
+   "decide": false
+  },
+  "sttForm": {
+   "cls": "Tournament",
+   "decide": false
+  },
+  "sttList": {
+   "cls": "Tournament",
+   "decide": false
+  },
+  "bySt": {
+   "cls": "Tournament",
+   "decide": false
+  },
+  "scorerMatches": {
+   "cls": "ScorerView",
+   "decide": true
+  },
+  "scorerSettings": {
+   "cls": "SettingsPage",
+   "decide": false
+  },
+  "SIDE": {
+   "cls": "CourtSides",
+   "decide": false
+  },
+  "oppT": {
+   "cls": "CourtSides",
+   "decide": false
+  },
+  "oppS": {
+   "cls": "CourtSides",
+   "decide": false
+  },
+  "tossRes": {
+   "cls": "CourtSides",
+   "decide": false
+  },
+  "tossText": {
+   "cls": "CourtSides",
+   "decide": false
+  },
+  "teamReady": {
+   "cls": "Roster",
+   "decide": false
+  },
+  "rosterReady": {
+   "cls": "Roster",
+   "decide": false
+  },
+  "tossLine": {
+   "cls": "CourtSides",
+   "decide": false
+  },
+  "openToss": {
+   "cls": "CourtSides",
+   "decide": false
+  },
+  "tsLk": {
+   "cls": "CourtSides",
+   "decide": false
+  },
+  "tsWin": {
+   "cls": "CourtSides",
+   "decide": false
+  },
+  "tsPick": {
+   "cls": "CourtSides",
+   "decide": false
+  },
+  "tsOther": {
+   "cls": "CourtSides",
+   "decide": false
+  },
+  "tsBack": {
+   "cls": "CourtSides",
+   "decide": false
+  },
+  "tsClear": {
+   "cls": "CourtSides",
+   "decide": false
+  },
+  "tsSave": {
+   "cls": "CourtSides",
+   "decide": false
+  },
+  "tossView": {
+   "cls": "ScorerView",
+   "decide": true
+  },
+  "STEPS": {
+   "cls": "Crumbs",
+   "decide": false
+  },
+  "boardStarted": {
+   "cls": "Crumbs",
+   "decide": false
+  },
+  "f5": {
+   "cls": "Lineup",
+   "decide": false
+  },
+  "rcapOf": {
+   "cls": "Captaincy",
+   "decide": false
+  },
+  "capNum": {
+   "cls": "Captaincy",
+   "decide": false
+  },
+  "scCapNeed": {
+   "cls": "Captaincy",
+   "decide": false
+  },
+  "lineupDone": {
+   "cls": "Lineup",
+   "decide": false
+  },
+  "bpCap": {
+   "cls": "Captaincy",
+   "decide": false
+  },
+  "stepsDone": {
+   "cls": "Crumbs",
+   "decide": false
+  },
+  "editLocked": {
+   "cls": "Crumbs",
+   "decide": false
+  },
+  "DOCIC": {
+   "cls": "Html",
+   "decide": false
+  },
+  "crumbs": {
+   "cls": "Crumbs",
+   "decide": false
+  },
+  "showStep": {
+   "cls": "Crumbs",
+   "decide": false
+  },
+  "openMatch": {
+   "cls": "ScorerView",
+   "decide": true
+  },
+  "goStep": {
+   "cls": "Crumbs",
+   "decide": false
+  },
+  "stepHead": {
+   "cls": "Crumbs",
+   "decide": false
+  },
+  "stepSoon": {
+   "cls": "Crumbs",
+   "decide": false
+  },
+  "roLine": {
+   "cls": "Crumbs",
+   "decide": false
+  },
+  "roNote": {
+   "cls": "Crumbs",
+   "decide": false
+  },
+  "matchRO": {
+   "cls": "Crumbs",
+   "decide": false
+  },
+  "rosterRO": {
+   "cls": "Crumbs",
+   "decide": false
+  },
+  "tossRO": {
+   "cls": "Crumbs",
+   "decide": false
+  },
+  "hm": {
+   "cls": "Fmt",
+   "decide": false
+  },
+  "lockedM": {
+   "cls": "Crumbs",
+   "decide": false
+  },
+  "libLine": {
+   "cls": "ScorerView",
+   "decide": true
+  },
+  "startedTxt": {
+   "cls": "Crumbs",
+   "decide": false
+  },
+  "isTB": {
+   "cls": "CourtSides",
+   "decide": false
+  },
+  "swapRule": {
+   "cls": "RuleSet",
+   "decide": false
+  },
+  "tbSwapAt": {
+   "cls": "CourtSides",
+   "decide": false
+  },
+  "tbSwapped": {
+   "cls": "CourtSides",
+   "decide": false
+  },
+  "tbTossOk": {
+   "cls": "CourtSides",
+   "decide": false
+  },
+  "tbLocked": {
+   "cls": "CourtSides",
+   "decide": false
+  },
+  "sideOfT": {
+   "cls": "CourtSides",
+   "decide": false
+  },
+  "sideNow": {
+   "cls": "CourtSides",
+   "decide": false
+  },
+  "serveOfT": {
+   "cls": "CourtSides",
+   "decide": false
+  },
+  "tcol": {
+   "cls": "CourtSides",
+   "decide": false
+  },
+  "bset": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "openLineup": {
+   "cls": "Lineup",
+   "decide": false
+  },
+  "openBoard": {
+   "cls": "ScorerView",
+   "decide": true
+  },
+  "bpPick": {
+   "cls": "Lineup",
+   "decide": false
+  },
+  "bpFive": {
+   "cls": "Lineup",
+   "decide": false
+  },
+  "bpPlace": {
+   "cls": "Lineup",
+   "decide": false
+  },
+  "bpClear": {
+   "cls": "Lineup",
+   "decide": false
+  },
+  "startSetS": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "spie": {
+   "cls": "PieView",
+   "decide": false
+  },
+  "scSubMarks": {
+   "cls": "PieView",
+   "decide": false
+  },
+  "sideInfo": {
+   "cls": "CourtSides",
+   "decide": false
+  },
+  "lineupView": {
+   "cls": "ScorerView",
+   "decide": true
+  },
+  "scState": {
+   "cls": "Rotation",
+   "decide": false
+  },
+  "scToMax": {
+   "cls": "TimeoutRules",
+   "decide": false
+  },
+  "scToLeft": {
+   "cls": "TimeoutRules",
+   "decide": false
+  },
+  "hms": {
+   "cls": "Fmt",
+   "decide": false
+  },
+  "scSc": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "scLog": {
+   "cls": "ActionLog",
+   "decide": false
+  },
+  "scLogTxt": {
+   "cls": "ActionLog",
+   "decide": false
+  },
+  "scLogText": {
+   "cls": "ActionLog",
+   "decide": false
+  },
+  "openLog": {
+   "cls": "ActionLog",
+   "decide": false
+  },
+  "logView": {
+   "cls": "ActionLog",
+   "decide": false
+  },
+  "lgCopy": {
+   "cls": "ActionLog",
+   "decide": false
+  },
+  "lgDownload": {
+   "cls": "ActionLog",
+   "decide": false
+  },
+  "scSetRule": {
+   "cls": "RuleSet",
+   "decide": false
+  },
+  "scWinner": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "scCnt": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "scSetsWon": {
+   "cls": "Match",
+   "decide": false
+  },
+  "scMatchWinner": {
+   "cls": "Match",
+   "decide": false
+  },
+  "scEKey": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "scEndAsk": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "scFfResult": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "scSetEndAsk": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "scSetFfPick": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "scSetFfCancel": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "scSetFfMatch": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "scSetFfConfirm": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "scEndCancel": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "scEndConfirm": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "scReopen": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "scNextSet": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "scRemAsk": {
+   "cls": "Match",
+   "decide": false
+  },
+  "scRemWho": {
+   "cls": "Match",
+   "decide": false
+  },
+  "scRemCancel": {
+   "cls": "Match",
+   "decide": false
+  },
+  "scRemConfirm": {
+   "cls": "Match",
+   "decide": false
+  },
+  "FINREQ": {
+   "cls": "Match",
+   "decide": false
+  },
+  "mvpRule": {
+   "cls": "RuleSet",
+   "decide": false
+  },
+  "mvpNeeded": {
+   "cls": "Match",
+   "decide": false
+  },
+  "mvpDone": {
+   "cls": "Match",
+   "decide": false
+  },
+  "mvpTxt": {
+   "cls": "Match",
+   "decide": false
+  },
+  "scMvp": {
+   "cls": "Match",
+   "decide": false
+  },
+  "scSignName": {
+   "cls": "SignaturePad",
+   "decide": false
+  },
+  "scFinTxt": {
+   "cls": "Match",
+   "decide": false
+  },
+  "scFinWinner": {
+   "cls": "Match",
+   "decide": false
+  },
+  "scFinSets": {
+   "cls": "Match",
+   "decide": false
+  },
+  "scFinAsk": {
+   "cls": "Match",
+   "decide": false
+  },
+  "scFinPick": {
+   "cls": "Match",
+   "decide": false
+  },
+  "scFinCancel": {
+   "cls": "Match",
+   "decide": false
+  },
+  "scFinConfirm": {
+   "cls": "Match",
+   "decide": false
+  },
+  "scFinReopen": {
+   "cls": "Match",
+   "decide": false
+  },
+  "openSign": {
+   "cls": "ScorerView",
+   "decide": true
+  },
+  "sgStartE": {
+   "cls": "SignaturePad",
+   "decide": false
+  },
+  "sgCancelE": {
+   "cls": "SignaturePad",
+   "decide": false
+  },
+  "sgSaveE": {
+   "cls": "SignaturePad",
+   "decide": false
+  },
+  "scFinish": {
+   "cls": "Match",
+   "decide": false
+  },
+  "signPad": {
+   "cls": "SignaturePad",
+   "decide": false
+  },
+  "signView": {
+   "cls": "ScorerView",
+   "decide": true
+  },
+  "openSetView": {
+   "cls": "ScorerView",
+   "decide": true
+  },
+  "scSetView": {
+   "cls": "ScorerView",
+   "decide": true
+  },
+  "scQ": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "scSubMax": {
+   "cls": "SubstitutionRules",
+   "decide": false
+  },
+  "scPn": {
+   "cls": "ScorerView",
+   "decide": true
+  },
+  "scSubOpts": {
+   "cls": "SubstitutionRules",
+   "decide": false
+  },
+  "scSubAsk": {
+   "cls": "ScorerView",
+   "decide": true
+  },
+  "scSubPick": {
+   "cls": "ScorerView",
+   "decide": true
+  },
+  "scSubCancel": {
+   "cls": "ScorerView",
+   "decide": true
+  },
+  "scSubConfirm": {
+   "cls": "ScorerView",
+   "decide": true
+  },
+  "scSub": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "scRemoveAsk": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "scRemoveN": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "scRemoveCancel": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "scRemoveConfirm": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "scRemove": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "scToAsk": {
+   "cls": "ScorerView",
+   "decide": true
+  },
+  "scToCancel": {
+   "cls": "ScorerView",
+   "decide": true
+  },
+  "scToConfirm": {
+   "cls": "ScorerView",
+   "decide": true
+  },
+  "scTo": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "scLeave": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "scLvOpen": {
+   "cls": "ScorerView",
+   "decide": true
+  },
+  "scLvWho": {
+   "cls": "ScorerView",
+   "decide": true
+  },
+  "scLvBack": {
+   "cls": "ScorerView",
+   "decide": true
+  },
+  "scLvReason": {
+   "cls": "ScorerView",
+   "decide": true
+  },
+  "scPt": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "scCanUndo": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "scSwapOk": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "scUndo": {
+   "cls": "SetPlay",
+   "decide": false
+  },
+  "boardView": {
+   "cls": "ScorerView",
+   "decide": true
+  },
+  "ORGK": {
+   "cls": "Store",
+   "decide": false
+  },
+  "ORG": {
+   "cls": "Organiser",
+   "decide": false
+  },
+  "orgSave": {
+   "cls": "Store",
+   "decide": false
+  },
+  "orgLogoOk": {
+   "cls": "Organiser",
+   "decide": false
+  },
+  "orgSetName": {
+   "cls": "Organiser",
+   "decide": false
+  },
+  "orgClearLogo": {
+   "cls": "Organiser",
+   "decide": false
+  },
+  "orgPickLogo": {
+   "cls": "Organiser",
+   "decide": false
+  },
+  "orgBody": {
+   "cls": "Organiser",
+   "decide": false
+  },
+  "sheetHtml": {
+   "cls": "Scoresheet",
+   "decide": false
+  },
+  "openSheet": {
+   "cls": "Scoresheet",
+   "decide": false
+  },
+  "sheetView": {
+   "cls": "Scoresheet",
+   "decide": false
+  },
+  "fitCrumbs": {
+   "cls": "Crumbs",
+   "decide": false
+  },
+  "fitPt": {
+   "cls": "Scoresheet",
+   "decide": false
+  },
+  "fitNames": {
+   "cls": "Scoresheet",
+   "decide": false
+  },
+  "fitRight": {
+   "cls": "Scoresheet",
+   "decide": false
+  },
+  "fitSheet": {
+   "cls": "Scoresheet",
+   "decide": false
+  },
+  "renderScorer": {
+   "cls": "App",
+   "decide": false
+  },
+  "render": {
+   "cls": "App",
+   "decide": false
+  }
+ }
+}
