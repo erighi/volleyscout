@@ -62,21 +62,21 @@ The first piece is already moved as a pilot: `TimeoutRules`.
 * `static clock(ms)` (hh:mm)
 * `static clockSeconds(ms)` (hh:mm:ss)
 
-**Player**: A player: id, shirt number, name, preferred roles in order, libero flag, captain flag.
+**Player** (migrated in 1.63.8): A player of the coach's roster as a wrapper over plain data `{id, name, prefs, teamId, also, tm: {teamId: {num, role}}, num, role, arch}`. A player can be in several teams with a different number and role in each; `num` and `role` mirror the main team's. The methods that change the player change the plain data in place.
 
-* `constructor(data)`
-* `label()` ("#12 Name" for messages and buttons)
-* `isLibero()`
-* `roleIn(team)` (role in a given team (roles and numbers are team level))
+* `static roles()`, `static numberTaken(players, teamId, num, exceptId)`, `static create(fields)`
+* `data()`, `id()`, `name()`, `teamData(teamId)`, `number(teamId)`, `role(teamId)`, `view(teamId)`, `preferences()`, `isIn(teamId)`
+* `freeze()`, `syncPrimary()`, `applyEdit(fields)`, `shareWith(teamId)`, `leaveTeam(teamId, tidy)` (false when it was his only team), `archive(on)`
 
-**Team**: A team: name, players, which one is "my team". Players can belong to several teams with a different number and role in each.
+Not part of it: the player form and role pickers, the confirmations, `canRoleEdit` (a rule about the match). The skeleton's `label()` and `isLibero()` were dropped: nothing used them (a libero is a role in a team, and the label of a player in a match is built from the line-up).
+**Team** (migrated in 1.63.7): A team as a value object over plain data `{id, name, mine}` (`mine` is true for the coach's own teams, false or missing for opponents). Players belong to a team through their own data (`teamId` and `also`).
 
-* `constructor(data)`
-* `player(number)` (find by shirt number)
-* `add(player)`
-* `remove(id)`
-* `isMine()`
+* `data()`, `id()`, `name()`, `isMine()`, `static hasMember(player, teamId)`, `hasPlayer(player)`
 
+**TeamBook** (new in 1.63.7): The list of teams (`S.t`). Reads the live list through a function; saving stays with the caller. Removing a team does not touch its players.
+
+* `all()`, `find(id)`, `get(id)`, `mine()`, `mineAll()`, `opponents()`, `byName(name)`
+* `ensure(name)` (existing, or a new opponent), `add(name, mine)`, `rename(id, name)`, `toggleMine(id)` (returns the new state), `remove(id)`
 **Roster**: The players of one team for one match, with the libero and captain, and whether it is complete enough to start.
 
 * `constructor(team, rules)`
@@ -108,17 +108,14 @@ The first piece is already moved as a pilot: `TimeoutRules`.
 
 * `all()`, `find(id)`, `get(id)`, `wrap(data)`, `sortedByName()`, `nameTaken(name, exceptId)`, `ruleId(id)`
 * `create(name, ruleId, teams)`, `rename(id, name)`, `setRule(id, ruleId)` (returns the previous valid rule set id), `setTeams(id, teamIds)`, `remove(id)`
-**Match**: A match between two teams under a rule set: header data, roster per team, toss, sets, signatures, result.
+**Match** (migrated in 1.63.4, score table side): The rules of a score table match: sets won, the winner, how the match can end and who wins in each case, the MVP nominations and the signatures needed. A wrapper over the plain match data. The points of a running set are replayed from the point log elsewhere, so the caller passes `pointsOf(setIndex) -> {a, b}`.
 
-* `constructor(data)`
-* `setsWon(team)`
-* `winner()` (null until won, forfeited or ended)
-* `currentSet()`
-* `nextSet()` (starts the next set (or the tie break with its own toss))
-* `end(reason)` (won, time, forfeit, cancelled, suspended)
-* `isFinished()`
-* `resultText()`
+* `static signaturesRequired()`
+* `setsNeeded()`, `setsWon(team)`, `winner()`
+* `finishWinner(reason)` (win, ffa, ffb, time, else none), `finishSets()`, `finishText(reason)`
+* `mvpNeeded()`, `mvpDone()`
 
+Not part of it yet: the coach view's match (its sets come from the scouted log: `tally`, `setsWon`, `matchBusy`), the match form and the ask/confirm dialogs. The coach side waits for SetPlay.
 **SetPlay**: One set: line-ups, the point log, substitutions, timeouts, five-player events, remarks. State is always replayed from the logs.
 
 * `constructor(data, rules)`
@@ -129,14 +126,12 @@ The first piece is already moved as a pilot: `TimeoutRules`.
 * `removePoints(n)`
 * `state()` (positions, server, ghost rotation: asks Rotation)
 
-**Lineup**: The six court positions and the roles: placing players, the team system (5-1, 6-2, 4-2), auto fill, the five-player layout.
+**Lineup** (migrated in 1.63.5): The six court positions and the roles: the team system (5-1, 6-2, 4-2), which roles fit which position, auto fill, copying the previous set, the next empty position, the five-player layout. Positions are numbered 1 to 6; a list of positions is an array of 6 player ids (index 0 is P1). Constructed with the system and the roster (`new Lineup(m.sys, m.lu.h)`).
 
-* `constructor(positions, system)`
-* `place(position, player)`
-* `isValidFor(system)` (middles opposite each other ...)
-* `suggest(position)` (who fits the active slice)
-* `isFivePlayer()`
-
+* `static patterns()`, `roleCodes()`, `roleNames()`, `slotOk(slot, code)`
+* `hasSystem()`, `slots(positions)`, `static fits(slots, i, role)`, `autoFill(positions, injured)` (fills in place), `evaluate(pids)` (`off`, `incomplete`, `ok`, `bad`)
+* `static fiveFromStart(f5, si)`, `fiveMidSet(f5, si)` (coach view), `fiveInSet(set, team)` (score table)
+* `static complete(positions, five)`, `copyPrevious(previous, injured, five)`, `nextEmpty(positions, five)` (coach), `nextEmptyAfter(positions, p, five)` (score table)
 **Rotation**: Replays the point log into positions, who serves and ghost rotations. One engine for the coach and the score table.
 
 * `static replay(lineup, points, options)` (returns the current positions and server)
@@ -158,11 +153,11 @@ The first piece is already moved as a pilot: `TimeoutRules`.
 * `used(list, team)`
 * `left(list, team)`
 
-**Captaincy**: The game captain: the team captain whenever on court, otherwise the declared one; who must be declared after a substitution or a player who cannot continue.
+**Captaincy** (migrated in 1.63.6): The game captain in the score table: the team captain whenever he is on court, otherwise the captain declared for the set; and who must be declared when the captain leaves the court. Plain values only (roster, court numbers, declared number); numbers are compared as text.
 
-* `static onCourt(team, lineup, declared)` (the captain now, or null)
-* `static mustDeclare(team, state, leaving, coming)` ({need, options})
-
+* `static teamCaptain(players)` (number as text of the captain who is not a libero, or null)
+* `static onCourt(players, court, declared)` (the game captain's number or null)
+* `static mustDeclare(players, court, current, out, inn)` -> `{need, opts}`
 **CourtSides** (migrated in 1.63.1): Toss, first serve, court sides per set, the deciding set toss and the change of courts at 8 points, for the score table. An instance wraps one score table match (plain data); teams are `a` and `b`, sides `L` and `R`.
 
 * `static other(team)`, `static otherSide(side)`, `static sideName(side)`

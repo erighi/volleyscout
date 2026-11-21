@@ -4,7 +4,7 @@ const T=[['kill','Attack'],['ace','Ace'],['block','Block'],['err','Opp. error']]
 const TH=T.filter(x=>x[0]!=='ace'),TA=T.map(([k,l])=>k==='err'?[k,'My team error']:[k,l]);
 const G=k=>k==='--'?'<span class="dd" role="img" aria-label="minus minus"><i></i><i></i></span>':esc(k);
 const PK=Store.key('players'),TK=Store.key('teams');
-const ROLES=['Setter','Outside hitter','Opposite','Middle blocker','Libero','Defensive specialist'];
+const ROLES=Player.roles();
 let S={pv:'cur',m:[],p:[],t:[],r:[],rd:null,cur:null,tab:'teams',form:false,edit:null,team:null,tform:false};
 S.m=Store.read(K,[]);
 S.p=Store.read(PK,[]);
@@ -20,13 +20,14 @@ const saveP=()=>{Store.write(PK,S.p)};
 const saveT=()=>{Store.write(TK,S.t)};
 const save=()=>{Store.write(K,S.m)};
 if(S.p.some(p=>!p.teamId)){let t=S.t.find(x=>x.mine);if(!t){t={id:'t-mine',name:'My team',mine:true};S.t.push(t)}S.p.forEach(p=>{if(!p.teamId)p.teamId=t.id});saveT();saveP()}
-const myTeam=()=>S.t.find(t=>t.mine);
-const myTeams=()=>S.t.filter(t=>t.mine),inTeam=(p,id)=>p.teamId===id||(p.also||[]).includes(id);
-const pTm=(p,t)=>{const e=p.tm&&p.tm[t];return e?{num:e.num||'',role:e.role||''}:{num:p.num||'',role:p.role||''}};
-const pNum=(p,t)=>pTm(p,t).num,pRole=(p,t)=>pTm(p,t).role,tv=(p,t)=>({...p,num:pNum(p,t),role:pRole(p,t)});
-const prefsOf=p=>Array.isArray(p.prefs)?p.prefs:(p.role?[p.role]:[]);
-function freezeTm(p){p.tm=p.tm||{};[p.teamId,...(p.also||[])].forEach(t=>{if(!p.tm[t])p.tm[t]={num:p.num||'',role:p.role||''}})}
-function syncPrimary(p){const t=pTm(p,p.teamId);p.num=t.num;p.role=t.role}
+const TMB=new TeamBook(()=>S.t);
+const myTeam=()=>TMB.mine();
+const myTeams=()=>TMB.mineAll(),inTeam=(p,id)=>Team.hasMember(p,id);
+const pTm=(p,t)=>new Player(p).teamData(t);
+const pNum=(p,t)=>new Player(p).number(t),pRole=(p,t)=>new Player(p).role(t),tv=(p,t)=>new Player(p).view(t);
+const prefsOf=p=>new Player(p).preferences();
+function freezeTm(p){new Player(p).freeze()}
+function syncPrimary(p){new Player(p).syncPrimary()}
 const ordn=i=>Fmt.ordinal(i);
 function prefSlots(cur){return`<div id="pf-box">${[0,1,2,3,4,5].map(i=>`<div class="row" id="pf-row${i}" style="margin-top:6px;flex-wrap:nowrap;align-items:center${i>cur.length?';display:none':''}"><span class="mut" style="width:64px;flex:none">${ordn(i)}</span><select id="pf-s${i}" class="pf-r" aria-label="${ordn(i)} preferred role" style="flex:1" onchange="pfChg()"><option value="">${i?'None':'Choose a role'}</option>${ROLES.map(r=>`<option${cur[i]===r?' selected':''}>${r}</option>`).join('')}</select></div>`).join('')}</div>`}
 function pfChg(){const sel=[...document.querySelectorAll('.pf-r')];if(!sel.length)return;const vals=[];sel.forEach(e=>{if(e.value&&!vals.includes(e.value))vals.push(e.value)});
@@ -239,8 +240,8 @@ function setWin(m,si,x,y){const r=setRule(m,si),W=r.win,H=r.hard;
 function toggleTimer(){const m=get(S.cur),t=tmOf(m);if(t.run){t.acc+=Date.now()-t.run;t.run=null}else t.run=Date.now();save();render()}
 setInterval(()=>{const el=document.getElementById('tmr');if(!el||!S.cur)return;const m=get(S.cur);if(!m)return;const l=timeLeft(m),up=l<=0?'1':'0';if(el.dataset.up!==up){render();return}el.textContent=fmtT(l)},1000);
 const byNum=(a,b)=>(parseInt(a.num,10)||999)-(parseInt(b.num,10)||999)||a.name.localeCompare(b.name);
-const teamByName=n=>S.t.find(t=>t.name.toLowerCase()===n.toLowerCase());
-function ensureTeam(n){let t=teamByName(n);if(!t){t={id:'t'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name:n,mine:false};S.t.push(t);saveT()}return t}
+const teamByName=n=>TMB.byName(n);
+function ensureTeam(n){const k=S.t.length,t=TMB.ensure(n);if(S.t.length>k)saveT();return t}
 const snap=t=>S.p.filter(p=>inTeam(p,t.id)&&!p.arch).map(p=>({pid:p.id,name:p.name,num:pNum(p,t.id),role:pRole(p,t.id)}));
 const esc=s=>Html.esc(s);
 const get=id=>S.m.find(m=>m.id===id);
@@ -275,28 +276,25 @@ function savePlayer(){
   const v=id=>document.getElementById(id).value.trim();
   const name=v('p-n');if(!name){alert('Enter the player’s name.');return}
   const num=v('p-#'),prefs=[...document.querySelectorAll('.pf-r')].map(e=>e.value).filter((x,i,a)=>x&&a.indexOf(x)===i),rv=v('p-r'),role=rv==='__pref'?(prefs[0]||''):rv;
-  if(num!==''&&S.p.some(p=>inTeam(p,S.team)&&!p.arch&&pNum(p,S.team)===num&&p.id!==S.edit)&&!confirm('Another player already wears #'+num+' in this team. Save anyway?'))return;
+  if(num!==''&&Player.numberTaken(S.p,S.team,num,S.edit)&&!confirm('Another player already wears #'+num+' in this team. Save anyway?'))return;
   const chk=[...document.querySelectorAll('.pt-also:checked')].map(e=>e.value),cands=[...document.querySelectorAll('.pt-also')].map(e=>e.value);
-  if(S.edit&&S.edit!=='new'){const p=S.p.find(p=>p.id===S.edit);freezeTm(p);p.name=name;p.prefs=prefs;
-    const prev=[p.teamId,...(p.also||[])],M=[...new Set([S.team,...chk,...prev.filter(i=>i!==S.team&&!cands.includes(i))])];
-    p.tm[S.team]={num,role};M.forEach(t=>{if(!prev.includes(t))p.tm[t]={num:'',role:prefs[0]||''}});prev.forEach(t=>{if(!M.includes(t))delete p.tm[t]});
-    p.teamId=M.includes(p.teamId)?p.teamId:M[0];p.also=M.filter(i=>i!==p.teamId);if(!p.also.length)delete p.also;syncPrimary(p)}
-  else{const np={id:Date.now().toString(36),teamId:S.team,name,prefs,tm:{[S.team]:{num,role}}};if(chk.length){np.also=chk;chk.forEach(t=>{np.tm[t]={num:'',role:prefs[0]||''}})}syncPrimary(np);S.p.push(np)}
+  if(S.edit&&S.edit!=='new')new Player(S.p.find(p=>p.id===S.edit)).applyEdit({name,prefs,teamId:S.team,num,role,checked:chk,candidates:cands});
+  else S.p.push(Player.create({teamId:S.team,name,prefs,num,role,also:chk}));
   saveP();S.edit=null;render()}
-function shareIn(id){const p=S.p.find(p=>p.id===id);if(!p||inTeam(p,S.team))return;freezeTm(p);p.also=[...(p.also||[]),S.team];p.tm[S.team]={num:'',role:prefsOf(p)[0]||''};saveP();render()}
+function shareIn(id){const p=S.p.find(p=>p.id===id);if(!p||inTeam(p,S.team))return;new Player(p).shareWith(S.team);saveP();render()}
 function editPlayer(id){S.edit=id;render();pfChg();const el=document.getElementById('p-n');if(el)el.focus()}
-function archivePlayer(id,on){const p=S.p.find(p=>p.id===id);if(!p)return;if(on)p.arch=true;else delete p.arch;saveP();S.edit=null;render()}
+function archivePlayer(id,on){const p=S.p.find(p=>p.id===id);if(!p)return;new Player(p).archive(on);saveP();S.edit=null;render()}
 function delPlayer(id){const p=S.p.find(p=>p.id===id),M=[p.teamId,...(p.also||[])];
-  if(M.length>1){if(confirm('Remove '+p.name+' from this team? They stay in their other teams with all their stats.')){const rest=M.filter(i=>i!==S.team);freezeTm(p);delete p.tm[S.team];p.teamId=rest[0];p.also=rest.slice(1);if(!p.also.length)delete p.also;syncPrimary(p);saveP();S.edit=null;render()}return}
+  if(M.length>1){if(confirm('Remove '+p.name+' from this team? They stay in their other teams with all their stats.')){new Player(p).leaveTeam(S.team,true);saveP();S.edit=null;render()}return}
   if(confirm('Remove '+p.name+' from the roster for good? Past matches keep their own copy, but their stats are then grouped by name only. Archive instead to keep their stats.')){S.p=S.p.filter(x=>x.id!==id);saveP();S.edit=null;render()}}
 function addTeam(){const n=document.getElementById('tm-n').value.trim();if(!n){alert('Enter a team name.');return}
   if(teamByName(n)){alert('That team already exists.');return}
   const mine=S.tab==='teams';
-  const t={id:'t'+Date.now().toString(36),name:n,mine};S.t.push(t);saveT();S.tform=false;S.team=t.id;render()}
+  const t=TMB.add(n,mine);saveT();S.tform=false;S.team=t.id;render()}
 function openTeam(id){S.team=id;S.edit=null;render();scrollTo(0,0)}
-function toggleMine(){const t=S.t.find(t=>t.id===S.team);const on=!t.mine;t.mine=on;S.tab=on?'teams':'opps';saveT();render()}
-function renameTeam(){const t=S.t.find(t=>t.id===S.team);const n=prompt('Team name',t.name);if(n&&n.trim()){t.name=n.trim();saveT();render()}}
-function delTeam(){const t=S.t.find(t=>t.id===S.team);if(confirm('Delete '+t.name+' and its roster? Matches already logged keep their data.')){S.p=S.p.filter(p=>{if(!inTeam(p,t.id))return true;const rest=[p.teamId,...(p.also||[])].filter(i=>i!==t.id);if(!rest.length)return false;freezeTm(p);delete p.tm[t.id];p.teamId=rest[0];p.also=rest.slice(1);syncPrimary(p);return true});S.t=S.t.filter(x=>x.id!==t.id);S.team=null;saveP();saveT();render()}}
+function toggleMine(){const on=TMB.toggleMine(S.team);S.tab=on?'teams':'opps';saveT();render()}
+function renameTeam(){const t=S.t.find(t=>t.id===S.team);const n=prompt('Team name',t.name);if(n&&n.trim()){TMB.rename(t.id,n.trim());saveT();render()}}
+function delTeam(){const t=S.t.find(t=>t.id===S.team);if(confirm('Delete '+t.name+' and its roster? Matches already logged keep their data.')){S.p=S.p.filter(p=>!inTeam(p,t.id)||new Player(p).leaveTeam(t.id,false));TMB.remove(t.id);S.team=null;saveP();saveT();render()}}
 const cnt=L=>{const lib=L.filter(x=>x.role==='Libero').length;return{lib,pl:L.length-lib}};
 const over=(m,L)=>{if(!ruleOf(m).roster)return'';const c=cnt(L);return c.pl>12?'The roster limit is 12 players plus liberos.':c.lib>2?'The roster limit is 2 liberos.':''};
 function luSet(s,i,f,v){const m=get(S.cur),L=m.lu[s],t=L.map(x=>({...x}));if(matchBusy(m)&&!(f==='role'&&canRoleEdit(m)))return;t[i][f]=v.trim();
@@ -353,8 +351,8 @@ function curLU(m,si){let pos=[0,1,2,3,4,5].map(i=>(m.st[si]||[])[i]||null),sl=[0
     k++;ap(k);dec(k)});
   const init=[null,null,null,null,null,null];pos.forEach((id,j)=>{init[sl[j]]=id});
   return{pos,serving:sv,dots,was,rl,init:snap||init,f5:{h:h5,a:a5,sh:sH,sa:sA},gh}}
-const f5s=(m,si)=>{const f=((m.f5||{})[si]||{}).h;return !!(f&&f.at===0&&!f.lost)};
-const f5Mid=(m,si)=>{const f=(m.f5||{})[si]||{};return !!((f.h&&f.h.lost)||f.a)};
+const f5s=(m,si)=>Lineup.fiveFromStart(m.f5,si);
+const f5Mid=(m,si)=>Lineup.fiveMidSet(m.f5,si);
 function scoutPie(m){const si=m.n,all=m.lu.h,ok=a=>a.map(id=>all.some(x=>x.pid===id)?id:null),cl=curLU(m,si),cur=S.pv==='cur';
   const stt=subState(m,si),role=id=>cl.rl[id]||((all.find(x=>x.pid===id)||{}).role),lockIds=[...stt.done].filter(id=>cl.pos.includes(id)&&role(id)!=='Libero'),ex={lock:lockIds};if(cur?cl.f5.h:f5s(m,si))ex.off6=true;if(S.pm==='sub'&&S.sb&&!m.done){ex.act='subPickPid';ex.blocked=S.sb.em?cl.pos.filter(id=>id&&role(id)==='Libero'):lockIds;ex.selPid=S.sb.out||null}
   const arr=cur?ok(cl.pos):ok(cl.init),sv=cur?(cl.serving?'h':'a'):(m.sv||{})[si],sp=all.find(x=>x.pid===cl.pos[0]);
@@ -366,8 +364,8 @@ function setServe(k){const m=get(S.cur);if(setStarted(m,curSet(m)))return;(m.sv=
 function pickPos(p){const m=get(S.cur);if(setStarted(m,curSet(m)))return;S.pick=S.pick===p?null:p;render()}
 function setSetView(i){S.setv=i;S.pick=null;render()}
 function setPos(p,pid){const m=get(S.cur),si=curSet(m);if(setStarted(m,si))return;if(p===6&&f5s(m,si))return;const a=m.st[si]=m.st[si]||[null,null,null,null,null,null];a[p-1]=pid||null;if(pid)autoFill(m,si);reAuto(m,si);save();
-  const nx=[1,2,3,4,5,6].find(q=>!a[q-1]&&!(q===6&&f5s(m,si)));S.pick=pid&&nx?nx:null;render()}
-function copyPrev(){const m=get(S.cur),si=curSet(m);if(setStarted(m,si))return;const inj=injured(m);m.st[si]=(m.st[si-1]||[]).map(id=>inj.has(id)?null:id);if(f5s(m,si))m.st[si][5]=null;reAuto(m,si);save();S.pick=null;render()}
+  const nx=Lineup.nextEmpty(a,f5s(m,si));S.pick=pid&&nx?nx:null;render()}
+function copyPrev(){const m=get(S.cur),si=curSet(m);if(setStarted(m,si))return;m.st[si]=Lineup.copyPrevious(m.st[si-1],injured(m),f5s(m,si));reAuto(m,si);save();S.pick=null;render()}
 function setFive(v){const m=get(S.cur),si=curSet(m);if(!m||setStarted(m,si)||!ruleFive(ruleOf(m)))return;const f=((m.f5=m.f5||{})[si]=m.f5[si]||{});
   if(v){f.h={at:0,q:(m.q=(m.q||0)+1)};const a=m.st[si]=m.st[si]||[null,null,null,null,null,null];a[5]=null}else if(f.h&&!f.h.lost)delete f.h;
   reAuto(m,si);save();S.pick=null;render()}
@@ -410,26 +408,13 @@ function pie(m,cur,hl,ro,dots,was,rl,ex){
       rest:e&&RL[er]?`<text x="${G.rx}" y="${G.ry}" text-anchor="middle" dominant-baseline="central" fill="${tc}" ${PIE_F} font-weight="700" font-size="22">${RL[er]}</text>`:'',
       tail:dd.map((c,i)=>{const[dx,dy]=pt(a+[-18,-6,6,18][i],153);return`<circle cx="${dx}" cy="${dy}" r="6" fill="${c==='g'?'var(--good)':'var(--bad)'}"/>`}).join('')})}).join('');
   return pieSvg(g,'Starting line-up')}
-const SYSP={'5-1':['S','H','M','O','H','M'],'6-2':['X','H','M','X','H','M'],'4-2':['X','H','M','X','H','M']};
-const RC={'Setter':'S','Outside hitter':'H','Middle blocker':'M','Opposite':'O'};
-const RN={S:'Setter',H:'Outside hitter',M:'Middle blocker',O:'Opposite',X:'Setter or Opposite'};
-const slotOk=(slot,c)=>slot==='X'?(c==='S'||c==='O'):slot===c;
-function sysSlots(m,a){const pat=SYSP[m.sys];if(!pat)return null;
-  const rs=[0,1,2,3,4,5].map(i=>{const e=m.lu.h.find(x=>x.pid===a[i]);return e&&RC[e.role]?RC[e.role]:null});let rots=[];
-  for(let r=0;r<6;r++)if(rs.every((c,i)=>!c||slotOk(pat[(i+r)%6],c)))rots.push(r);
-  return rots.length?{pat,rots}:null}
-const sysFit=(sl,i,role)=>{const c=RC[role];return !!c&&sl.rots.some(r=>slotOk(sl.pat[(i+r)%6],c))};
-function autoFill(m,si){const a=m.st[si];if(!a||!SYSP[m.sys])return;
-  for(let g=0;g<6;g++){const sl=sysSlots(m,a);if(!sl)return;
-    const placed=new Set(a.filter(Boolean)),pool=m.lu.h.filter(x=>!placed.has(x.pid)&&!injured(m).has(x.pid)),
-      one=[0,1,2,3,4,5].filter(i=>!a[i]).map(i=>({i,c:pool.filter(x=>sysFit(sl,i,x.role))})).filter(o=>o.c.length===1),cnt={};
-    one.forEach(o=>{cnt[o.c[0].pid]=(cnt[o.c[0].pid]||0)+1});
-    const pk=one.find(o=>cnt[o.c[0].pid]===1);if(!pk)return;a[pk.i]=pk.c[0].pid}}
-function sysEval(m,ok){const pat=SYSP[m.sys];if(!pat)return{state:'off'};
-  const es=ok.map(id=>m.lu.h.find(x=>x.pid===id)||null);if(es.some(e=>!e))return{state:'incomplete'};
-  const rs=es.map(e=>RC[e.role]||'?');let best=null;
-  for(let r=0;r<6;r++){const bad=[];rs.forEach((c,i)=>{if(!slotOk(pat[(i+r)%6],c))bad.push({i,exp:pat[(i+r)%6]})});if(!best||bad.length<best.bad.length)best={r,bad}}
-  return{state:best.bad.length?'bad':'ok',bad:best.bad,es}}
+const SYSP=Lineup.patterns(),RC=Lineup.roleCodes(),RN=Lineup.roleNames();
+const slotOk=(slot,c)=>Lineup.slotOk(slot,c);
+const lineupOf=m=>new Lineup(m.sys,m.lu.h);
+function sysSlots(m,a){return lineupOf(m).slots(a)}
+const sysFit=(sl,i,role)=>Lineup.fits(sl,i,role);
+function autoFill(m,si){const a=m.st[si];if(!a)return;lineupOf(m).autoFill(a,injured(m))}
+function sysEval(m,ok){return lineupOf(m).evaluate(ok)}
 function sysCheck(m,ok){const ev=sysEval(m,ok);if(ev.state==='off')return'';
   if(ev.state==='incomplete')return`<div class="mut" style="text-align:center;margin-top:6px">Fill all 6 positions to check the line-up against the ${esc(m.sys)} system.</div>`;
   if(ev.state==='ok')return`<div class="card" style="border-color:var(--good);border-width:2px"><b>Line-up matches the ${esc(m.sys)} system.</b></div>`;
@@ -524,7 +509,7 @@ function listView(){
   if(!my)h+=`<div class="card"><b>Set up your team first.</b><div class="mut">Matches use your team and its players. Add it on the Teams tab.</div><div style="margin-top:12px"><button class="pri" onclick="go('teams')">Go to Teams</button></div></div>`;
   if(S.form&&my){
     const mts=myTeams(),my2=mts.find(t=>t.id===S.nt)||my,ps=S.p.filter(p=>inTeam(p,my2.id)&&!p.arch).map(p=>tv(p,my2.id)).sort(byNum);
-    h+=`<div class="card"><datalist id="tl">${S.t.filter(t=>!t.mine).map(t=>`<option value="${esc(t.name)}">`).join('')}</datalist>
+    h+=`<div class="card"><datalist id="tl">${TMB.opponents().map(t=>`<option value="${esc(t.name)}">`).join('')}</datalist>
     ${mts.length>1?`<label for="f-t">My team</label><select id="f-t" onchange="S.nt=this.value;S.nf={a:document.getElementById('f-a').value,f:document.getElementById('f-f').value,d:document.getElementById('f-d').value,tn:document.getElementById('f-tn').value};render()">${mts.map(t=>`<option value="${t.id}"${t.id===my2.id?' selected':''}>${esc(t.name)}</option>`).join('')}</select>`:''}
     <label for="f-a">Opponent</label><input id="f-a" list="tl" autocomplete="off" value="${esc((S.nf||{}).a||'')}">
     <label for="f-tn">Tournament</label><select id="f-tn" onchange="tnPick(this.value)">${tnOpts((S.nf||{}).tn||S.ntn||'')}<option value="__new"${(S.nf||{}).tn==='__new'?' selected':''}>New tournament…</option></select><input id="f-tnn" placeholder="Tournament name" autocomplete="off" style="display:${(S.nf||{}).tn==='__new'?'block':'none'};margin-top:6px">
@@ -623,7 +608,7 @@ function teamsView(){
     if(cand.length&&!S.edit)h+=`<details class="card"${S.copen?' open':''} ontoggle="S.copen=this.open"><summary><b>Add a player from another of your teams (${cand.length})</b></summary><div class="mut" style="margin:6px 0">The player is shared, so their stats stay together.</div>${cand.map(p=>`<button class="m" onclick="shareIn('${p.id}')"><div class="row"><span class="num" style="font-size:28px;min-width:52px">${p.num?'#'+esc(p.num):'–'}</span><div><b>${esc(p.name)}</b><div class="mut">${esc([p.teamId,...(p.also||[])].map(i=>(S.t.find(x=>x.id===i)||{}).name).filter(Boolean).join(', '))}</div></div></div></button>`).join('')}</details>`;
     if(AR.length)h+=`<details class="card"${S.aopen?' open':''} ontoggle="S.aopen=this.open"><summary><b>Archived players (${AR.length})</b></summary><div class="mut" style="margin:6px 0">Hidden from new matches and line-ups. Their stats are kept. Tap a player to restore or remove.</div>${AR.map(p=>`<button class="m" onclick="editPlayer('${p.id}')"><div class="row"><span class="num" style="font-size:28px;min-width:52px">${p.num?'#'+esc(p.num):'–'}</span><div><b>${esc(p.name)}</b><div class="mut">${p.role?esc(p.role):'None'}</div></div></div></button>`).join('')}</details>`;
     return h}
-  const opp=S.tab==='opps',my=S.t.find(t=>t.mine);
+  const opp=S.tab==='opps',my=TMB.mine();
   let h=`<div class="row sp"><h1>Teams</h1>${true?`<button class="pri" onclick="S.tform=!S.tform;render()">${S.tform?'Cancel':opp?'Add opponent':my?'Add another team':'Add my team'}</button>`:''}</div><div class="seg" role="group" aria-label="My team or opponents" style="margin:10px 0">${[['teams','My team'],['opps','Opponents']].map(([k,l])=>`<button aria-pressed="${S.tab===k}" onclick="go('${k}')">${l}</button>`).join('')}</div>`;
   if(S.tform)h+=`<div class="card"><label for="tm-n">${opp?'Opponent name':'Team name'}</label><input id="tm-n" autocomplete="off"><div style="margin-top:14px"><button class="pri" onclick="addTeam()">Save team</button></div></div>`;
   if(!opp&&!S.t.length&&!S.tform)h+=`<div class="card"><b>Start with your own team.</b><div class="mut">Save it once with its players, then pick it for every match. Opponents are saved automatically when you create a match, and you can manage them under Opponents on this page.</div></div>`;
@@ -761,7 +746,7 @@ function statsView(){
   <div class="mut" style="margin-top:8px">Errors given: ${r.given}. Share of points from attack: ${r.pf?Math.round(r.kill/r.pf*100):0}%, from serve: ${r.pf?Math.round(r.ace/r.pf*100):0}%.</div></div>`});
   return h}
 
-const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 1.63.3</div>';
+const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 1.63.8</div>';
 const FXK=Store.key('fx');let fx={flash:true,sound:true};{const r=Store.read(FXK,null);if(r&&typeof r==='object')fx=Object.assign(fx,r)}
 function setFx(k,v){fx[k]=!!v;Store.write(FXK,fx);render()}
 let actx=null;
@@ -955,14 +940,12 @@ function tossView(){const ts=S.ts,m=S.sm.find(x=>x.id===ts.id);if(!m){S.ts=null;
 /* ===== Steps (breadcrumbs) ===== */
 const STEPS=[['match','Match'],['roster','Roster'],['toss','Toss'],['lineup','Line-up'],['board','Scoreboard'],['sheet','Sheet']];
 const boardStarted=m=>!!(m.sets&&m.sets.some(x=>x.on));
-const f5=(set,t)=>!!(set&&set.f5&&set.f5[t]);
-const rcapOf=(m,t)=>{const r=(m[t].pl||[]).find(p=>p.cap&&!p.lib);return r&&r.n!=null?String(r.n):null};
-const capNum=(m,t,set)=>{const on=(set.lu[t]||[]).filter(Boolean).map(String),rc=rcapOf(m,t),c=set.cap&&set.cap[t];if(rc&&on.includes(rc))return rc;return c!=null&&on.includes(String(c))?String(c):null};
+const f5=(set,t)=>Lineup.fiveInSet(set,t);
+const rcapOf=(m,t)=>Captaincy.teamCaptain(m[t].pl);
+const capNum=(m,t,set)=>Captaincy.onCourt(m[t].pl,set.lu[t],set.cap&&set.cap[t]);
 /* a captain must always be on the court: when the captain leaves (substitution or a player who cannot continue) the coach declares the game captain; the team captain takes the role back as soon as he is on the court again */
-function scCapNeed(m,t,st,out,inn){const same=(x,y)=>x!=null&&y!=null&&String(x)===String(y),pos=st.pos[t].map(x=>same(x,out)?(inn==null?null:inn):x).filter(x=>x!=null).map(String),rc=rcapOf(m,t),cur=st.cap&&st.cap[t];
-  if(rc&&pos.includes(rc))return{need:false,opts:[]};if(cur!=null&&!same(cur,out)&&pos.includes(String(cur)))return{need:false,opts:[]};
-  return{need:true,opts:pos.filter(x=>!(m[t].pl||[]).some(p=>p.lib&&String(p.n)===x))}}
-const lineupDone=m=>{const x=m.sets&&m.sets[m.cur||0];return !!(x&&['a','b'].every(t=>x.lu[t].slice(0,f5(x,t)?5:6).every(Boolean))&&(x.on||['a','b'].every(t=>capNum(m,t,x)!=null)))};
+function scCapNeed(m,t,st,out,inn){return Captaincy.mustDeclare(m[t].pl,st.pos[t],st.cap&&st.cap[t],out,inn)}
+const lineupDone=m=>{const x=m.sets&&m.sets[m.cur||0];return !!(x&&['a','b'].every(t=>Lineup.complete(x.lu[t],f5(x,t)))&&(x.on||['a','b'].every(t=>capNum(m,t,x)!=null)))};
 function bpCap(t,n){const m=S.sm.find(x=>x.id===S.mv.id),set=bset(m);if(set.on)return;(set.cap=set.cap||{})[t]=String(n);saveSM();if(lineupDone(m)){S.bp=null;S.mv.step='board';render();scrollTo(0,0);return}render()}
 function stepsDone(m){return[true,rosterDone(m),!!(m.toss&&m.toss.serve),lineupDone(m),false,false]}
 function editLocked(m,k){if(k!=='match'&&k!=='roster'&&k!=='toss')return false;return boardStarted(m)||stepsDone(m).slice(4).some(Boolean)}
@@ -1009,7 +992,7 @@ function bpFive(t){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||!m.rule||!ruleFiv
   set.f5=set.f5||{a:false,b:false};set.f5[t]=!set.f5[t];if(set.f5[t]){set.lu[t][5]=null;if(S.bp&&S.bp.t===t&&S.bp.p===6)S.bp=null}saveSM();render()}
 function bpPlace(n){const m=S.sm.find(x=>x.id===S.mv.id),set=bset(m),{t,p}=S.bp;if(set.on)return;
   set.lu[t]=set.lu[t].map(x=>x===n?null:x);set.lu[t][p-1]=n;
-  const nx=[1,2,3,4,5,6].map(k=>(p-1+k)%6+1).find(q=>!set.lu[t][q-1]&&!(q===6&&f5(set,t)));S.bp=nx?{t,p:nx}:null;saveSM();if(lineupDone(m)){S.bp=null;S.mv.step='board';render();scrollTo(0,0);return}render()}
+  const nx=Lineup.nextEmptyAfter(set.lu[t],p,f5(set,t));S.bp=nx?{t,p:nx}:null;saveSM();if(lineupDone(m)){S.bp=null;S.mv.step='board';render();scrollTo(0,0);return}render()}
 function bpClear(){const m=S.sm.find(x=>x.id===S.mv.id),set=bset(m),{t,p}=S.bp;if(set.on)return;set.lu[t][p-1]=null;saveSM();render()}
 function startSetS(){const m=S.sm.find(x=>x.id===S.mv.id),set=bset(m);if(set.on)return;if(!lineupDone(m)){alert('Both teams need a full line-up: six players, or five where a team plays with five.');return}
   if(!confirm('Start set '+(m.cur+1)+' now? The start time is recorded, and the match details, rosters, toss and line-up are locked.'))return
@@ -1089,8 +1072,9 @@ const scSetRule=(m,i)=>new RuleSet(m.rule).setLimits(i);
 function scWinner(m,i){const set=m.sets&&m.sets[i];if(!set||!set.on||set.end)return null;const{win,hard}=scSetRule(m,i),x=scState(m,i).pts;
   for(const t of['a','b']){const q=x[t],o=x[t==='a'?'b':'a'];if(q>=win&&(q-o>=2||(hard>0&&q>=hard)))return t}return null}
 const scCnt=(set,k,t)=>(set[k]||[]).filter(e=>e.t===t).length;
-const scSetsWon=(m,t)=>(m.sets||[]).filter(x=>x.end&&x.end.w===t).length;
-function scMatchWinner(m){const need=Math.floor(((m.rule&&m.rule.sets&&m.rule.sets.length)||3)/2)+1;return['a','b'].find(t=>scSetsWon(m,t)>=need)||null}
+const scM=m=>new Match(m,i=>scState(m,i).pts);
+const scSetsWon=(m,t)=>scM(m).setsWon(t);
+function scMatchWinner(m){return scM(m).winner()}
 const scEKey=(m,i)=>m.id+':'+i+':'+((m.sets[i].pts||[]).length);
 function scEndAsk(){S.sdis=null;render();const b=document.getElementById('se-c');if(b)b.focus()}
 /* End set: a set that is stopped before it is won (a team forfeits the set). The other team is credited with the points needed to win the set, the forfeiting team keeps its points, and the next set can still be played. The popup also leads to End match. */
@@ -1118,19 +1102,18 @@ function scRemCancel(){S.rmq=null;render();const b=document.getElementById('rm-b
 function scRemConfirm(){const q=S.rmq,m=q&&S.sm.find(x=>x.id===q.id);if(!m){S.rmq=null;render();return}const x=document.getElementById('rm-t'),text=String((x?x.value:q.text)||'').trim();if(!text)return;
   S.rmq=null;(m.rem=m.rem||[]).push({ts:Date.now(),set:q.i,sc:q.sc,t:q.t,text});saveSM();scLog(m,q.i,{k:'remark',t:q.t,sc:q.sc,text});render();const b=document.getElementById('rm-btn');if(b)b.focus()}
 /* ===== End of the match: reason, points per set, then the signatures ===== */
-const FINREQ=['ca','cb','r1','sc'];
+const FINREQ=Match.signaturesRequired();
 /* MVP: at the end of a match that was played out, each team nominates a player of the other team (m.mvp[t] = number of the nominated player, or '-' for no nomination) */
 /* rule option: on for custom rules unless switched off; the built-in rules do not ask for it */
 const mvpRule=r=>new RuleSet(r).mvpRequired();
-const mvpNeeded=m=>!!(m.fin&&(m.fin.reason==='win'||m.fin.reason==='time')&&mvpRule(m.rule));
-const mvpDone=m=>!mvpNeeded(m)||['a','b'].every(t=>m.mvp&&m.mvp[t]!=null);
+const mvpNeeded=m=>scM(m).mvpNeeded();
+const mvpDone=m=>scM(m).mvpDone();
 const mvpTxt=m=>m.mvp&&m.fin?['a','b'].map(t=>{const v=m.mvp[t],o=t==='a'?'b':'a';return v!=null&&v!=='-'?'MVP nominated by '+esc(m[t].name)+': '+scPn(m,o,v)+' ('+esc(m[o].name)+')':null}).filter(Boolean).join('; '):'';
 function scMvp(t,n){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||!m.fin||m.fin.signed||(t!=='a'&&t!=='b'))return;const o=t==='a'?'b':'a';if(n!=='-'&&!(m[o].pl||[]).some(p=>String(p.n)===String(n)))return;(m.mvp=m.mvp||{})[t]=String(n);saveSM();scLog(m,m.cur||0,{k:'mvp',t,n:String(n)});render();const b=document.getElementById('mvp-'+t+'-'+n);if(b)b.focus()}
 const scSignName=(m,k)=>({ca:'Captain '+m.a.name,cb:'Captain '+m.b.name,r1:'1st referee',r2:'2nd referee',sc:'Scorer'})[k]||k;
-function scFinTxt(m,r){const w=scFinWinner(m,r);return r==='win'?'Won on sets'+(w?' by '+m[w].name:''):r==='time'?'Time limit reached':r==='ffa'?m.a.name+' forfeits':r==='ffb'?m.b.name+' forfeits':r==='ffboth'?'Both teams forfeit':r==='cancel'?'Match cancelled (emergency)':r==='susp'?'Match suspended: court unavailable. To be replayed another day':'Match ended'}
-function scFinWinner(m,r){if(r==='win')return scMatchWinner(m);if(r==='ffa')return'b';if(r==='ffb')return'a';
-  if(r==='time'){const a=scSetsWon(m,'a'),b=scSetsWon(m,'b');if(a!==b)return a>b?'a':'b';let pa=0,pb=0;(m.sets||[]).forEach((z,i)=>{if(z.on){const x=scState(m,i).pts;pa+=x.a;pb+=x.b}});return pa===pb?null:pa>pb?'a':'b'}return null}
-function scFinSets(m){const o=[];(m.sets||[]).forEach((z,i)=>{if(z&&z.on){const x=z.end?{a:z.end.a,b:z.end.b}:scState(m,i).pts;o.push({i,a:x.a,b:x.b,done:!!z.end})}});return o}
+function scFinTxt(m,r){return scM(m).finishText(r)}
+function scFinWinner(m,r){return scM(m).finishWinner(r)}
+function scFinSets(m){return scM(m).finishSets()}
 function scFinAsk(reason){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||m.fin)return;S.mfq={id:m.id,reason:reason||(scMatchWinner(m)?'win':null)};render();const b=document.getElementById('fm-c');if(b)b.focus()}
 function scFinPick(r){const q=S.mfq;if(!q)return;q.reason=r;render();const b=document.getElementById('fm-r-'+r);if(b)b.focus()}
 function scFinCancel(){S.mfq=null;render()}

@@ -2192,6 +2192,18 @@
   "scLogger": {
    "cls": "ActionLog",
    "decide": false
+  },
+  "scM": {
+   "cls": "Match",
+   "decide": false
+  },
+  "lineupOf": {
+   "cls": "Lineup",
+   "decide": false
+  },
+  "TMB": {
+   "cls": "TeamBook",
+   "decide": false
   }
  }
 }
