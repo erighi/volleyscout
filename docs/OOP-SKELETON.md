@@ -99,14 +99,15 @@ The first piece is already moved as a pilot: `TimeoutRules`.
 * `builtIn()`, `all()` (plain data), `get(id)`, `forMatch(match)` (RuleSet)
 * `nameTaken(name, exceptId)`, `problem(ruleSet)`, `save(ruleSet)`, `remove(id)`
 
-**Tournament**: A group of matches with the participating teams and a default rule set.
+**Tournament** (migrated in 1.63.2): A group of matches with a default rule set and, in the coach view, the teams taking part. A value object over plain data `{id, name, <ruleField>, teams?}`; the rule set id is kept in `fmt` (coach view) or `rule` (score table), so the field name is a constructor argument until the two shapes are merged. Ids are kept as they are, so a tournament made by the organiser can later be handed to a coach under the same id.
 
-* `constructor(data)`
-* `rules()` (default RuleSet)
-* `teams()`
-* `matches()`
-* `add(match)`
+* `data()`, `id()`, `name()`, `ruleId(rules)` (the id when the rule set still exists, else ''), `rules(rules)` (RuleSet or null)
+* `teams(knownTeamIds)`, `teamsWithMatches(knownTeamIds, homeTeamIds)`, `teamsAfter(teamId, on, knownTeamIds, homeTeamIds)`
 
+**TournamentBook** (new in 1.63.2): The list of tournaments of one view (the coach list `S.tn` and the score table list `S.stt` each have one). Reads the live list through a function; saving stays with the caller.
+
+* `all()`, `find(id)`, `get(id)`, `wrap(data)`, `sortedByName()`, `nameTaken(name, exceptId)`, `ruleId(id)`
+* `create(name, ruleId, teams)`, `rename(id, name)`, `setRule(id, ruleId)` (returns the previous valid rule set id), `setTeams(id, teamIds)`, `remove(id)`
 **Match**: A match between two teams under a rule set: header data, roster per team, toss, sets, signatures, result.
 
 * `constructor(data)`
@@ -142,13 +143,13 @@ The first piece is already moved as a pilot: `TimeoutRules`.
 * `static rotate(positions)` (clockwise)
 * `static ghost(positions)` (five-player ghost rotation)
 
-**SubstitutionRules**: Who can replace whom: pairs, return once, substitute once, libero, injury, injured players. Already shared (subRep, subWhy, libWhy, emWhy).
+**SubstitutionRules** (migrated in 1.62.2): Who can replace whom in one team in one set. Players are opaque ids; events are the team's replacements in the set: `{out, in, lib, em}`. Pure rules, no match data.
 
-* `static replay(events)` (state of replacements for one team and one set)
-* `static whyNot(state, out, inn, label, injured)` ("" when allowed, else the message)
-* `static whyNotLibero(state, out, inn, label, injured, inIsLibero)`
-* `static whyNotInjury(state, out, inn, label, injured, flags)`
-* `static options(state, onCourt, pool, injured)` (allowed outs and ins (score table))
+* `static replay(events)` (who replaced whom; starters who returned; substitutes who are spent; libero swaps)
+* `static whyNot(state, out, inn, label, injured)`, `whyNotLibero(...)`, `whyNotInjury(...)` ("" when allowed, else the message)
+* `static whyNotInjuryOut(out, label, flags)` (the part that depends on the player going out), `static canSubstitute(events, injured, out, bench, max)` (a regular substitution is possible; an exceptional substitution is only allowed when it is not, since 1.63.0)
+* `static used(events)`, `static injured(events)`, `static isLiberoSwap(roleOut, roleIn)`
+* `static options(events, injured, onCourt, pool, max, canLeave)` (score table: who can leave and who can enter)
 
 **TimeoutRules**: Timeouts: the limit comes from the rule set, both views count what a team used in the set.
 
@@ -162,21 +163,20 @@ The first piece is already moved as a pilot: `TimeoutRules`.
 * `static onCourt(team, lineup, declared)` (the captain now, or null)
 * `static mustDeclare(team, state, leaving, coming)` ({need, options})
 
-**CourtSides**: Toss, first serve, court sides per set, the deciding set toss and the change of courts at 8 points.
+**CourtSides** (migrated in 1.63.1): Toss, first serve, court sides per set, the deciding set toss and the change of courts at 8 points, for the score table. An instance wraps one score table match (plain data); teams are `a` and `b`, sides `L` and `R`.
 
-* `constructor(match)`
-* `sideOf(team, setIndex)` ("L" or "R", changes at 8 in the deciding set)
-* `firstServer(setIndex)`
-* `isDecidingSet(setIndex)`
-* `swapPoint(setIndex)` (point count when the teams swap, or 0)
+* `static other(team)`, `static otherSide(side)`, `static sideName(side)`
+* `static tossResult(toss)` (`{serve, sides}` or null while the steps are incomplete), `static tossText(names, result)`
+* `isDecidingSet(i)`, `decidingSetStarted()`, `decidingTossDone()`
+* `swapPoint(i)` (point count when a team reached 8, or 0), `swapped(i)` (courts have changed)
+* `sideAtStart(team, i)`, `sideOf(team, i)` (now, with the change at 8), `firstServer(i)`
 
-**ActionLog**: Append-only log kept with the match: what happened, when, at which score.
+**ActionLog** (migrated in 1.63.3): The audit log of a score table match, kept in `match.alog` and never edited; undone and removed points stay in it. An entry is a plain object `{ts, set, k, ...}`; kinds: start, point, undo, remove, timeout, sub, mvp, swap, five, end, remark, fin, finreopen, sign, signed, reopen. The caller gives three labels (player, finish reason, signer name) for the text.
 
-* `constructor(match)`
-* `add(entry)`
-* `text(entry)` (one line of text)
-* `all()`
+* `add(setIndex, fields)` (adds time and set), `all()` (live list, does not create it)
+* `text(entry)`, `toText()` (whole log), `fileName()` (download name)
 
+The coach view's own match log (`match.log`, the scouted actions) is a different thing and is not part of this class.
 **ScoutStats**: Scouting: serve and skill grades, lost points, per player statistics with filters.
 
 * `static grades(skill)`

@@ -2,6 +2,16 @@
 > **Done in 1.60.1:** Html, Fmt and Store. `legacy.js` keeps one line aliases for them (`esc`, `ordn`, `fmtT`, `todayS`, `hm`, `hms`, `IC_L`, `IC_S`, `IC_V`, `DOCIC`, the key constants `K`, `PK` ... `ORGK` and the `saveP`/`saveT`/`save`/`saveR`/`saveSM`/`saveStt`/`saveTn`/`saveSkx`/`orgSave`/`tbSave` writers). They are removed when their callers are updated to call the classes directly.
 >
 > **Done in 1.60.2:** RuleSet and RuleBook. `legacy.js` keeps one-line aliases (`BOOK`, `BUILT`, `allRules`, `getRule`, `ruleOf`, `setRule`, `ruleText`, `ruleSub`, `ruleMin`, `rulePl`, `ruleLib`, `ruleFive`, `ruleRoster`, `swapRule`, `scSetRule`, `mvpRule`, `RD0`). The rule form screens (`ruleForm`, `syncRule`, `editRule`, `saveRule`, `delRule`, `ruleCount`) stay in legacy until `RuleEditor` is built; they now call the classes for the rules. The two views still read a set's rule differently (`setRule` clamps to the last set, `setLimits` does not); behaviour kept as it was.
+>
+> **Done in 1.62.2:** SubstitutionRules (the pure rules). `legacy.js` keeps one-line aliases `subRep`, `subWhy`, `libWhy`, `emWhy`, `subsUsed`, `injured`, `libSwap` and `scSubOpts`. The pieces that need the match or the screen (`subState`, `subCheck`, `libCheck`, `emCheck`, `subIn`, `subPickPid`, `pushSub`, `autoLib`, `libOut`, `libSetup`, ...) stay until the Match, Lineup and view classes exist.
+>
+> **Changed in 1.63.0:** an exceptional substitution (injury) is only allowed when no regular substitution is possible for the injured player (coach view; the score table has no exceptional substitution). New `regularPossible` in legacy.
+>
+> **Done in 1.63.1:** CourtSides. `legacy.js` keeps one-line aliases `SIDE`, `oppT`, `oppS`, `tossRes`, `tossText`, `isTB`, `tbSwapAt`, `tbSwapped`, `tbTossOk`, `tbLocked`, `sideOfT`, `sideNow` and `serveOfT`. The toss screen (`openToss`, `tsLk`, `tsWin`, `tsPick`, `tsOther`, `tsBack`, `tsClear`, `tsSave`, `tossLine`), `sideInfo` and `tcol` stay with the screens.
+>
+> **Done in 1.63.2:** Tournament and the new TournamentBook (coach list `TNB`, score table list `STB`). `legacy.js` keeps one-line aliases `newTn`, `tnTeams`, `tnTeamIds`, `setTnTeam`, `tnFmt`, `setTnFmt`, `renameTn`, `delTn`, `sttOf`, `sttRule` and the list sorting; the forms and lists (`tnPick`, `addTn`, `tnAddMatch`, `setTn`, `tnOpts`, `newStt`, `editStt`, `syncStt`, `sttRulePick`, `saveSttForm`, `delStt`, `sttForm`, `sttList`, `bySt`) stay with the screens. `matchBusy` is a rule about a match and waits for the Match class. Future: the organiser's tournaments should be importable by the coach; the two shapes (`fmt` and `rule`) are merged then.
+>
+> **Done in 1.63.3:** ActionLog (the score table's audit log in `match.alog`). `legacy.js` keeps one-line aliases `scLog`, `scLogTxt`, `scLogText` and a helper `scLogger(m)` that gives the class its three labels; the log screen and its buttons (`openLog`, `logView`, `lgCopy`, `lgDownload`) stay with the screens.
 
 Where every piece of the current code (`src/legacy/legacy.js`) would go. This is a **proposal**: edit the lists in `classify.js` (or tell me) and it is regenerated.
 

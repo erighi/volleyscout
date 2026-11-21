@@ -13,8 +13,8 @@ class RuleBook {
       { id: 'fivb', name: 'Official FIVB', roster: true, sets: [{ win: 25 }, { win: 25 }, { win: 25 }, { win: 25 }, { win: 15 }] },
       /* HVA: best of 3, 25 points, tie break 15, no hard limit, no match time. Timeouts and substitutions are not set, so they follow the same defaults as Official FIVB. */
       { id: 'hva', name: 'HVA', roster: false, sets: [{ win: 25 }, { win: 25 }, { win: 15 }] },
-      /* SADVA: best of 3, 21 points with a hard limit of 23, tie break 15 (hard and soft), one hour match time. Timeouts and substitutions as Official FIVB. */
-      { id: 'sadva', name: 'SADVA', roster: false, min: 60, sets: [{ win: 21, hard: 23 }, { win: 21, hard: 23 }, { win: 15, hard: 15 }] }
+      /* SADVA: best of 3, 21 points with a hard limit of 23, tie break 15 (hard and soft), one hour match time, teams may play with five players. Timeouts and substitutions as Official FIVB. */
+      { id: 'sadva', name: 'SADVA', roster: false, five: true, min: 60, sets: [{ win: 21, hard: 23 }, { win: 21, hard: 23 }, { win: 15, hard: 15 }] }
     ];
   }
 
@@ -26,6 +26,9 @@ class RuleBook {
 
   /** the rule set with this id; Local tournament when there is none */
   get(id) { return new RuleSet(this.all().find(r => r.id === id) || this._built[0]); }
+
+  /** true when a rule set with this id exists (built-in or custom) */
+  has(id) { return this.all().some(r => r.id === id); }
 
   /** the rule set of a match: its own copy (match.rule), else the one named by match.fmt, else Local tournament */
   forMatch(match) { return new RuleSet(match.rule || this._built.find(r => r.id === match.fmt) || this._built[0]); }
