@@ -62,30 +62,27 @@ The first piece is already moved as a pilot: `TimeoutRules`.
 * `static clock(ms)` (hh:mm)
 * `static clockSeconds(ms)` (hh:mm:ss)
 
-**Player**: A player: id, shirt number, name, preferred roles in order, libero flag, captain flag.
+**Player** (migrated in 1.63.8): A player of the coach's roster as a wrapper over plain data `{id, name, prefs, teamId, also, tm: {teamId: {num, role}}, num, role, arch}`. A player can be in several teams with a different number and role in each; `num` and `role` mirror the main team's. The methods that change the player change the plain data in place.
 
-* `constructor(data)`
-* `label()` ("#12 Name" for messages and buttons)
-* `isLibero()`
-* `roleIn(team)` (role in a given team (roles and numbers are team level))
+* `static roles()`, `static numberTaken(players, teamId, num, exceptId)`, `static create(fields)`
+* `data()`, `id()`, `name()`, `teamData(teamId)`, `number(teamId)`, `role(teamId)`, `view(teamId)`, `preferences()`, `isIn(teamId)`
+* `freeze()`, `syncPrimary()`, `applyEdit(fields)`, `shareWith(teamId)`, `leaveTeam(teamId, tidy)` (false when it was his only team), `archive(on)`
 
-**Team**: A team: name, players, which one is "my team". Players can belong to several teams with a different number and role in each.
+Not part of it: the player form and role pickers, the confirmations, `canRoleEdit` (a rule about the match). The skeleton's `label()` and `isLibero()` were dropped: nothing used them (a libero is a role in a team, and the label of a player in a match is built from the line-up).
+**Team** (migrated in 1.63.7): A team as a value object over plain data `{id, name, mine}` (`mine` is true for the coach's own teams, false or missing for opponents). Players belong to a team through their own data (`teamId` and `also`).
 
-* `constructor(data)`
-* `player(number)` (find by shirt number)
-* `add(player)`
-* `remove(id)`
-* `isMine()`
+* `data()`, `id()`, `name()`, `isMine()`, `static hasMember(player, teamId)`, `hasPlayer(player)`
 
-**Roster**: The players of one team for one match, with the libero and captain, and whether it is complete enough to start.
+**TeamBook** (new in 1.63.7): The list of teams (`S.t`). Reads the live list through a function; saving stays with the caller. Removing a team does not touch its players.
 
-* `constructor(team, rules)`
-* `liberos()`
-* `teamCaptain()`
-* `isComplete()` (12 + liberos, captain set (limits come from the rule set))
-* `sign(drawing)` (the team signs once the roster is complete)
-* `isSigned()`
+* `all()`, `find(id)`, `get(id)`, `mine()`, `mineAll()`, `opponents()`, `byName(name)`
+* `ensure(name)` (existing, or a new opponent), `add(name, mine)`, `rename(id, name)`, `toggleMine(id)` (returns the new state), `remove(id)`
+**Roster** (migrated in 1.63.9): The players a team brings to a match and the rules that go with them. Coach view: the match roster list `{pid, name, num, role}` (a rule set can limit it to 12 players plus 2 liberos). Score table: the team list `match[team].pl` of `{n, name, lib, cap}`; a team is ready with at least 6 players (not liberos) and a captain who is not a libero, and done when it has also signed. An instance wraps a score table match.
 
+* static: `counts(list)`, `limitProblem(list, limited)`, `compare(a, b)` (sort by shirt number, then name), `unplace(st, pid)`, `isReady(team)`, `build(rows, teamName)` (checks the editor rows: `{error}` or `{list}`)
+* instance: `ready(team)`, `signed(team)`, `done(team)`, `bothReady()`, `bothDone()`, `editorRows(team)`, `replace(team, list)` (true when a signature was removed because the list changed)
+
+Not part of it: the roster screens and their actions (`nrSel`, `nrStatus`, `luSet`, `luDel`, `luToggle`, `luGuest`, `luRow`, `luHtml`, `openRoster`, `syncRx`, `commitTeam`, `rxTeam`, `rxNext`, `saveRoster`): they read forms, ask, alert and save.
 **RuleSet** (migrated in 1.60.2): One rule set as a value object over its plain data (the same plain object that is saved and copied into each match). A missing rule set behaves like an empty one.
 
 * `data()`, `id()`, `name()`, `static blank()` (defaults of the New rule set form)
@@ -108,17 +105,14 @@ The first piece is already moved as a pilot: `TimeoutRules`.
 
 * `all()`, `find(id)`, `get(id)`, `wrap(data)`, `sortedByName()`, `nameTaken(name, exceptId)`, `ruleId(id)`
 * `create(name, ruleId, teams)`, `rename(id, name)`, `setRule(id, ruleId)` (returns the previous valid rule set id), `setTeams(id, teamIds)`, `remove(id)`
-**Match**: A match between two teams under a rule set: header data, roster per team, toss, sets, signatures, result.
+**Match** (migrated in 1.63.4, score table side): The rules of a score table match: sets won, the winner, how the match can end and who wins in each case, the MVP nominations and the signatures needed. A wrapper over the plain match data. The points of a running set are replayed from the point log elsewhere, so the caller passes `pointsOf(setIndex) -> {a, b}`.
 
-* `constructor(data)`
-* `setsWon(team)`
-* `winner()` (null until won, forfeited or ended)
-* `currentSet()`
-* `nextSet()` (starts the next set (or the tie break with its own toss))
-* `end(reason)` (won, time, forfeit, cancelled, suspended)
-* `isFinished()`
-* `resultText()`
+* `static signaturesRequired()`
+* `setsNeeded()`, `setsWon(team)`, `winner()`
+* `finishWinner(reason)` (win, ffa, ffb, time, else none), `finishSets()`, `finishText(reason)`
+* `mvpNeeded()`, `mvpDone()`
 
+Not part of it yet: the coach view's match (its sets come from the scouted log: `tally`, `setsWon`, `matchBusy`), the match form and the ask/confirm dialogs. The coach side waits for SetPlay.
 **SetPlay**: One set: line-ups, the point log, substitutions, timeouts, five-player events, remarks. State is always replayed from the logs.
 
 * `constructor(data, rules)`
@@ -129,20 +123,19 @@ The first piece is already moved as a pilot: `TimeoutRules`.
 * `removePoints(n)`
 * `state()` (positions, server, ghost rotation: asks Rotation)
 
-**Lineup**: The six court positions and the roles: placing players, the team system (5-1, 6-2, 4-2), auto fill, the five-player layout.
+**Lineup** (migrated in 1.63.5): The six court positions and the roles: the team system (5-1, 6-2, 4-2), which roles fit which position, auto fill, copying the previous set, the next empty position, the five-player layout. Positions are numbered 1 to 6; a list of positions is an array of 6 player ids (index 0 is P1). Constructed with the system and the roster (`new Lineup(m.sys, m.lu.h)`).
 
-* `constructor(positions, system)`
-* `place(position, player)`
-* `isValidFor(system)` (middles opposite each other ...)
-* `suggest(position)` (who fits the active slice)
-* `isFivePlayer()`
+* `static patterns()`, `roleCodes()`, `roleNames()`, `slotOk(slot, code)`
+* `hasSystem()`, `slots(positions)`, `static fits(slots, i, role)`, `autoFill(positions, injured)` (fills in place), `evaluate(pids)` (`off`, `incomplete`, `ok`, `bad`)
+* `static fiveFromStart(f5, si)`, `fiveMidSet(f5, si)` (coach view), `fiveInSet(set, team)` (score table)
+* `static complete(positions, five)`, `copyPrevious(previous, injured, five)`, `nextEmpty(positions, five)` (coach), `nextEmptyAfter(positions, p, five)` (score table)
+**Rotation** (migrated in 1.63.10): The two engines that replay what happened in a set into court positions, who serves and the five-player (ghost) rotations, plus the rotation of the starting positions by hand. Pure functions of plain values (no match object); the code of the two engines is the code that was in `curLU` and `scState`, moved as it was.
 
-**Rotation**: Replays the point log into positions, who serves and ghost rotations. One engine for the coach and the score table.
+* `static replay({positions, serve, roles, declarations, subs, points})` -> `{pos, serving, dots, was, rl, init, f5, gh}` (coach view; teams are `h` and `a`)
+* `static scoreState({set, five, server, captain, teamCaptain})` -> `{pts, pos, srv, gh, slot, five, marks, tos, subm, starts, col, cap}` (score table: the state of the scoresheet)
+* `static rotatePositions(positions, direction, five)` (by hand, a new array)
 
-* `static replay(lineup, points, options)` (returns the current positions and server)
-* `static rotate(positions)` (clockwise)
-* `static ghost(positions)` (five-player ghost rotation)
-
+`legacy.js` keeps `curLU`, `scState` and `rotLU` as short calls that collect the values from the match (`curLU(m, si)`, `scState(m, i)`, `rotLU(d)`). The skeleton's `ghost()` was dropped: the ghost rotation is part of the replay.
 **SubstitutionRules** (migrated in 1.62.2): Who can replace whom in one team in one set. Players are opaque ids; events are the team's replacements in the set: `{out, in, lib, em}`. Pure rules, no match data.
 
 * `static replay(events)` (who replaced whom; starters who returned; substitutes who are spent; libero swaps)
@@ -158,11 +151,11 @@ The first piece is already moved as a pilot: `TimeoutRules`.
 * `used(list, team)`
 * `left(list, team)`
 
-**Captaincy**: The game captain: the team captain whenever on court, otherwise the declared one; who must be declared after a substitution or a player who cannot continue.
+**Captaincy** (migrated in 1.63.6): The game captain in the score table: the team captain whenever he is on court, otherwise the captain declared for the set; and who must be declared when the captain leaves the court. Plain values only (roster, court numbers, declared number); numbers are compared as text.
 
-* `static onCourt(team, lineup, declared)` (the captain now, or null)
-* `static mustDeclare(team, state, leaving, coming)` ({need, options})
-
+* `static teamCaptain(players)` (number as text of the captain who is not a libero, or null)
+* `static onCourt(players, court, declared)` (the game captain's number or null)
+* `static mustDeclare(players, court, current, out, inn)` -> `{need, opts}`
 **CourtSides** (migrated in 1.63.1): Toss, first serve, court sides per set, the deciding set toss and the change of courts at 8 points, for the score table. An instance wraps one score table match (plain data); teams are `a` and `b`, sides `L` and `R`.
 
 * `static other(team)`, `static otherSide(side)`, `static sideName(side)`
@@ -177,15 +170,14 @@ The first piece is already moved as a pilot: `TimeoutRules`.
 * `text(entry)`, `toText()` (whole log), `fileName()` (download name)
 
 The coach view's own match log (`match.log`, the scouted actions) is a different thing and is not part of this class.
-**ScoutStats**: Scouting: serve and skill grades, lost points, per player statistics with filters.
+**ScoutStats** (migrated in 1.63.11): What scouting records and the statistics made from it, for the coach view. Pure functions of plain values; the current grade scales (`SC`, `SKX`) are state and stay in `legacy.js`.
 
-* `static grades(skill)`
-* `static serveStats(matches, filter)`
-* `static attendance(matches, filter)`
-* `static lostPoints(match)`
+* grades and kinds: `static grades()`, `pointTypes()`, `pointTypesHome()`, `pointTypesAway()`, `skillNames()`
+* grade scales: `defaultServeGrades()`, `defaultSkillGrades()`, `normalizeServeGrades(saved)`, `applySkillGrades(skills, saved)` (in place), `scale(skill, serve, skills, keys)`
+* counting and filter: `count(match, skill, grade)`, `filterMatch(match, filter, tournaments)`
+* statistics: `serveCounts(sl)` (per match), `serveByPlayer(matches, players, filter, tournaments, keys)` -> `{matches, rows, all}`, `attendance(matches, players, filter, tournaments)` -> `{matches, sets, rows}`
 
-
-### infra
+Not part of it: the grade settings screen and its saving (`saveScale`, `resetScale`, `saveSkx`), the scouting actions that change the match log (`serve`, `advGrade`, `undo`; these belong with SetPlay), and the tables and filter form (`serveTable`, `actRow`, `lostTable`, `statsFilter`, and the html of `serveStats` and `attendStats`). The skeleton's `lostPoints(match)` was dropped: counting lost points is `count()`.
 
 **Store** (migrated in 1.60.1): The only place that touches localStorage. Every access is guarded, so a blocked or full storage never stops the app.
 
