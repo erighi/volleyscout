@@ -18,7 +18,7 @@ class RuleSet {
 
   /** a new rule set with the defaults of the "New rule set" form */
   static blank() {
-    return new RuleSet({ id: null, name: '', min: null, to: 2, sub: 8, pl: 12, lib: 2, roster: false, five: false, swap8: true, mvp: true, pts: '', sets: [{ win: 21, hard: 23 }, { win: 21, hard: 23 }, { win: 15, hard: 15 }] });
+    return new RuleSet({ id: null, name: '', min: null, to: 2, sub: 6, pl: 12, lib: 2, roster: false, five: false, swap8: true, mvp: true, pts: '', sets: [{ win: 21, hard: 23 }, { win: 21, hard: 23 }, { win: 15, hard: 15 }] });
   }
 
   /** the sets as plain objects ({win, hard}) */
@@ -34,8 +34,8 @@ class RuleSet {
   /** timeouts per team per set (2 when not set) */
   timeoutsPerSet() { return new TimeoutRules(this._d).limit(); }
 
-  /** substitutions per team per set (8 when not set; 0 hides the counter) */
-  substitutionsPerSet() { return this._d.sub == null ? 8 : this._d.sub; }
+  /** substitutions per team per set (6 when not set or not a number; 0 hides the counter) */
+  substitutionsPerSet() { const v = this._d.sub; return v != null && !isNaN(+v) ? +v : 6; }
 
   /** match time in minutes, or null (the match's own value, else the first set that has one) */
   timeLimit() { return this._d.min || (this.sets().find(x => x.min) || {}).min || null; }
