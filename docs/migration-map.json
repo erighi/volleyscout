@@ -2204,6 +2204,18 @@
   "TMB": {
    "cls": "TeamBook",
    "decide": false
+  },
+  "UI": {
+   "cls": "UiState",
+   "decide": false
+  },
+  "LIB": {
+   "cls": "Library",
+   "decide": false
+  },
+  "DATA": {
+   "cls": "Library",
+   "decide": false
   }
  }
 }
