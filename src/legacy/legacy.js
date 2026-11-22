@@ -5,7 +5,15 @@ const TH=ScoutStats.pointTypesHome(),TA=ScoutStats.pointTypesAway();
 const G=k=>k==='--'?'<span class="dd" role="img" aria-label="minus minus"><i></i><i></i></span>':esc(k);
 const PK=Store.key('players'),TK=Store.key('teams');
 const ROLES=Player.roles();
-let S={pv:'cur',m:[],p:[],t:[],r:[],rd:null,cur:null,tab:'teams',form:false,edit:null,team:null,tform:false};
+/* S: the old single state object, now a thin alias over two parts: the data lists (Library: S.m, S.p, S.t, S.r, S.sm, S.tn, S.stt) and the screen state (UiState: everything else). It goes when the screens are classes that get both parts. */
+const UI=new UiState(),LIB=new Library(),DATA=Library.aliases();
+let S=new Proxy(UI,{
+  get:(t,k)=>k in DATA?LIB[DATA[k]]:t[k],
+  set:(t,k,v)=>{if(k in DATA)LIB[DATA[k]]=v;else t[k]=v;return true},
+  has:(t,k)=>k in DATA||k in t,
+  deleteProperty:(t,k)=>k in DATA?false:delete t[k],
+  ownKeys:t=>[...Reflect.ownKeys(t),...Object.keys(DATA)],
+  getOwnPropertyDescriptor:(t,k)=>k in DATA?{value:LIB[DATA[k]],writable:true,enumerable:true,configurable:true}:Reflect.getOwnPropertyDescriptor(t,k)});
 S.m=Store.read(K,[]);
 S.p=Store.read(PK,[]);
 S.t=Store.read(TK,[]);
@@ -228,11 +236,7 @@ const ruleMin=r=>new RuleSet(r).timeLimit();
 const tmOf=m=>m.tm&&typeof m.tm.acc==='number'?m.tm:null;
 function elapsed(m){const t=tmOf(m);return t?t.acc+(t.run?Date.now()-t.run:0):0}
 function timeLeft(m){const n=ruleMin(ruleOf(m));return n?n*60000-elapsed(m):Infinity}
-function setWin(m,si,x,y){const r=setRule(m,si),W=r.win,H=r.hard;
-  if(H){if(x>=H&&x>y)return['h','points'];if(y>=H&&y>x)return['a','points']}
-  if(x>=W&&x-y>=2)return['h','points'];if(y>=W&&y-x>=2)return['a','points'];
-  if(ruleMin(ruleOf(m))&&timeLeft(m)<=0&&x!==y)return[x>y?'h':'a','time'];
-  return null}
+function setWin(m,si,x,y){return SetPlay.coachWinner(setRule(m,si),x,y,ruleMin(ruleOf(m))?()=>timeLeft(m):null)}
 function toggleTimer(){const m=get(S.cur),t=tmOf(m);if(t.run){t.acc+=Date.now()-t.run;t.run=null}else t.run=Date.now();save();render()}
 setInterval(()=>{const el=document.getElementById('tmr');if(!el||!S.cur)return;const m=get(S.cur);if(!m)return;const l=timeLeft(m),up=l<=0?'1':'0';if(el.dataset.up!==up){render();return}el.textContent=fmtT(l)},1000);
 const byNum=(a,b)=>(parseInt(a.num,10)||999)-(parseInt(b.num,10)||999)||a.name.localeCompare(b.name);
@@ -260,7 +264,7 @@ function addMatch(){
   if(tid)m.tid=tid;
   S.m.unshift(m);save();S.form=false;S.nf=null;S.ntn=null;open_(m.id)}
 function point(t,type){const m=get(S.cur);if(m.done)return;const sv0=curLU(m,m.n).serving;m.log.push({t,type,s:m.n});rallyDone(m,sv0);save();render()}
-const autoServe=(m,si)=>{m.sv=m.sv||{};if(si>0&&si<ruleOf(m).sets.length-1&&!m.sv[si]&&m.sv[si-1])m.sv[si]=m.sv[si-1]==='h'?'a':'h'};
+const autoServe=(m,si)=>{m.sv=m.sv||{};const f=SetPlay.firstServerOf(m.sv,si,()=>ruleOf(m).sets.length);if(f)m.sv[si]=f};
 function setPd(){const m=get(S.cur);if(!m)return;S.pd=m.id+':'+m.n;render()}
 function endPopup(m,wn,sw,x,y,won){const n=m.n+1,time=sw[1]==='time',txt=time?`Time is up. ${esc(wn)} has the most points (${x}–${y}) and wins set ${n}, so the match is over.`:`${esc(wn)} has won set ${n} (${x}–${y}).${won?' That wins the match.':''}`;
   return`<div class="ov"><div class="dlg" role="alertdialog" aria-modal="true" aria-labelledby="pd-t" aria-describedby="pd-d"><b id="pd-t" style="font-size:18px">${won?'Match over':'Set '+n+' over'}</b><div id="pd-d" style="margin-top:8px">${txt}</div><div class="row" style="margin-top:14px;gap:8px;flex-wrap:nowrap"><button class="pri" style="flex:1" onclick="${won?'finish()':'endSet()'}">${won?'Finish match':'End set '+n}</button><button style="flex:1" onclick="setPd()">Continue</button></div></div></div>`}
@@ -323,8 +327,8 @@ function rosterView(m){
   return`<label for="md">Match date</label><input id="md" type="date" value="${esc(m.date)}" onchange="setDate(this.value)"><label for="mt">Tournament</label><select id="mt" onchange="setTn(this.value)">${tnOpts(m.tid||'')}<option value="__new">New tournament…</option></select><label for="mf">Tournament rules</label><select id="mf" onchange="setFmt(this.value)">${opts}</select><div class="mut" style="margin-top:6px">${esc(ruleText(ruleOf(m)))}.${matchBusy(m)?'':' Tick the players attending. Number and role changes apply to this match only.'}</div>${matchBusy(m)?'<div class="card" style="margin-top:10px"><b>Roster is locked.</b><div class="mut">The first action has been recorded, so players and shirt numbers can no longer be changed.'+(m.done?' The match is finished, so roles are locked too.':canRoleEdit(m)?' You can still change roles between sets.':' Roles can be changed again between sets.')+'</div></div>':''}<h2>Players attending</h2>${luHtml(m,'h')}`}
 const ANG={3:0,2:60,1:120,6:180,5:240,4:300};
 const RL={'Setter':'S','Opposite':'O','Middle blocker':'M','Outside hitter':'H','Libero':'L','Defensive specialist':'D'};
-const curSet=m=>S.setv==null||S.setv>m.n?m.n:S.setv;
-const setReady=(m,si)=>(m.st[si]||[]).filter(id=>id&&m.lu.h.some(x=>x.pid===id)).length===(f5s(m,si)?5:6)&&!!(m.sv||{})[si];
+const curSet=m=>SetPlay.viewedSet(m,S.setv);
+const setReady=(m,si)=>SetPlay.isReady(m,si);
 function startSet(){const m=get(S.cur);{const ev=sysEval(m,(m.st[m.n]||[]).map(id=>m.lu.h.some(x=>x.pid===id)?id:null));if(!f5s(m,m.n)&&ev.state==='bad'&&!confirm('The line-up does not match the '+m.sys+' system. Start the set anyway?'))return}if(ruleMin(ruleOf(m))&&!tmOf(m)){m.tm={acc:0,run:Date.now()};save()}m.ss=m.ss||{};m.ss[m.n]=true;if(alOf(m).on&&!m.log.some(e=>e.s===m.n)&&!(m.sb||[]).some(x=>x.s===m.n)){autoLib(m)}save();S.mt='scout';S.pv='cur';S.pick=null;render();scrollTo(0,0)}
 function curLU(m,si){return Rotation.replay({positions:m.st[si],serve:(m.sv||{})[si],roles:m.rs&&m.rs[si],declarations:(m.f5||{})[si],subs:(m.sb||[]).filter(x=>x.s===si),points:m.log.filter(e=>e.s===si).map(e=>e.t)})}
 const f5s=(m,si)=>Lineup.fiveFromStart(m.f5,si);
@@ -333,7 +337,7 @@ function scoutPie(m){const si=m.n,all=m.lu.h,ok=a=>a.map(id=>all.some(x=>x.pid==
   const stt=subState(m,si),role=id=>cl.rl[id]||((all.find(x=>x.pid===id)||{}).role),lockIds=[...stt.done].filter(id=>cl.pos.includes(id)&&role(id)!=='Libero'),ex={lock:lockIds};if(cur?cl.f5.h:f5s(m,si))ex.off6=true;if(S.pm==='sub'&&S.sb&&!m.done){ex.act='subPickPid';ex.blocked=S.sb.em?cl.pos.filter(id=>id&&role(id)==='Libero'):lockIds;ex.selPid=S.sb.out||null}
   const arr=cur?ok(cl.pos):ok(cl.init),sv=cur?(cl.serving?'h':'a'):(m.sv||{})[si],sp=all.find(x=>x.pid===cl.pos[0]);
   return`<div style="max-width:280px;margin:0 auto">${pie(m,arr,{pid:cl.pos[0],st:cl.serving?'serving':'receiving'},true,cl.dots,cl.was,cl.rl,ex)}</div><div class="mut" style="text-align:center" aria-live="polite">${cur?(cl.serving?esc(m.home)+' serving'+(sp?': '+(sp.num?'#'+esc(sp.num)+' ':'')+esc(sp.name):''):esc(m.away)+' serving')+'. Rotates when your team wins the serve back.':'Starting positions for set '+(si+1)+'.'}</div><div class="mut" style="text-align:center;font-size:13px">Dots by each slice: green means that player started a service, red means the set started on reception.</div>`}
-const setStarted=(m,si)=>si<m.n||setBusy(m,si);
+const setStarted=(m,si)=>SetPlay.isStarted(m,si);
 function reAuto(m,si){if(si!==m.n)return;m.sb=(m.sb||[]).filter(x=>!(x.s===si&&x.au&&x.k===0));if(m.ss&&m.ss[si]&&alOf(m).on&&!m.log.some(e=>e.s===si)&&!(m.sb||[]).some(x=>x.s===si))autoLib(m)}
 function setSys(k){const m=get(S.cur);if(setStarted(m,curSet(m)))return;m.sys=k;save();render()}
 function setServe(k){const m=get(S.cur);if(setStarted(m,curSet(m)))return;(m.sv=m.sv||{})[curSet(m)]=k;reAuto(m,curSet(m));save();render()}
@@ -396,16 +400,13 @@ function sysCheck(m,ok){const ev=sysEval(m,ok);if(ev.state==='off')return'';
   if(ev.state==='ok')return`<div class="card" style="border-color:var(--good);border-width:2px"><b>Line-up matches the ${esc(m.sys)} system.</b></div>`;
   const rule=m.sys==='5-1'?'setter, outside hitter, middle blocker, opposite, outside hitter, middle blocker':'setter, outside hitter, middle blocker, setter, outside hitter, middle blocker';
   return`<div class="card" style="border-color:var(--bad);border-width:2px"><b>Line-up does not match the ${esc(m.sys)} system.</b>${ev.bad.map(b=>{const e=ev.es[b.i];return`<div style="margin-top:4px">P${b.i+1} ${e.num?'#'+esc(e.num)+' ':''}${esc(e.name)}: ${e.role?esc(e.role):'no role set'}, expected ${RN[b.exp].toLowerCase()}.</div>`}).join('')}<div class="mut" style="margin-top:8px">Going anticlockwise round the pie (P1, P2, P3 to P6) the roles repeat ${rule}, from any starting position. So the middle blockers sit opposite each other, the outside hitters sit opposite each other, and ${m.sys==='5-1'?'the setter sits opposite the opposite':'the two setters sit opposite each other'}. Fix the roles on the Roster tab or move the players.</div></div>`}
-const setBusy=(m,si)=>m.log.some(e=>e.s===si)||(m.sb||[]).some(e=>e.s===si&&!e.au)||(m.sl||[]).some(e=>e.s===si)||(m.ag||[]).some(e=>e.s===si)||(m.to||[]).some(e=>e.s===si)||f5Mid(m,si);
-const canResetSet=(m,si)=>si===m.n||(si===m.n-1&&!setBusy(m,m.n));
+const setBusy=(m,si)=>SetPlay.isBusy(m,si);
+const canResetSet=(m,si)=>SetPlay.canReset(m,si);
 function resetSet(si){const m=get(S.cur);if(!m||si==null)si=m.n;if(!canResetSet(m,si))return;
   const n=si+1;
   if(!confirm('Delete everything scouted in set '+n+' (points, serves, grades, substitutions and timeouts) and start the set again? The starting line-up and first serve are kept.'+(m.done?' The match will be reopened.':'')+(m.rs&&m.rs[si]?' Roles go back to what they were in that set.':'')+' This cannot be undone.'))return;
-  m.log=m.log.filter(e=>e.s!==si);m.sb=(m.sb||[]).filter(e=>e.s!==si);m.sl=(m.sl||[]).filter(e=>e.s!==si);m.ag=(m.ag||[]).filter(e=>e.s!==si);m.to=(m.to||[]).filter(e=>e.s!==si);
-  if(m.f5&&m.f5[si]){const f=m.f5[si];if(f.h&&f.h.lost)delete f.h;delete f.a}
-  if(m.ss)delete m.ss[si];if(ruleMin(ruleOf(m)))delete m.tm;
-  if(m.rs&&m.rs[si]){const sn=m.rs[si];m.lu.h.forEach(x=>{x.role=sn[x.pid]||''});delete m.rs[si]}
-  m.n=si;m.done=false;S.pd=null;S.sb=null;S.pm=null;S.pick=null;S.setv=null;S.mt='set';S.pv='cur';save();render();scrollTo(0,0)}
+  SetPlay.discard(m,si,!!ruleMin(ruleOf(m)));
+  S.pd=null;S.sb=null;S.pm=null;S.pick=null;S.setv=null;S.mt='set';S.pv='cur';save();render();scrollTo(0,0)}
 function resetBtn(m,si){const n=si+1;
   if(canResetSet(m,si))return`<div class="card"><b>Missed something in set ${n}?</b><div class="mut">Delete everything scouted in set ${n} and scout it again. The starting line-up and first serve are kept.</div><div style="margin-top:10px"><button class="del" onclick="resetSet(${si})">Delete and re-scout set ${n}</button></div></div>`;
   return`<div class="mut" style="margin-top:8px">Set ${n} cannot be deleted on its own because a later set has already been scouted.</div>`}
@@ -709,7 +710,7 @@ function statsView(){
   <div class="mut" style="margin-top:8px">Errors given: ${r.given}. Share of points from attack: ${r.pf?Math.round(r.kill/r.pf*100):0}%, from serve: ${r.pf?Math.round(r.ace/r.pf*100):0}%.</div></div>`});
   return h}
 
-const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 1.63.11</div>';
+const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 1.64.0</div>';
 const FXK=Store.key('fx');let fx={flash:true,sound:true};{const r=Store.read(FXK,null);if(r&&typeof r==='object')fx=Object.assign(fx,r)}
 function setFx(k,v){fx[k]=!!v;Store.write(FXK,fx);render()}
 let actx=null;
@@ -939,7 +940,7 @@ const sideOfT=(m,i,t)=>new CourtSides(m).sideAtStart(t,i);
 const sideNow=(m,i,t)=>new CourtSides(m).sideOf(t,i);
 const serveOfT=(m,i)=>new CourtSides(m).firstServer(i);
 const tcol=t=>t==='a'?'var(--home)':'var(--away)';
-function bset(m){if(!m.sets)m.sets=[{lu:{a:[null,null,null,null,null,null],b:[null,null,null,null,null,null]},on:false}];if(m.cur==null)m.cur=0;return m.sets[m.cur]}
+function bset(m){return SetPlay.current(m)}
 function openLineup(id){const m=S.sm.find(x=>x.id===id);if(!m)return;bset(m);S.sx=null;S.ts=null;S.rx=null;S.bp=null;S.mv={id,step:'lineup'};render();scrollTo(0,0)}
 function openBoard(id){const m=S.sm.find(x=>x.id===id);if(!m)return;bset(m);S.sx=null;S.ts=null;S.rx=null;S.bp=null;S.mv={id,step:'board'};render();scrollTo(0,0)}
 function bpPick(t,p){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||bset(m).on||(p===6&&f5(bset(m),t)))return;S.bp={t,p};render()}
@@ -1002,16 +1003,15 @@ function lgCopy(){const m=S.mv&&S.sm.find(x=>x.id===S.mv.id);if(!m)return;const 
 function lgDownload(){const m=S.mv&&S.sm.find(x=>x.id===S.mv.id);if(!m)return;try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([scLogText(m)],{type:'text/plain'}));a.download=new ActionLog(m).fileName();document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}catch(e){S.lgmsg='Download is not available here. Use Copy log instead.';render()}}
 /* ===== End of a set: points to win, two clear points, hard limit ===== */
 const scSetRule=(m,i)=>new RuleSet(m.rule).setLimits(i);
-function scWinner(m,i){const set=m.sets&&m.sets[i];if(!set||!set.on||set.end)return null;const{win,hard}=scSetRule(m,i),x=scState(m,i).pts;
-  for(const t of['a','b']){const q=x[t],o=x[t==='a'?'b':'a'];if(q>=win&&(q-o>=2||(hard>0&&q>=hard)))return t}return null}
-const scCnt=(set,k,t)=>(set[k]||[]).filter(e=>e.t===t).length;
+function scWinner(m,i){const set=m.sets&&m.sets[i];if(!set||!set.on||set.end)return null;const{win,hard}=scSetRule(m,i);return SetPlay.winner(scState(m,i).pts,win,hard)}
+const scCnt=(set,k,t)=>SetPlay.count(set,k,t);
 const scM=m=>new Match(m,i=>scState(m,i).pts);
 const scSetsWon=(m,t)=>scM(m).setsWon(t);
 function scMatchWinner(m){return scM(m).winner()}
-const scEKey=(m,i)=>m.id+':'+i+':'+((m.sets[i].pts||[]).length);
+const scEKey=(m,i)=>SetPlay.endKey(m,i);
 function scEndAsk(){S.sdis=null;render();const b=document.getElementById('se-c');if(b)b.focus()}
 /* End set: a set that is stopped before it is won (a team forfeits the set). The other team is credited with the points needed to win the set, the forfeiting team keeps its points, and the next set can still be played. The popup also leads to End match. */
-function scFfResult(m,i,f){const{win,hard}=scSetRule(m,i),x=scState(m,i).pts,w=f==='a'?'b':'a';let need=Math.max(win,x[f]+2);if(hard&&need>hard)need=hard;const wp=Math.max(x[w],need);return{a:f==='a'?x.a:wp,b:f==='b'?x.b:wp,w,f}}
+function scFfResult(m,i,f){const{win,hard}=scSetRule(m,i);return SetPlay.forfeit(win,hard,scState(m,i).pts,f)}
 function scSetEndAsk(){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||m.fin)return;const i=m.cur||0,set=bset(m);if(!set.on||set.end)return;if(scWinner(m,i)){scEndAsk();return}S.sfq={id:m.id,reason:null};render();const b=document.getElementById('sf-c');if(b)b.focus()}
 function scSetFfPick(f){const q=S.sfq;if(!q||(f!=='a'&&f!=='b'&&f!=='susp'))return;q.reason=f;render();const b=document.getElementById('sf-r-'+f);if(b)b.focus()}
 function scSetFfCancel(){S.sfq=null;render()}
@@ -1083,45 +1083,42 @@ function scSetView(){const m=S.sm.find(x=>x.id===S.mv.id),i=S.mv&&S.mv.si,set=m&
   <div class="card"><b>${e?esc(m[e.w].name)+' won the set'+(e.ff?' ('+esc(m[e.ff].name)+' forfeited)':''):'Set in progress'}</b><div style="margin-top:4px;font-size:20px;font-weight:700">${esc(m.a.name)} ${st.pts.a} : ${st.pts.b} ${esc(m.b.name)}</div><div class="mut" style="margin-top:4px">${set.t0?'Started '+hm(set.t0):'Not started'}${e?' \u00b7 Ended '+hm(e.ts)+(mins!=null?' \u00b7 '+mins+' min':''):''}</div>${i===m.cur&&!m.fin?`<div class="row" style="margin-top:8px"><button class="pri" onclick="openBoard('${m.id}')">Back to the scoreboard</button></div>`:''}</div>
   <div style="display:flex;gap:10px;margin-top:10px">${box('a')}${box('b')}</div>
   <div class="row" style="margin-top:12px"><button onclick="goStep('sheet')">Scoresheet</button><button onclick="goStep('log')">Action log</button></div>`}
-const scQ=set=>Math.max(Date.now(),Math.max(0,...[...(set.f5m||[]),...(set.tos||[]),...(set.subs||[])].map(e=>e.q||0))+1);
+const scQ=set=>SetPlay.order(set);
 const scSubMax=m=>new RuleSet(m.rule).substitutionsPerSet();
 const scPn=(m,t,x)=>{const q=(m[t].pl||[]).find(p=>String(p.n)===String(x));return '#'+esc(x)+(q&&q.name?' '+esc(q.name):'')};
 /* who can leave and who can enter: a bench player enters once in a set; a substitute can only be replaced by the starter he replaced; a starter comes back once; the rule set limits the substitutions per set */
 function scSubOpts(m,set,t,st){const sub=(set.subs||[]).filter(e=>e.t===t),inj=new Set((set.f5m||[]).filter(e=>e.t===t).map(e=>String(e.lost))),
     court=st.pos[t].filter(x=>x!=null).map(String),pool=(m[t].pl||[]).filter(p=>!p.lib&&p.n!=null&&String(p.n)!=='').map(p=>String(p.n)).filter(x=>!court.includes(x));
   return SubstitutionRules.options(sub.map(e=>({out:String(e.out),in:String(e.inn)})),inj,court,pool,scSubMax(m),A=>!!st.col[t][A])}
-function scSubAsk(t){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!set.on||set.end||m.fin)return;if(!scSubOpts(m,set,t,scState(m,m.cur||0)).outs.length)return;S.sbq={id:m.id,t,out:null,inn:null};render();const b=document.getElementById('sb-c');if(b)b.focus()}
+function scSubAsk(t){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!SetPlay.isOpen(m,set))return;if(!scSubOpts(m,set,t,scState(m,m.cur||0)).outs.length)return;S.sbq={id:m.id,t,out:null,inn:null};render();const b=document.getElementById('sb-c');if(b)b.focus()}
 function scSubPick(k,x){const q=S.sbq;if(!q)return;if(k==='o'){q.out=x;q.inn=null;q.cap=null;const m=S.sm.find(z=>z.id===S.mv.id);if(m){const ins=scSubOpts(m,bset(m),q.t,scState(m,m.cur||0)).ins[String(x)]||[];if(ins.length===1)q.inn=ins[0]}}else if(k==='c')q.cap=x;else{q.inn=x;q.cap=null}render();const b=document.getElementById('sb-'+k+'-'+x);if(b)b.focus()}
 function scSubCancel(){const t=S.sbq&&S.sbq.t;S.sbq=null;render();const b=t&&document.getElementById('sb-btn-'+t);if(b&&!b.disabled)b.focus()}
 function scSubConfirm(){const q=S.sbq;S.sbq=null;if(!q||q.out==null||q.inn==null){render();return}scSub(q.t,q.out,q.inn,q.cap);const b=document.getElementById('sb-btn-'+q.t);if(b&&!b.disabled)b.focus()}
-function scSub(t,out,inn,cap){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!set.on||set.end||m.fin)return;const o=scSubOpts(m,set,t,scState(m,m.cur||0));
+function scSub(t,out,inn,cap){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!SetPlay.isOpen(m,set))return;const o=scSubOpts(m,set,t,scState(m,m.cur||0));
   if(!o.outs.includes(String(out))||!(o.ins[String(out)]||[]).includes(String(inn)))return;const cn=scCapNeed(m,t,scState(m,m.cur||0),out,inn);if(cn.need&&!(cap!=null&&cn.opts.includes(String(cap))))return;(set.subs=set.subs||[]).push(Object.assign({t,out:String(out),inn:String(inn),at:(set.pts||[]).length,q:scQ(set)},cn.need?{cap:String(cap)}:{}));saveSM();scLog(m,m.cur||0,{k:'sub',t,out:String(out),inn:String(inn),sc:scSc(m,m.cur||0),left:Math.max(0,scSubMax(m)-set.subs.filter(e=>e.t===t).length),cap:cn.need?String(cap):undefined});render()}
 /* remove points from a team (rotation fault found a few points later): the team's last n points are taken out of the log wherever they are; timeouts, substitutions and five-player entries stay, moved back so that they keep their place among the remaining points */
-function scRemoveAsk(t){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!set.on||set.end||m.fin||!scState(m,m.cur||0).pts[t])return;S.rpq={id:m.id,t,n:1};render();const b=document.getElementById('rp-c');if(b)b.focus()}
+function scRemoveAsk(t){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!SetPlay.isOpen(m,set)||!scState(m,m.cur||0).pts[t])return;S.rpq={id:m.id,t,n:1};render();const b=document.getElementById('rp-c');if(b)b.focus()}
 function scRemoveN(d){const q=S.rpq,m=q&&S.sm.find(x=>x.id===q.id);if(!m)return;const mx=scState(m,m.cur||0).pts[q.t];q.n=Math.max(1,Math.min(mx,q.n+d));render();const b=document.getElementById(d<0?'rp-less':'rp-more');if(b)b.focus()}
 function scRemoveCancel(){const t=S.rpq&&S.rpq.t;S.rpq=null;render();const b=t&&document.getElementById('rp-btn-'+t);if(b&&!b.disabled)b.focus()}
 function scRemoveConfirm(){const q=S.rpq;S.rpq=null;if(!q){render();return}scRemove(q.t,q.n);const b=document.getElementById('rp-btn-'+q.t);if(b&&!b.disabled)b.focus()}
-function scRemove(t,n){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!set.on||set.end||m.fin)return;const pts=set.pts||[],idx=[];
-  for(let j=pts.length-1;j>=0&&idx.length<(+n||1);j--)if(pts[j]===t)idx.push(j);if(!idx.length)return;
-  const sc0=scSc(m,m.cur||0),gone=new Set(idx);['f5m','tos','subs'].forEach(k=>(set[k]||[]).forEach(e=>{e.at=e.at-idx.filter(j=>j<e.at).length}));
-  set.pts=pts.filter((_,j)=>!gone.has(j));saveSM();scLog(m,m.cur||0,{k:'remove',t,n:idx.length,sc0,sc:scSc(m,m.cur||0)});render()}
-function scToAsk(t){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!set.on||set.end||m.fin||scToLeft(m,set,t)<1)return;S.toc={id:m.id,t};render();const b=document.getElementById('to-c');if(b)b.focus()}
+function scRemove(t,n){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!SetPlay.isOpen(m,set))return;const sc0=scSc(m,m.cur||0),k=SetPlay.removePoints(set,t,n);if(!k)return;
+  saveSM();scLog(m,m.cur||0,{k:'remove',t,n:k,sc0,sc:scSc(m,m.cur||0)});render()}
+function scToAsk(t){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!SetPlay.isOpen(m,set)||scToLeft(m,set,t)<1)return;S.toc={id:m.id,t};render();const b=document.getElementById('to-c');if(b)b.focus()}
 function scToCancel(){const t=S.toc&&S.toc.t;S.toc=null;render();const b=t&&document.getElementById('to-btn-'+t);if(b&&!b.disabled)b.focus()}
 function scToConfirm(){const q=S.toc;S.toc=null;if(!q){render();return}scTo(q.t);const b=document.getElementById('to-btn-'+q.t);if(b&&!b.disabled)b.focus()}
-function scTo(t){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!set.on||set.end||m.fin||scToLeft(m,set,t)<1)return;(set.tos=set.tos||[]).push({t,at:(set.pts||[]).length,q:scQ(set)});saveSM();scLog(m,m.cur||0,{k:'timeout',t,sc:scSc(m,m.cur||0),left:scToLeft(m,set,t)});render()}
-function scLeave(t,num,reason,cap){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||!m.rule||!ruleFive(m.rule)||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!set.on||set.end||m.fin)return;
+function scTo(t){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!SetPlay.isOpen(m,set)||scToLeft(m,set,t)<1)return;(set.tos=set.tos||[]).push({t,at:(set.pts||[]).length,q:scQ(set)});saveSM();scLog(m,m.cur||0,{k:'timeout',t,sc:scSc(m,m.cur||0),left:scToLeft(m,set,t)});render()}
+function scLeave(t,num,reason,cap){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||!m.rule||!ruleFive(m.rule)||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!SetPlay.isOpen(m,set))return;
   const st=scState(m,m.cur||0);if(st.five[t]||!st.pos[t].some(x=>x!=null&&String(x)===String(num)))return;
   const cn=scCapNeed(m,t,st,num,null);if(cn.need&&!(cap!=null&&cn.opts.includes(String(cap))))return;(set.f5m=set.f5m||[]).push(Object.assign({t,at:(set.pts||[]).length,lost:num,reason:reason||'Injury',q:Date.now()},cn.need?{cap:String(cap)}:{}));S.lv=null;saveSM();scLog(m,m.cur||0,{k:'five',t,lost:num,reason:reason||'Injury',sc:scSc(m,m.cur||0)});render()}
 function scLvOpen(t){S.lv=S.lv&&S.lv.t===t?null:{t,reason:'Injury'};render()}
 function scLvWho(t,x){const m=S.sm.find(z=>z.id===S.mv.id);if(!m||!S.lv)return;const st=scState(m,m.cur||0);if(scCapNeed(m,t,st,x,null).need){S.lv.out=x;render();return}scLeave(t,x,S.lv.reason)}
 function scLvBack(){if(S.lv){delete S.lv.out;render()}}
 function scLvReason(r){if(S.lv){S.lv.reason=r;render()}}
-function scPt(t){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!set.on||set.end||m.fin)return;(set.pts=set.pts||[]).push(t);saveSM();{const i=m.cur||0,x=scState(m,i);scLog(m,i,{k:'point',t,sc:[x.pts.a,x.pts.b],sv:x.srv,gh:x.gh||null})}render();{const b=document.getElementById('sw-c');if(b)b.focus()}}
-const scCanUndo=set=>!!(set&&set.on&&!set.end&&((set.pts&&set.pts.length)||(set.f5m&&set.f5m.length)||(set.tos&&set.tos.length)||(set.subs&&set.subs.length)));
+function scPt(t){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||(t!=='a'&&t!=='b'))return;const set=bset(m);if(!SetPlay.isOpen(m,set))return;(set.pts=set.pts||[]).push(t);saveSM();{const i=m.cur||0,x=scState(m,i);scLog(m,i,{k:'point',t,sc:[x.pts.a,x.pts.b],sv:x.srv,gh:x.gh||null})}render();{const b=document.getElementById('sw-c');if(b)b.focus()}}
+const scCanUndo=set=>SetPlay.canUndo(set);
 function scSwapOk(){const m=S.sm.find(x=>x.id===S.mv.id);if(!m)return;const i=m.cur||0,set=bset(m);if(!tbSwapped(m,i))return;set.swk=tbSwapAt(m,i);saveSM();const x=scState(m,i);scLog(m,i,{k:'swap',t:set.pts[set.swk-1],sc:[x.pts.a,x.pts.b]});render()}
 function scUndo(){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||m.fin)return;const set=bset(m);if(!scCanUndo(set))return;
-  const K=(set.pts||[]).length,c=[];let u=null;(set.f5m||[]).forEach((e,j)=>{if(e.at===K)c.push({k:'f',j,q:e.q||0})});(set.tos||[]).forEach((e,j)=>{if(e.at===K)c.push({k:'t',j,q:e.q||0})});(set.subs||[]).forEach((e,j)=>{if(e.at===K)c.push({k:'s',j,q:e.q||0})});
-  if(c.length){c.sort((x,y)=>y.q-x.q);const t=c[0];if(t.k==='f'){const e=set.f5m[t.j];u={what:'five',t:e.t,lost:e.lost};set.f5m.splice(t.j,1);if(!set.f5m.length)delete set.f5m}else if(t.k==='s'){const e=set.subs[t.j];u={what:'sub',t:e.t,out:e.out,inn:e.inn};set.subs.splice(t.j,1);if(!set.subs.length)delete set.subs}else{const e=set.tos[t.j];u={what:'timeout',t:e.t};set.tos.splice(t.j,1);if(!set.tos.length)delete set.tos}}else{u={what:'point',t:set.pts[set.pts.length-1]};set.pts.pop()}
+  const u=SetPlay.undo(set);
   saveSM();scLog(m,m.cur||0,Object.assign({k:'undo'},u,{sc:scSc(m,m.cur||0)}));render()}
 function boardView(){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||!m.toss||!m.toss.serve){S.mv=null;return scorerMatches()}
   if(isTB(m,m.cur||0)&&!tbTossOk(m)&&!bset(m).on){S.ts={id:m.id,tb:true,w:null,c:null,o:null};S.mv={id:m.id,step:'toss'};return tossView()}

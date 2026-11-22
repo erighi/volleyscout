@@ -113,15 +113,12 @@ Not part of it: the roster screens and their actions (`nrSel`, `nrStatus`, `luSe
 * `mvpNeeded()`, `mvpDone()`
 
 Not part of it yet: the coach view's match (its sets come from the scouted log: `tally`, `setsWon`, `matchBusy`), the match form and the ask/confirm dialogs. The coach side waits for SetPlay.
-**SetPlay**: One set: line-ups, the point log, substitutions, timeouts, five-player events, remarks. State is always replayed from the logs.
+**SetPlay** (rules migrated in 1.63.12): The rules and calculations of one set, for both views, as static functions of plain match data. Coach teams are `h` and `a`; score table teams are `a` and `b`. The state of a set (positions, server) is replayed by `Rotation`. The actions that change the screen or ask the user are not part of it yet (they go with the view classes).
 
-* `constructor(data, rules)`
-* `score()` ({a, b})
-* `isWon()` (points to win, two clear points, hard limit)
-* `addPoint(team)`
-* `undo()`
-* `removePoints(n)`
-* `state()` (positions, server, ghost rotation: asks Rotation)
+* coach view: `coachWinner(rule, x, y, timeLeft)`, `firstServerOf(servers, si, setCount)`, `isBusy(m, si)`, `isStarted(m, si)`, `canReset(m, si)`, `isReady(m, si)`, `viewedSet(m, viewed)`, `discard(m, si, hasTimeLimit)` (what resetting a set removes, in place)
+* score table: `current(m)`, `isOpen(m, set)`, `winner(pts, win, hard)`, `forfeit(win, hard, pts, f)`, `count(set, kind, team)`, `endKey(m, i)`, `order(set)`, `canUndo(set)`, `undo(set)` (in place, returns what was undone), `removePoints(set, team, n)` (in place, returns how many)
+
+The skeleton's `score()`, `isWon()`, `addPoint()` and `state()` were dropped: the score and state come from `Rotation.scoreState` and `Rotation.replay`, and adding a point is one line in the action.
 
 **Lineup** (migrated in 1.63.5): The six court positions and the roles: the team system (5-1, 6-2, 4-2), which roles fit which position, auto fill, copying the previous set, the next empty position, the five-player layout. Positions are numbered 1 to 6; a list of positions is an array of 6 player ids (index 0 is P1). Constructed with the system and the roster (`new Lineup(m.sys, m.lu.h)`).
 
@@ -287,11 +284,15 @@ Not part of it: the grade settings screen and its saving (`saveScale`, `resetSca
 
 ### app
 
-**UiState**: Transient screen state (open pop-ups, selections, current tab). Data lives in the domain classes, never here.
+**UiState** (migrated in 1.64.0): Transient screen state: the open screen and tab, selections, open dialogs and forms, the pick in progress. Nothing here is saved and nothing here is data. Plain fields, with these methods for code that works with names.
 
-* `get(name)`
-* `set(name, value)`
-* `reset()`
+* `static fields()` (the 46 screen state names in use, sorted), `get(name)`, `set(name, value)`, `has(name)`, `clear(name)`, `reset(names)`
+
+**Library** (new in 1.64.0): The data the app works with, as lists: `matches`, `players`, `teams`, `rules`, `scoreMatches`, `tournaments`, `scoreTournaments`. Only data. Saving and loading stay with the caller (through `Store`).
+
+* `static aliases()` (the old short names `m`, `p`, `t`, `r`, `sm`, `tn`, `stt` mapped to the names above), `static names()`
+
+`legacy.js` keeps `S` as a thin alias (a Proxy) over both: `S.m`, `S.p`, `S.t`, `S.r`, `S.sm`, `S.tn` and `S.stt` read and write the Library, every other `S.x` reads and writes the UiState. It goes when the screens are classes that receive the two parts. A test (`t162.js`) fails when the code uses an `S.x` that is neither a data list nor in `UiState.fields()`.
 
 **Router**: Which view, tab and screen are shown.
 
