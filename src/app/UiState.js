@@ -9,6 +9,7 @@
 class UiState {
   constructor() {
     this.pv = 'cur'; this.rd = null; this.cur = null; this.tab = 'teams'; this.form = false; this.edit = null; this.team = null; this.tform = false;
+    this.stab = 'matches'; this.sx = null; this.ts = null; this.mv = null;
   }
 
   /** the names of the screen state fields in use, sorted (what each one means is documented where it is used) */

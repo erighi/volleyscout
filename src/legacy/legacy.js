@@ -6,7 +6,7 @@ const G=k=>k==='--'?'<span class="dd" role="img" aria-label="minus minus"><i></i
 const PK=Store.key('players'),TK=Store.key('teams');
 const ROLES=Player.roles();
 /* S: the old single state object, now a thin alias over two parts: the data lists (Library: S.m, S.p, S.t, S.r, S.sm, S.tn, S.stt) and the screen state (UiState: everything else). It goes when the screens are classes that get both parts. */
-const UI=new UiState(),LIB=new Library(),DATA=Library.aliases();
+const UI=App.ui(),LIB=App.library(),DATA=Library.aliases(),ROUTER=App.router();
 let S=new Proxy(UI,{
   get:(t,k)=>k in DATA?LIB[DATA[k]]:t[k],
   set:(t,k,v)=>{if(k in DATA)LIB[DATA[k]]=v;else t[k]=v;return true},
@@ -17,13 +17,10 @@ let S=new Proxy(UI,{
 S.m=Store.read(K,[]);
 S.p=Store.read(PK,[]);
 S.t=Store.read(TK,[]);
-const THK=Store.key('theme');
-let themeMode='auto';{const r=Store.text(THK);if(r==='light'||r==='dark')themeMode=r}
-function applyTheme(){const d=document.documentElement;if(themeMode==='auto')d.removeAttribute('data-theme');else d.setAttribute('data-theme',themeMode);
-  const dk=themeMode==='dark'||(themeMode==='auto'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches),mt=document.querySelector('meta[name=theme-color]');if(mt)mt.setAttribute('content',dk?'#0c1a1d':'#0e6b73')}
-function setTheme(k){themeMode=k;if(k==='auto')Store.remove(THK);else Store.setText(THK,k);applyTheme();render()}
-try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(themeMode==='auto')applyTheme()})}catch(e){}
-applyTheme();
+const SET_THEMES=Theme.modes();
+Theme.start();
+function applyTheme(){Theme.apply()}
+function setTheme(k){Theme.set(k);render()}
 const saveP=()=>{Store.write(PK,S.p)};
 const saveT=()=>{Store.write(TK,S.t)};
 const save=()=>{Store.write(K,S.m)};
@@ -183,7 +180,7 @@ function toReport(m){const L=m.to||[];if(!L.length)return'';const top=Math.max(m
   const rows=Array.from({length:top+1},(_,si)=>L.filter(e=>e.s===si).map(e=>`<tr><td>Set ${si+1}</td><td>${esc(e.t==='h'?m.home:m.away)}</td><td>${e.sc[0]}–${e.sc[1]}</td></tr>`).join('')).join('');
   return`<h2>Timeouts</h2><div class="card sc"><table><tr><th>Set</th><th>Called by</th><th>Score</th></tr>${rows}</table><div class="mut" style="font-size:13px;margin-top:6px">Score when the timeout was recorded: ${esc(m.home)} first, then ${esc(m.away)}.</div></div>`}
 const TBK=Store.key('board'),TBC=['#111827','#d33','#1f6feb','#16a34a'];let TB=null,tbEl=null;
-const tbDark=()=>themeMode==='dark'||(themeMode==='auto'&&!!window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches);
+const tbDark=()=>Theme.isDark();
 const tbIc=c=>tbDark()&&c==='#111827'?'#f1f5f9':c;
 const tbHome=[null,[260,520],[260,370],[180,370],[100,370],[100,520],[180,520]];
 function tbDefault(){const m=S.cur&&get(S.cur);let pos=[];try{if(m)pos=curLU(m,m.n).pos}catch(e){}
@@ -247,8 +244,8 @@ const esc=s=>Html.esc(s);
 const get=id=>S.m.find(m=>m.id===id);
 const sc=(m,i)=>{let h=0,a=0;m.log.forEach(e=>{if(e.s===i){e.t==='h'?h++:a++}});return[h,a]};
 const target=(m)=>m.n>=4?15:25;
-function go(t){S.tab=t;S.cur=null;S.form=false;S.edit=null;S.team=null;S.tform=false;S.rd=null;render()}
-function open_(id){S.cur=id;S.mt=get(id).log.length?'scout':'set';S.pick=null;S.sb=null;S.lm=false;S.pm=null;S.setv=null;S.pv='cur';render();scrollTo(0,0)}
+function go(t){ROUTER.goCoach(t);render()}
+function open_(id){ROUTER.openCoachMatch(id,!!get(id).log.length);render();scrollTo(0,0)}
 function nrSel(){const sel=document.getElementById('f-t'),tid=(sel&&sel.value)||(myTeam()||{}).id;return[...document.querySelectorAll('.nr:checked')].map(e=>tv(S.p.find(p=>p.id===e.value),tid))}
 function nrStatus(){const el=document.getElementById('nr-st'),f=document.getElementById('f-f');if(!el||!f)return;
   const L=nrSel(),rl=getRule(f.value),fv=rl.roster,c=cnt(L);const rt=document.getElementById('f-rt');if(rt)rt.textContent=ruleText(rl);el.textContent=fv?`${c.pl} of 12 players, ${c.lib} of 2 liberos`:`${L.length} attending`;el.style.color=over({rule:rl},L)?'var(--bad)':''}
@@ -632,13 +629,12 @@ function rulesHtml(){
 function backupHtml(){return `<div class="mut">Data lives only on this device. Export a file, send it to your other device (AirDrop, email, messages, cloud drive) and import it there. Export also works as a backup.</div><div class="row" style="margin-top:12px"><button class="pri" onclick="exportData()">Export data</button></div><div class="row" style="margin-top:10px"><button onclick="pickImport('replace')">Import and replace</button><button onclick="pickImport('merge')">Import and add</button></div><div class="mut" style="margin-top:8px"><b>Replace</b> makes this device match the file. <b>Add</b> keeps what is here and adds the matches, teams and players that are missing.</div><input id="imp" type="file" accept=".json,application/json" style="display:none" onchange="importFile(this)">`}
 /* ===== Settings: one page builder for both views. Every group says in which views it is shown. To show a group (or a part of one) in another view, add that view to its list; nothing is rebuilt. ===== */
 const settingsNm=(L,k)=>((L.find(x=>x[0]===k)||[])[1])||'';
-const SET_THEMES=[['auto','Auto'],['light','Light'],['dark','Dark']];
-const settingsThemeHtml=()=>`<h2 style="margin-top:0">Theme</h2><div class="seg" role="group" aria-label="Theme">${[['auto','Auto'],['light','Light'],['dark','Dark']].map(([k,l])=>`<button aria-pressed="${themeMode===k}" onclick="setTheme('${k}')">${l}</button>`).join('')}</div><div class="mut" style="margin-top:6px">Auto follows your device setting.</div>`;
+const settingsThemeHtml=()=>`<h2 style="margin-top:0">Theme</h2><div class="seg" role="group" aria-label="Theme">${[['auto','Auto'],['light','Light'],['dark','Dark']].map(([k,l])=>`<button aria-pressed="${Theme.mode()===k}" onclick="setTheme('${k}')">${l}</button>`).join('')}</div><div class="mut" style="margin-top:6px">Auto follows your device setting.</div>`;
 const settingsLayoutHtml=()=>`<h2>Scout layout</h2><div class="seg" role="group" aria-label="Scout layout in settings">${LAYOUTS.map(([k,l])=>`<button aria-pressed="${layoutMode===k}" onclick="setLayout('${k}')">${l}</button>`).join('')}</div><div class="mut" style="margin-top:6px"><b>Extended:</b> everything in one column, for phones and small screens. <b>Compact:</b> for larger screens, to fit more without scrolling. The pie is on the left, with the scores and the timeouts in a column on its right.</div>`;
 const settingsScoutHtml=()=>`<h2 style="margin-top:0">Default scouting level</h2><div class="seg" role="group" aria-label="Default scouting level">${LVL.map(([k,l])=>`<button aria-pressed="${defMode===k}" onclick="setDefMode('${k}')">${l}</button>`).join('')}</div><div class="mut" style="margin-top:6px">The level the Scout page starts at each time the app is opened. The cog on the Scout page still switches level, until the app is closed and reopened.</div><h2>Tap feedback</h2><div>${[['flash','Colour flash on scouting buttons'],['sound','Click sound on scouting buttons']].map(([k,l])=>`<div class="row sp" style="margin:6px 0"><span>${l}</span><div class="seg" role="group" aria-label="${l}">${[[true,'On'],[false,'Off']].map(([v,t])=>`<button aria-pressed="${fx[k]===v}" onclick="setFx('${k}',${v})">${t}</button>`).join('')}</div></div>`).join('')}</div>`;
 const settingsGradesHtml=()=>`<div class="mut">The same five symbols are used for every skill. The symbols are fixed; you can rename each one and change its description. Open a skill to edit it. For serves, a ${G('--')} gives the opponents the point and a ${G('++')} gives your team the point. Only serves are graded on the Scout page for now.</div>${Object.keys(SKN).map(sk=>`<details class="card" ${S.gopen&&S.gopen[sk]?'open':''} ontoggle="(S.gopen=S.gopen||{})['${sk}']=this.open"><summary><b>${SKN[sk]} grades</b></summary>${gScale(sk).map((x,i)=>`<div style="margin-top:10px"><b>${G(x.k)}</b><label for="g-${sk}-n${i}">Short label</label><input id="g-${sk}-n${i}" maxlength="12" value="${esc(x.n)}"><label for="g-${sk}-d${i}">Description</label><input id="g-${sk}-d${i}" value="${esc(x.d)}"></div>`).join('')}<div class="row" style="margin-top:12px"><button class="pri" onclick="saveScale('${sk}')">Save</button><button onclick="resetScale('${sk}')">Reset to defaults</button></div></details>`).join('')}`;
 const SETTINGS=[
-  {id:'app',title:'Appearance',views:['coach','scorer'],hint:v=>settingsNm(SET_THEMES,themeMode)+(v==='coach'?' \u00b7 '+settingsNm(LAYOUTS,layoutMode):''),body:v=>settingsThemeHtml()+(v==='coach'?settingsLayoutHtml():'')},
+  {id:'app',title:'Appearance',views:['coach','scorer'],hint:v=>settingsNm(SET_THEMES,Theme.mode())+(v==='coach'?' \u00b7 '+settingsNm(LAYOUTS,layoutMode):''),body:v=>settingsThemeHtml()+(v==='coach'?settingsLayoutHtml():'')},
   {id:'sct',title:'Scouting',views:['coach'],hint:()=>settingsNm(LVL,defMode),body:()=>settingsScoutHtml()},
   {id:'org',title:'Organiser',views:['scorer'],hint:()=>ORG.name||'',body:()=>orgBody()},
   {id:'rul',title:'Tournament rules',views:['coach'],hint:()=>allRules().length+' rule sets',body:()=>rulesHtml()},
@@ -710,7 +706,7 @@ function statsView(){
   <div class="mut" style="margin-top:8px">Errors given: ${r.given}. Share of points from attack: ${r.pf?Math.round(r.kill/r.pf*100):0}%, from serve: ${r.pf?Math.round(r.ace/r.pf*100):0}%.</div></div>`});
   return h}
 
-const VER='<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version 1.64.0</div>';
+const VER=App.versionHtml();
 const FXK=Store.key('fx');let fx={flash:true,sound:true};{const r=Store.read(FXK,null);if(r&&typeof r==='object')fx=Object.assign(fx,r)}
 function setFx(k,v){fx[k]=!!v;Store.write(FXK,fx);render()}
 let actx=null;
@@ -726,10 +722,8 @@ function renderCoach(){
   ['matches','teams','stats','settings'].forEach(t=>{const b=document.getElementById('t-'+t);if((S.tab===t||(t==='teams'&&S.tab==='opps'))&&!m)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});nrStatus();applyFx()}
 
 /* ===== Views: picker, Score table (VolleyScore) ===== */
-const APPK=Store.key('appMode'),SCK=Store.key('scoreMatches');
-let appMode=null;{const r=Store.text(APPK);if(r==='coach'||r==='scorer')appMode=r}
+const SCK=Store.key('scoreMatches');
 S.sm=Store.read(SCK,[]);
-S.stab='matches';S.sx=null;S.ts=null;S.mv=null;
 const saveSM=()=>{Store.write(SCK,S.sm)};
 const STK=Store.key('scoreTournaments');
 S.stt=[];{const r=Store.read(STK,[]);if(Array.isArray(r))try{S.stt=r.filter(t=>t&&t.id&&t.name)}catch(e){}}
@@ -737,11 +731,11 @@ S.td=null;
 const saveStt=()=>{Store.write(STK,S.stt)};
 const sttOf=id=>(id&&STB.find(id))||null;
 const sttRule=t=>{const r=t&&STB.wrap(t).rules(BOOK);return r?r.data():null};
-const NAV_COACH=document.getElementById('mainnav').innerHTML;
-const NAV_SCORER='<button id="t-smatches" onclick="goS(\'matches\')">Matches</button><button id="t-stournaments" onclick="goS(\'tournaments\')">Tournaments</button><button id="t-srules" onclick="goS(\'rules\')">Rules</button><button id="t-ssettings" onclick="goS(\'settings\')">Settings</button>';
-function setApp(m){appMode=m;Store.setText(APPK,m);S.cur=null;S.tab=m==='coach'?'teams':'matches';S.stab='matches';S.sx=null;S.mv=null;S.rd=null;render();scrollTo(0,0)}
-function changeView(){appMode=null;Store.remove(APPK);S.cur=null;S.sx=null;S.rd=null;render();scrollTo(0,0)}
-function goS(t){S.stab=t;S.td=null;S.lv=null;S.toc=null;S.sbq=null;S.rpq=null;S.sx=null;S.ts=null;S.rx=null;S.mv=null;S.rd=null;render();scrollTo(0,0)}
+const NAV_COACH=App.navHtml('coach');
+const NAV_SCORER=App.navHtml('scorer');
+function setApp(m){App.setMode(m);ROUTER.chooseMode(m);render();scrollTo(0,0)}
+function changeView(){App.setMode(null);ROUTER.changeMode();render();scrollTo(0,0)}
+function goS(t){ROUTER.goScorer(t);render();scrollTo(0,0)}
 function pickView(){const b=(k,t,d)=>`<button onclick="setApp('${k}')" style="display:block;width:100%;text-align:left;padding:16px;margin:12px 0;font-size:16px"><b style="font-size:18px">${t}</b><div class="mut" style="margin-top:4px">${d}</div></button>`;
   return`<h1>VolleyScout</h1><div class="mut">Choose how this device will be used. The choice is remembered. You can change it later in Settings.</div>${b('coach','Coach view','Your own team: roster, line-ups, rotation, substitutions and scouting.')}${b('scorer','Score table','Official scoring of a match between two teams. Set the match up in advance, then score it.')}`}
 const todayS=()=>Fmt.today();
@@ -1239,6 +1233,7 @@ function renderScorer(){const t=S.stab;
   document.getElementById('app').innerHTML=(t==='rules'?(S.rd?ruleForm():'<h1>Rules</h1>'+rulesHtml()):t==='settings'?scorerSettings():t==='tournaments'?sttList():scorerMatches())+VER;
   ['matches','tournaments','rules','settings'].forEach(k=>{const b=document.getElementById('t-s'+k);if(!b)return;if(t===k)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});fitSheet();fitCrumbs();sgBind()}
 function render(){const nav=document.getElementById('mainnav'),app=document.getElementById('app');
+  const appMode=App.mode();
   if(appMode===null){nav.style.display='none';app.innerHTML=pickView()+VER;return}
   nav.style.display='';
   if(appMode==='scorer'){if(nav.dataset.m!=='s'){nav.innerHTML=NAV_SCORER;nav.dataset.m='s'}renderScorer();return}

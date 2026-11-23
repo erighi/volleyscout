@@ -2216,6 +2216,10 @@
   "DATA": {
    "cls": "Library",
    "decide": false
+  },
+  "ROUTER": {
+   "cls": "Router",
+   "decide": false
   }
  }
 }

@@ -195,10 +195,11 @@ Not part of it: the grade settings screen and its saving (`saveScale`, `resetSca
 * `static set(name, value)`
 * `static groups(view)` (ids of the groups visible in a view)
 
-**Theme**: Auto, light and dark theme.
+**Theme** (migrated in 1.64.2): The colour theme of the device: auto (follows the device), light or dark. The choice is remembered on the device; the theme is put on the page through the `data-theme` attribute of the document and the colour of the browser bar (the `theme-color` meta tag). Infra: it may touch the document, the window and `Store`.
 
-* `static apply()`
-* `static set(mode)`
+* `static modes()` (`[key, label]` for the choice), `mode()` (read from the device once, then in memory), `isDark()`, `apply()`, `set(mode)` (remembers, auto forgets, then applies), `start()` (applies now and follows the device's light/dark changes)
+
+`legacy.js` keeps `applyTheme` and `setTheme` (set, then `render()`), `SET_THEMES` and `tbDark` as short calls. A device without light/dark support is treated as light.
 
 **Feedback**: Flash and sound feedback on taps.
 
@@ -294,32 +295,16 @@ Not part of it: the grade settings screen and its saving (`saveScale`, `resetSca
 
 `legacy.js` keeps `S` as a thin alias (a Proxy) over both: `S.m`, `S.p`, `S.t`, `S.r`, `S.sm`, `S.tn` and `S.stt` read and write the Library, every other `S.x` reads and writes the UiState. It goes when the screens are classes that receive the two parts. A test (`t162.js`) fails when the code uses an `S.x` that is neither a data list nor in `UiState.fields()`.
 
-**Router**: Which view, tab and screen are shown.
 
-* `go(tab)`
-* `open(screen, params)`
-* `current()`
+**App** (migrated in 1.64.1): The entry point and the root of the app: it makes the two parts of the app state, the router, and knows which view the device uses and the version. `index.html` calls `App.start()`; while the screens still live in `legacy.js`, `start` hands over to them.
 
-**App**: The only entry point: index.html calls App.start().
+* `static version()` (the version shown on every screen; bump it here, in `index.html` and in `sw.js`), `versionHtml()`
+* `static ui()`, `library()`, `router()` (made once; `legacy.js` takes `UI`, `LIB` and `ROUTER` from here)
+* `static mode()` ('coach', 'scorer' or null; read from the device once, kept in memory), `setMode(mode)` (null forgets)
+* `static navHtml(mode)` (the buttons of the navigation bar: the coach bar is the one in `index.html`, the score table's come from `ScorerView.tabs()`)
 
-* `static start()` (registers the service worker, picks the view, first render)
-* `static view()` (the active View)
-* `static changeView()` (coach view or score table)
+**Router** (migrated in 1.64.1): Which view, tab and screen are shown: the changes to the screen state when the user moves around. It only changes the state; `render()` and scrolling stay with the caller. Constructed with the `UiState`.
 
-## Decisions to take before the big moves
+* `goCoach(tab)`, `openCoachMatch(id, hasLog)`, `goScorer(tab)`, `chooseMode(mode)`, `changeMode()`
 
-1. **Two data shapes.** The coach view identifies players by an id and keeps a scouting log; the score table identifies them by shirt number and keeps sets, points and substitutions. `Player`, `Roster`, `Match` and `SetPlay` want one shape. Either the classes read both saved formats (no migration of saved data), or we convert saved data once. This decides how much the domain classes can be shared.
-2. **Rotation.** `curLU` (coach) and `scState` (score table) both replay a log into positions and server. One `Rotation` class is the largest single win and the highest risk.
-3. **Static or instance.** Pure rules are static classes (`SubstitutionRules`); things with state are instances (`Match`, `SetPlay`, `Roster`). Say if you prefer one style everywhere.
-4. **Screens.** `boardView` (19 KB) and `sheetHtml` (11 KB) are single functions. They become `Screen` classes made of smaller methods, not just moved.
-5. **State.** The global `S` mixes saved data and screen state. Saved data moves to the domain classes and `Store`; screen state moves to `UiState`.
-
-## Suggested order
-
-1. Leaf classes: `Html`, `Fmt`, `Store`.
-2. `RuleSet`, `RuleBook`, then the rules that are already shared and tested: `SubstitutionRules`, `TimeoutRules`, `Captaincy`, `CourtSides`.
-3. `PieView`, `SignaturePad`, `Crumbs`, `TacticalBoard`.
-4. `Settings`, `Theme`, `Feedback`, `Organiser`, `SettingsPage`, `Backup`.
-5. `Player`, `Team`, `Roster`, `Tournament`, `ActionLog`, `ScoutStats`.
-6. `Match`, `SetPlay`, `Lineup`, `Rotation`.
-7. The screens (`CoachView`, `ScorerView` and their `Screen` classes), then `Scoresheet`.
+Not part of it: `render`, `renderCoach`, `renderScorer` and `pickView` (they build the screens, which are not classes yet).
