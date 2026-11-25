@@ -7,7 +7,7 @@
  */
 class App {
   /** the version shown on every screen (the cache name in sw.js and the file versions in index.html carry it too) */
-  static version() { return '1.64.2'; }
+  static version() { return '1.65.0'; }
 
   /** the version line at the bottom of every screen */
   static versionHtml() { return '<div class="mut" style="text-align:center;margin-top:28px;font-size:12px">Version ' + App.version() + '</div>'; }

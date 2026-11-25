@@ -36,6 +36,18 @@
 > **Done in 1.64.1:** App and Router. `legacy.js` keeps `go`, `open_`, `goS`, `setApp` and `changeView` as short functions (router, then `render()` and scroll), `VER`, `NAV_COACH`, `NAV_SCORER` from `App`, and `render` asks `App.mode()`. `render`, `renderCoach`, `renderScorer` and `pickView` stay until the screens are classes. Next: the small infra classes (Theme, Organiser, Settings, Feedback, Backup), the ui classes, then CoachView and ScorerView.
 >
 > **Done in 1.64.2:** Theme. `legacy.js` keeps `applyTheme`, `setTheme`, `SET_THEMES` and `tbDark` as short calls and starts it with `Theme.start()`. Next in the order: Organiser, Settings, Feedback, Backup (infra), then the ui classes, then CoachView and ScorerView.
+>
+> **Done in 1.64.3:** Organiser. `legacy.js` keeps `orgLogoOk`, `orgSetName`, `orgClearLogo`, `orgPickLogo` as short calls and `orgBody` (html) until `SettingsPage` exists. Next in the order: Settings, Feedback, Backup (infra), then the ui classes, then CoachView and ScorerView.
+>
+> **Done in 1.64.4:** Settings (scouting level and scout layout). `legacy.js` keeps `setMode`, `setDefMode`, `applyLayout`, `setLayout` as short calls and `COG` for `lvlHead`. Next in the order: Feedback, Backup (infra), then the ui classes, then CoachView and ScorerView.
+>
+> **Done in 1.64.5:** Feedback (flash and click sound). `legacy.js` keeps `setFx` and `applyFx` as short calls because they use the screen state `S.fx` and `render()`. Next in the order: Backup (infra), then the ui classes, then CoachView and ScorerView.
+>
+> **Done in 1.64.6:** Backup, the last infra class. `legacy.js` keeps `exportData`, `applyBackup`, `pickImport` and `importFile` as short calls (they use `LIB`, `SC`, `SKX`, the saving functions, `S` and `render()`). Next in the order: the ui classes, then CoachView and ScorerView.
+>
+> **Done in 1.64.7:** SettingsPage, the first ui class. `legacy.js` keeps `lvlHead`, `toggleLM`, `settingsParts`, `settingsPage`, `settingsView` and `scorerSettings` as short calls. Next in the order: the other ui classes, then CoachView and ScorerView.
+>
+> **Done in 1.65.0:** Crumbs (the step bar, step flags and edit lock), with one change of behaviour: the Scoreboard entry is now always the last step before the Scoresheet (golden master re-recorded: 8 groups, only the bar order differs). Going to steps and the read-only step pages stay in `legacy.js` until `ScorerView`. Next: the other ui classes, then CoachView and ScorerView.
 
 Where every piece of the current code (`src/legacy/legacy.js`) would go. This is a **proposal**: edit the lists in `classify.js` (or tell me) and it is regenerated.
 
@@ -64,18 +76,18 @@ Where every piece of the current code (`src/legacy/legacy.js`) would go. This is
 | ActionLog | domain | 7 | 4.4 | 0 |
 | ScoutStats | domain | 24 | 12.9 | 0 |
 | Store | infra | 47 | 2.5 | 0 |
-| Backup | infra | 7 | 4.0 | 0 |
-| Settings | infra | 13 | 1.7 | 0 |
+| Backup | infra | 4 | 0.9 | 0 |
+| Settings | infra | 4 | 0.5 | 0 |
 | Theme | infra | 4 | 0.6 | 0 |
-| Feedback | infra | 7 | 1.6 | 0 |
-| Organiser | infra | 6 | 1.6 | 0 |
+| Feedback | infra | 2 | 0.3 | 0 |
+| Organiser | infra | 5 | 1.0 | 0 |
 | PieView | ui | 15 | 8.7 | 0 |
 | SignaturePad | ui | 13 | 4.9 | 0 |
-| Crumbs | ui | 17 | 5.1 | 0 |
+| Crumbs | ui | 11 | 1.8 | 0 |
 | TacticalBoard | ui | 19 | 6.8 | 0 |
 | Scoresheet | ui | 7 | 12.5 | 0 |
 | RuleEditor | ui | 6 | 6.3 | 0 |
-| SettingsPage | ui | 14 | 6.5 | 0 |
+| SettingsPage | ui | 5 | 1.1 | 0 |
 | Screen | views | 0 | 0.0 | 0 |
 | View | views | 0 | 0.0 | 0 |
 | CoachView | views | 47 | 46.8 | 45 |
@@ -205,13 +217,13 @@ K, PK, TK, THK, saveP, saveT, save, SK, SKXK, GRK, RK, saveR, TBK, TBC, tbSave, 
 ### Backup (infra, 4.0 KB)
 Export, import and transfer of all data between devices.
 
-buildBackup, exportData, parseBackup, applyBackup, impMode, pickImport, importFile
+exportData, applyBackup, pickImport, importFile
 
 
 ### Settings (infra, 1.7 KB)
 The user settings of both views: theme, layout, default scout level, feedback, organiser, and which groups each view shows.
 
-defMode, scoutMode, setMode, setDefMode, LVL, COG, layoutMode, applyLayout, setLayout, LAYOUTS
+setMode, setDefMode, applyLayout, setLayout
 
 3 start-up statement(s) (loading saved data, event listeners).
 
@@ -225,7 +237,7 @@ themeMode, applyTheme, setTheme, SET_THEMES
 ### Feedback (infra, 1.6 KB)
 Flash and sound feedback on taps.
 
-fx, setFx, actx, clickSound, applyFx
+setFx, applyFx
 
 2 start-up statement(s) (loading saved data, event listeners).
 
@@ -233,7 +245,7 @@ fx, setFx, actx, clickSound, applyFx
 ### Organiser (infra, 1.6 KB)
 Organiser name or logo shown on the scoresheet.
 
-ORG, orgLogoOk, orgSetName, orgClearLogo, orgPickLogo, orgBody
+orgLogoOk, orgSetName, orgClearLogo, orgPickLogo, orgBody
 
 
 ### PieView (ui, 8.7 KB)
@@ -275,7 +287,7 @@ rulesHtml, RD0, newRule, editRule, syncRule, ruleForm
 ### SettingsPage (ui, 6.5 KB)
 Builds the Settings page from the groups the current view shows.
 
-layoutPick, lvlHead, lvlMenu, backupHtml, settingsNm, settingsThemeHtml, settingsLayoutHtml, settingsScoutHtml, settingsGradesHtml, SETTINGS, settingsBox, settingsPage, settingsView, scorerSettings
+lvlHead, settingsParts, settingsPage, settingsView, scorerSettings
 
 
 ### CoachView (views, 46.8 KB)

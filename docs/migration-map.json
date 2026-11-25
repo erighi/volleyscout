@@ -997,24 +997,8 @@
    "cls": "CoachView",
    "decide": true
   },
-  "MDK": {
-   "cls": "Store",
-   "decide": false
-  },
   "ADVK": {
    "cls": "Store",
-   "decide": false
-  },
-  "DMK": {
-   "cls": "Store",
-   "decide": false
-  },
-  "defMode": {
-   "cls": "Settings",
-   "decide": false
-  },
-  "scoutMode": {
-   "cls": "Settings",
    "decide": false
   },
   "setMode": {
@@ -1022,22 +1006,6 @@
    "decide": false
   },
   "setDefMode": {
-   "cls": "Settings",
-   "decide": false
-  },
-  "LVL": {
-   "cls": "Settings",
-   "decide": false
-  },
-  "COG": {
-   "cls": "Settings",
-   "decide": false
-  },
-  "LYK": {
-   "cls": "Store",
-   "decide": false
-  },
-  "layoutMode": {
    "cls": "Settings",
    "decide": false
   },
@@ -1049,23 +1017,11 @@
    "cls": "Settings",
    "decide": false
   },
-  "LAYOUTS": {
-   "cls": "Settings",
-   "decide": false
-  },
-  "layoutPick": {
-   "cls": "SettingsPage",
-   "decide": false
-  },
   "toggleLM": {
    "cls": "CoachView",
    "decide": true
   },
   "lvlHead": {
-   "cls": "SettingsPage",
-   "decide": false
-  },
-  "lvlMenu": {
    "cls": "SettingsPage",
    "decide": false
   },
@@ -1093,23 +1049,11 @@
    "cls": "CoachView",
    "decide": true
   },
-  "buildBackup": {
-   "cls": "Backup",
-   "decide": false
-  },
   "exportData": {
    "cls": "Backup",
    "decide": false
   },
-  "parseBackup": {
-   "cls": "Backup",
-   "decide": false
-  },
   "applyBackup": {
-   "cls": "Backup",
-   "decide": false
-  },
-  "impMode": {
    "cls": "Backup",
    "decide": false
   },
@@ -1125,40 +1069,8 @@
    "cls": "RuleEditor",
    "decide": false
   },
-  "backupHtml": {
-   "cls": "SettingsPage",
-   "decide": false
-  },
-  "settingsNm": {
-   "cls": "SettingsPage",
-   "decide": false
-  },
   "SET_THEMES": {
    "cls": "Theme",
-   "decide": false
-  },
-  "settingsThemeHtml": {
-   "cls": "SettingsPage",
-   "decide": false
-  },
-  "settingsLayoutHtml": {
-   "cls": "SettingsPage",
-   "decide": false
-  },
-  "settingsScoutHtml": {
-   "cls": "SettingsPage",
-   "decide": false
-  },
-  "settingsGradesHtml": {
-   "cls": "SettingsPage",
-   "decide": false
-  },
-  "SETTINGS": {
-   "cls": "SettingsPage",
-   "decide": false
-  },
-  "settingsBox": {
-   "cls": "SettingsPage",
    "decide": false
   },
   "settingsPage": {
@@ -1225,23 +1137,7 @@
    "cls": "App",
    "decide": false
   },
-  "FXK": {
-   "cls": "Store",
-   "decide": false
-  },
-  "fx": {
-   "cls": "Feedback",
-   "decide": false
-  },
   "setFx": {
-   "cls": "Feedback",
-   "decide": false
-  },
-  "actx": {
-   "cls": "Feedback",
-   "decide": false
-  },
-  "clickSound": {
    "cls": "Feedback",
    "decide": false
   },
@@ -1601,16 +1497,12 @@
    "cls": "Crumbs",
    "decide": false
   },
-  "DOCIC": {
-   "cls": "Html",
-   "decide": false
-  },
   "crumbs": {
    "cls": "Crumbs",
    "decide": false
   },
   "showStep": {
-   "cls": "Crumbs",
+   "cls": "ScorerView",
    "decide": false
   },
   "openMatch": {
@@ -1618,7 +1510,7 @@
    "decide": true
   },
   "goStep": {
-   "cls": "Crumbs",
+   "cls": "ScorerView",
    "decide": false
   },
   "stepHead": {
@@ -1638,15 +1530,15 @@
    "decide": false
   },
   "matchRO": {
-   "cls": "Crumbs",
+   "cls": "ScorerView",
    "decide": false
   },
   "rosterRO": {
-   "cls": "Crumbs",
+   "cls": "ScorerView",
    "decide": false
   },
   "tossRO": {
-   "cls": "Crumbs",
+   "cls": "ScorerView",
    "decide": false
   },
   "hm": {
@@ -1654,7 +1546,7 @@
    "decide": false
   },
   "lockedM": {
-   "cls": "Crumbs",
+   "cls": "ScorerView",
    "decide": false
   },
   "libLine": {
@@ -2093,18 +1985,6 @@
    "cls": "ScorerView",
    "decide": true
   },
-  "ORGK": {
-   "cls": "Store",
-   "decide": false
-  },
-  "ORG": {
-   "cls": "Organiser",
-   "decide": false
-  },
-  "orgSave": {
-   "cls": "Store",
-   "decide": false
-  },
   "orgLogoOk": {
    "cls": "Organiser",
    "decide": false
@@ -2219,6 +2099,10 @@
   },
   "ROUTER": {
    "cls": "Router",
+   "decide": false
+  },
+  "settingsParts": {
+   "cls": "SettingsPage",
    "decide": false
   }
  }
