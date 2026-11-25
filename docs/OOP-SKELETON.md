@@ -182,18 +182,23 @@ Not part of it: the grade settings screen and its saving (`saveScale`, `resetSca
 * `static read(key, fallback)` / `static write(key, value)` (JSON)
 * `static text(key)` / `static setText(key, value)` / `static remove(key)` (plain text values)
 
-**Backup**: Export, import and transfer of all data between devices.
+**Backup** (migrated in 1.64.6): Export, import and transfer of all data between devices. The backup is one JSON file (`{app:'volleyscout', v:22, exported, data}`) with the coach's matches, players, teams, rule sets and tournaments, the score table's matches and tournaments, the serve scale and the skill grades. Export shares the file where the device can, else downloads it. Import either replaces everything on the device or adds what is missing (nothing is deleted). Infra: it uses the page (file input, file reader, share sheet, download link). It works on `Library`; the serve scale and the skill grades are still kept by the old code, so they come in as parameters, and saving is done through the functions it is given (`io`).
 
-* `static build()` (all data as one object)
-* `static exportFile()`
-* `static parse(text)` (validates a backup)
-* `static apply(backup, mode)` (replace or merge)
+* `static version()` (22), `build(lib, scale, skills)`, `fileName()`, `exportFile(lib, scale, skills)`, `send(text, name)`
+* `static parse(text)` (the data, or `null` when the file is not a VolleyScout backup)
+* `static apply(lib, data, mode, io)` (`'replace'` makes the lists match the file, any other mode adds what is missing; `io` = `{saveScorer, saveTours, setScale, setSkills, saveLists}`, called in that order), `merge(lib, data)` (teams and tournaments matched by name without case, everything else by id; players, matches and the teams of tournaments are pointed at what was already here)
+* `static mode()` (the import mode chosen last, kept as given; `'replace'` at the start), `pick(mode)` (chooses it and opens the file picker), `importFile(input, apply, say, ask)` (reads the file, checks it, asks to confirm, applies, tells the result)
 
-**Settings**: The user settings of both views: theme, layout, default scout level, feedback, organiser, and which groups each view shows.
+`legacy.js` keeps `exportData` (passes `LIB`, `SC`, `SKX`), `applyBackup` (gives `Backup.apply` the saving functions and the scale and skills code, then resets the screen state and redraws), `pickImport` and `importFile` (pass `alert`, `confirm` and `applyBackup`), (the settings group is `SettingsPage.backup`). `buildBackup`, `parseBackup` and `impMode` are gone.
 
-* `static get(name)`
-* `static set(name, value)`
-* `static groups(view)` (ids of the groups visible in a view)
+**Settings** (migrated in 1.64.4): Two choices of the coach view that are remembered on the device: the scouting level (Basic or Enhanced) and the scout layout (Extended or Compact). The scouting level has a default (saved) and a level in use (the default at the start, changed from the Scout page without saving). The layout is put on the page through the `data-layout` attribute of the document. Infra: `applyLayout` touches the page. Which groups each view shows stays with the screens (`SettingsPage`, `CoachView.settingsGroups`), so the skeleton's `get`, `set` and `groups` were dropped.
+
+* `static levels()` (`[key, label]`), `layouts()`
+* `static load()` (reads the saved choices once at the start, forgets the old scouting mode key of earlier versions), `ensure()`
+* `static defLevel()`, `level()`, `layout()`
+* `static setLevel(k)` (in use only), `setDefLevel(k)` (saved, and in use), `setLayout(k)` (saved and applied), `applyLayout()`; anything but `'adv'` or `'compact'` gives Basic or Extended
+
+`legacy.js` keeps `Settings.load()` at the old place, `setMode` and `setDefMode` (call, close the level menu, `render()`), `applyLayout`, `setLayout`, and `lvlHead` (see `SettingsPage`). `scoutMode`, `defMode`, `layoutMode`, `LVL` and `LAYOUTS` are gone: the code calls `Settings.level()`, `defLevel()`, `layout()`, `levels()`, `layouts()`.
 
 **Theme** (migrated in 1.64.2): The colour theme of the device: auto (follows the device), light or dark. The choice is remembered on the device; the theme is put on the page through the `data-theme` attribute of the document and the colour of the browser bar (the `theme-color` meta tag). Infra: it may touch the document, the window and `Store`.
 
@@ -201,19 +206,22 @@ Not part of it: the grade settings screen and its saving (`saveScale`, `resetSca
 
 `legacy.js` keeps `applyTheme` and `setTheme` (set, then `render()`), `SET_THEMES` and `tbDark` as short calls. A device without light/dark support is treated as light.
 
-**Feedback**: Flash and sound feedback on taps.
+**Feedback** (migrated in 1.64.5): The flash and the click sound when a scouting button is tapped (the buttons that call `serve(`, `advGrade(` or `point(`). The two switches (flash, sound) are remembered on the device through `Store`; both are on by default. The sound is a short beep from the Web Audio API (nothing happens where it is missing or fails); the flash is a CSS class on the button, or on the "Graded" card when the screen was redrawn and the button is gone. Infra: it listens to taps on the document and plays sound. The request for the flash travels through the screen state `S.fx`, which the screens own, so the skeleton's `enable` and `tap` were replaced by the methods below.
 
-* `static enable(flash, sound)`
-* `static tap()`
+* `static load()` (reads the saved switches once at the start), `options()` (`{flash, sound}`), `flashOn()`, `soundOn()`, `set(k, v)` (saves)
+* `static isScoutCall(onclick)`, `beep()`, `tap(e)` (beeps; gives the flash request `{k, t}`, `null` when the flash is off, or `undefined` when the tap is not a scouting button), `start(pending)` (listens to every tap before the buttons' own handlers and passes `tap`'s result on)
+* `static flashClass(k)` (`fx-bad` for `--`, `fx-good` for `++`, `fx-away` for a point for the opponents, else `fx`), `flash(request)` (requests older than 1.5 s are dropped)
 
-**Organiser**: Organiser name or logo shown on the scoresheet.
+`legacy.js` keeps `Feedback.load()` and `Feedback.start(r=>{S.fx=r})` at the old place, `setFx` (set, then `render()`) and `applyFx` (takes `S.fx`, clears it, calls `Feedback.flash`). `fx`, `FXK`, `actx` and `clickSound` are gone; the Scouting settings group reads `Feedback.options()`.
 
-* `static name()`
-* `static logo()`
-* `static save(name, logo)`
+**Organiser** (migrated in 1.64.3): The organiser of the tournament, shown in the first cell at the top of the scoresheet: the logo if there is one, otherwise the name. Name and logo are remembered on the device through `Store`. Infra: `pickLogo` uses the page (file reader, image, canvas); it reports problems through functions it is given.
 
+* `static maxName()` (60), `maxLogo()` (`[400, 160]`), `load()` (reads the saved value once at the start; a damaged value gives an empty organiser), `data()`
+* `static name()`, `logo()`, `logoOk()` (base64 data URL of a png, jpeg, webp or gif), `save()`
+* `static setName(v)` (cut to 60 characters), `setLogo(dataUrl)`, `clearLogo()`
+* `static scale(w, h)`, `size(w, h)` (the size an image is drawn at, at least 1 by 1), `pickLogo(input, done, fail)` (image check, scaling, png, save; `fail(message)` leaves everything unchanged)
 
-### ui
+`legacy.js` keeps `Organiser.load()` at the old place, `orgLogoOk`, `orgSetName`, `orgClearLogo` (clear, then `render()`), `orgPickLogo` (`render` and `alert` as the two functions) and `orgBody` (the settings group html, called through `settingsParts`). `ORG`, `ORGK` and `orgSave` are gone.
 
 **PieView**: The line-up pie: geometry, slice, number, lock, replaced numbers. Already shared (pieGeom, pieSlice, pieCorner, pieSvg) with two adapters (coach, score table).
 
@@ -229,11 +237,13 @@ Not part of it: the grade settings screen and its saving (`saveScale`, `resetSca
 * `static clear(id)`
 * `static save(id)`
 
-**Crumbs**: The steps at the top of a match (Match, Roster, Toss, Line-up, Scoreboard, sets, Signatures).
+**Crumbs** (migrated in 1.65.0, ui): The steps at the top of a match in the score table view, in this order: Match, Roster, Toss, Line-up, then the tie-break toss, one entry per played set and the signatures when there are any, then the Scoreboard (**always the last step before the Scoresheet**, a change of 1.65.0: it used to come right after the Line-up), the Scoresheet button and the Log button; and the rule about when the first steps can no longer be edited. Which steps are done depends on the roster and line-up checks, which the old code still owns, so the caller works them out and passes `done`: the six flags from `done()`. Going to a step (`showStep`, `goStep`, `openMatch`) changes the screen state and opens screens, so it stays with the old code until `ScorerView` exists. The skeleton's `html`, `go` and `isLocked` became the methods below.
 
-* `static html(match, current)`
-* `static go(match, step)`
-* `static isLocked(match, step)` (editing is blocked once play has started)
+* `static steps()` (`[key, label]`), `boardStarted(m)`, `done(m, rosterOk, lineupOk)`, `locked(m, k, doneFn)` (Match, Roster and Toss are locked once the board started; `doneFn` is asked only when needed)
+* `static html(m, cur, done)` (the bar; `m` is null before a match exists), `head(m, k, done)`, `soon(m, k, done)`
+* `static roLine(team)`, `roNote(k)`, `startedTxt(set)`, `fit()` (scrolls the bar to the current step)
+
+`legacy.js` keeps short calls with the old names (`STEPS`, `boardStarted`, `stepsDone`, `editLocked`, `crumbs`, `stepHead`, `stepSoon`, `roLine`, `roNote`, `startedTxt`, `fitCrumbs`, `lockedM`), the navigation (`showStep`, `goStep`, `openMatch`) and the read-only pages (`matchRO`, `rosterRO`, `tossRO`), which go with `ScorerView`. `DOCIC` is gone.
 
 **TacticalBoard**: The white court tactical board with drawing tools.
 
@@ -252,13 +262,13 @@ Not part of it: the grade settings screen and its saving (`saveScale`, `resetSca
 * `static form(ruleSet)`
 * `static list()` (rule sets as cards)
 
-**SettingsPage**: Builds the Settings page from the groups the current view shows.
+**SettingsPage** (migrated in 1.64.7, the first ui class): Builds the Settings page, and the small scouting level menu on the Scout page. The page is a list of groups (Appearance, Scouting, Organiser, Tournament rules, Grades, Backup and transfer); every group says in which views it is shown (`'coach'` or `'scorer'`). To show a group in another view, add that view to its list; nothing is rebuilt. The groups that live in classes read them directly (`Theme`, `Settings`, `Feedback`, `Organiser`). What the old code still owns comes in as `parts`: `{sopen, gopen, org(), rules(), ruleCount(), skills, scale(skill), glyph(grade)}`: which groups and grade lists are open (screen state), the organiser and rule set groups, the skill names, the grades of a skill and the grade symbol. The strings call the old handlers (`setTheme`, `setLayout`, `setDefMode`, `setFx`, `setMode`, `toggleLM`, `exportData`, `pickImport`, `importFile`, `saveScale`, `resetScale`, `changeView`). The skeleton's `html` and `group` became `page` and `groups`.
 
-* `static html(view)`
-* `static group(id)` (one group (appearance, scouting, organiser, rules, grades, backup))
+* `static cog()`, `layoutPick()`, `lvlHead(title, open)` (title line with the level and the cog; `open` shows the menu), `lvlMenu()`
+* `static nameOf(list, key)`, `theme()`, `layout()`, `scout()`, `grades(parts)`, `backup()`
+* `static groups()` (`{id, title, views, hint(view, parts), body(view, parts)}`), `box(id, title, hint, body, sopen)`, `page(view, parts)`
 
-
-### views
+`legacy.js` keeps `lvlHead` (passes `!!S.lm`), `toggleLM` (changes the screen state), `settingsParts` (gives the class the screen state and the old pieces), `settingsPage`, `settingsView` (the rule form when `S.rd` is set, else the coach page) and `scorerSettings`. `COG`, `layoutPick`, `lvlMenu`, `backupHtml`, `settingsNm`, `settingsThemeHtml`, `settingsLayoutHtml`, `settingsScoutHtml`, `settingsGradesHtml`, `SETTINGS` and `settingsBox` are gone. `rulesHtml` (RuleEditor) and `orgBody` (Organiser) stay until their classes exist.
 
 **Screen**: Base class of a screen: builds html and binds its events.
 

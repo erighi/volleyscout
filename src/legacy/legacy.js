@@ -139,11 +139,11 @@ function subCard(m){const lim=ruleSub(ruleOf(m));if(!lim)return'';
   if(!S.sb.out)return h+`<div style="margin-top:10px"><b>${S.sb.em?'Who is injured?':'Who goes out?'}</b></div><div class="mut" style="margin:6px 0">${S.sb.em?'Tap the injured player on the pie below. An exceptional substitution does not count as a substitution. Any player not on the court can come in, except the libero and a player the libero replaced. The injured player cannot return to the match. It is only allowed when a normal substitution is not possible.':'Tap the player to take off on the pie below. A player with a lock cannot be substituted again in this set.'}</div><div class="row" style="margin:6px 0"><button aria-pressed="${!!S.sb.em}" onclick="S.sb.em=S.sb.em?undefined:1;render()">Emergency change (injury)</button></div>${S.sb.em?'':cl.pos.filter(id=>id&&((st.rep[id]!==undefined&&effR(id)!=='Libero')||(st.lrep[id]!==undefined&&effR(id)==='Libero'))).map(id=>`<div class="mut" style="font-size:13px">${pnum(m,id)} can only be replaced by ${pnum(m,effR(id)==='Libero'?st.lrep[id]:st.rep[id])}.</div>`).join('')}${cancel}</div>`;
   const eo=all.find(x=>x.pid===S.sb.out),inj=injured(m),bench=all.filter(x=>!cl.pos.includes(x.pid)&&(!S.sb.em||(effR(x.pid)!=='Libero'&&st.lrepBy[x.pid]===undefined&&!inj.has(x.pid)))).sort(byNum);
   return h+`<div style="margin-top:10px"><b>Who comes in for ${pnum(m,S.sb.out)} ${esc(eo?eo.name:'')}${S.sb.em?' (injured)':''}?</b></div><div class="mut" style="font-size:13px">Tap another player on the pie to change who goes out.</div><label for="sb-r">Plays as</label><select id="sb-r" onchange="S.sb.role=this.value||undefined;render()">${(()=>{const ro=effR(S.sb.out)||'';return ro&&ro!=='Libero'?`<option value="">Same as ${pnum(m,S.sb.out)} (${esc(ro)})</option><option value="own"${S.sb.role==='own'?' selected':''}>Their own role</option>`:'<option value="">Their own role</option>'})()}${ROLES.map(r=>`<option${S.sb.role===r?' selected':''}>${r}</option>`).join('')}</select>${!S.sb.em&&(effR(S.sb.out)==='Libero'?st.lrep[S.sb.out]:st.rep[S.sb.out])!==undefined?'<div class="mut" style="margin-top:6px">'+pnum(m,S.sb.out)+' can only be replaced by '+pnum(m,effR(S.sb.out)==='Libero'?st.lrep[S.sb.out]:st.rep[S.sb.out])+', the player they replaced.</div>':''}${bench.map(x=>{const em=!!S.sb.em,lib=!em&&libSwap(m,S.sb.out,x.pid,sbRole(m,S.sb.out,x.pid)),bad=em?'':(lib?libCheck(m,m.n,S.sb.out,x.pid):subCheck(m,m.n,S.sb.out,x.pid)),dis=!em&&((full&&!lib)||!!bad),why=bad||((!em&&full&&!lib)?'No substitutions left':'');return`<button class="m" style="margin:6px 0" ${dis?'disabled':''} onclick="subIn('${x.pid}')"><b>${x.num?'#'+esc(x.num):'–'}</b> ${esc(x.name)}${x.role?', <span class="mut">'+esc(x.role)+'</span>':''}${why?'<div class="mut" style="font-size:12px">'+why+'</div>':''}</button>`}).join('')||'<div class="mut" style="margin-top:6px">No one on the bench. Tick more players on the Roster tab.</div>'}<div class="row" style="margin-top:8px"><button onclick="S.sb.out=null;render()">Back</button><button onclick="subOpen(false)">Cancel</button></div></div>`}
-function homePts(m){const L=scoutMode==='adv'?TH.filter(x=>x[0]!=='kill'):TH;return`<div class="pts h" style="margin-top:14px;grid-template-columns:repeat(${L.length},1fr)"><div class="mut" style="grid-column:1/-1">Point for ${esc(m.home)}</div>${L.map(([k,l])=>`<button onclick="point('h','${k}')">${l}</button>`).join('')}</div>`}
+function homePts(m){const L=Settings.level()==='adv'?TH.filter(x=>x[0]!=='kill'):TH;return`<div class="pts h" style="margin-top:14px;grid-template-columns:repeat(${L.length},1fr)"><div class="mut" style="grid-column:1/-1">Point for ${esc(m.home)}</div>${L.map(([k,l])=>`<button onclick="point('h','${k}')">${l}</button>`).join('')}</div>`}
 const lockBtns=h=>h.replace(/<button /g,'<button disabled ');
 function serveGate(m){if(m.done)return false;const cl=curLU(m,m.n);if(!cl.serving||!cl.pos[0])return false;const sl=m.sl||[],ls=sl[sl.length-1];return!(ls&&ls.s===m.n&&ls.at===m.log.length)}
 const gateBtns=(m,h)=>serveGate(m)?lockBtns(h):h;
-function serveCard(m){const cl=curLU(m,m.n);if(m.done)return'';const adv=scoutMode==='adv';if(!cl.serving||!cl.pos[0])return`<div class="card">${lvlHead('Scouting')}${adv?actRow():''}${homePts(m)}</div>`;
+function serveCard(m){const cl=curLU(m,m.n);if(m.done)return'';const adv=Settings.level()==='adv';if(!cl.serving||!cl.pos[0])return`<div class="card">${lvlHead('Scouting')}${adv?actRow():''}${homePts(m)}</div>`;
   const L=m.log.length,sl=m.sl||[],ls=sl[sl.length-1],rated=ls&&ls.s===m.n&&ls.at===L,e=m.lu.h.find(x=>x.pid===cl.pos[0]),who=e?(e.num?'#'+esc(e.num)+' ':'')+esc(e.name):'';
   if(rated){const g=SC.find(x=>x.k===ls.g);return`<div class="card">${lvlHead('Serve'+(who?': '+who:''))}<div class="mut">Graded <b>${G(ls.g)}</b>${g?' ('+esc(g.n)+')':''}. Now record how the rally ended.</div>${adv?actRow():''}${homePts(m)}</div>`}
   return`<div class="card">${lvlHead('Serve'+(who?': '+who:''))}<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px">${SC.map(x=>`<button aria-label="${esc(x.k)} ${esc(x.n)}: ${esc(x.d)}" style="min-height:64px;padding:6px 2px;line-height:1.1${x.k==='--'?';border-color:var(--bad)':x.k==='++'?';border-color:var(--good)':''}" onclick="serve('${x.k}')"><span class="num" style="font-size:26px;display:block">${G(x.k)}</span><span style="font-size:11px">${esc(x.n)}</span></button>`).join('')}</div><div class="mut" style="margin-top:8px">Grade the serve first. The other scouting buttons unlock after.</div><details style="margin-top:8px"><summary class="mut" style="cursor:pointer">What do the grades mean?</summary>${SC.map(x=>`<div class="mut" style="margin-top:4px"><b>${G(x.k)}</b> ${esc(x.d)}</div>`).join('')}</details>${adv?lockBtns(actRow()):''}${lockBtns(homePts(m))}</div>`}
@@ -512,23 +512,15 @@ function listView(){
     h+=gs.map(g=>g.bx.map(x=>grp(x.t,x.team,x.ms)).join('')).join('')+(none.length?grp(null,'',none):'')}
   return h}
 
-const MDK=Store.key('oldMode'),ADVK=['block','pass','set','attack'];
-const DMK=Store.key('defMode');let defMode='simple';if(Store.text(DMK)==='adv')defMode='adv';Store.remove(MDK);
-let scoutMode=defMode;
-function setMode(k){scoutMode=k==='adv'?'adv':'simple';S.lm=false;render()}
-function setDefMode(k){defMode=k==='adv'?'adv':'simple';scoutMode=defMode;Store.setText(DMK,defMode);render()}
-const LVL=[['simple','Basic'],['adv','Enhanced']],COG='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
-const LYK=Store.key('layout');let layoutMode='extended';if(Store.text(LYK)==='compact')layoutMode='compact';
-function applyLayout(){document.documentElement.setAttribute('data-layout',layoutMode)}
-function setLayout(k){layoutMode=k==='compact'?'compact':'extended';Store.setText(LYK,layoutMode);S.lm=false;applyLayout();render()}
+const ADVK=['block','pass','set','attack'];
+Settings.load();
+function setMode(k){Settings.setLevel(k);S.lm=false;render()}
+function setDefMode(k){Settings.setDefLevel(k);render()}
+function applyLayout(){Settings.applyLayout()}
+function setLayout(k){Settings.setLayout(k);S.lm=false;render()}
 applyLayout();
-const LAYOUTS=[['extended','Extended'],['compact','Compact']];
-const layoutPick=()=>`<div role="group" aria-label="Scout layout" style="margin:8px 0 0"><div class="mut" style="font-size:13px;margin-bottom:4px">Layout</div><div class="seg">${LAYOUTS.map(([k,l])=>`<button aria-pressed="${layoutMode===k}" onclick="setLayout('${k}')">${l}</button>`).join('')}</div></div>`;
 function toggleLM(){S.lm=!S.lm;render()}
-function lvlHead(title){const open=!!S.lm,cur=(LVL.find(x=>x[0]===scoutMode)||LVL[0])[1];
-  return`<div class="row sp" style="align-items:center"><b>${title}</b><div class="row" style="gap:6px;align-items:center"><span class="mut" style="font-size:13px">${cur}</span><button aria-label="Scouting level, now ${cur}" aria-haspopup="menu" aria-expanded="${open}" onclick="toggleLM()" style="min-height:40px;min-width:40px;padding:0 8px">${COG}</button></div></div>${open?lvlMenu()+layoutPick():''}`}
-function lvlMenu(){const it='display:block;width:100%;text-align:left;border:0;border-radius:0;min-height:44px';
-  return`<div role="menu" aria-label="Scouting level" style="margin:8px 0;border:1px solid var(--line);border-radius:10px;overflow:hidden">${LVL.map(([k,l],i)=>`<button role="menuitemradio" aria-checked="${scoutMode===k}" onclick="setMode('${k}')" style="${it}${i?';border-top:1px solid var(--line)':''}${scoutMode===k?';background:var(--home);color:var(--onc);font-weight:600':''}">${l}${scoutMode===k?' ✓':''}</button>`).join('')}<button role="menuitemradio" aria-checked="false" disabled style="${it};border-top:1px solid var(--line)">Expert <span class="mut">(coming later)</span></button></div>`}
+function lvlHead(title){return SettingsPage.lvlHead(title,!!S.lm)}
 function advGrade(sk,g){const m=get(S.cur);if(m.done||!ADVK.includes(sk)||!GRK.includes(g))return;const sv0=curLU(m,m.n).serving;
   if(g==='--')m.log.push({t:'a',type:sk==='pass'?'ace':'err',s:m.n,x:sk,g});
   else if(g==='++'&&(sk==='block'||sk==='attack'))m.log.push({t:'h',type:sk==='block'?'block':'kill',s:m.n,x:sk,g});
@@ -537,7 +529,7 @@ function advGrade(sk,g){const m=get(S.cur);if(m.done||!ADVK.includes(sk)||!GRK.i
 function actRow(){const btn=(sk,x,i)=>{const k=GRK[i];return`<button aria-label="${SKN[sk]} ${esc(k)} ${esc(x.n)}: ${esc(x.d)}" style="min-height:64px;padding:6px 2px;line-height:1.1${k==='--'?';border-color:var(--bad)':k==='++'?';border-color:var(--good)':''}" onclick="advGrade('${sk}','${k}')"><span class="num" style="font-size:26px;display:block">${G(k)}</span><span style="font-size:11px">${esc(x.n)}</span></button>`};
   return ADVK.map(sk=>`<div style="margin-top:12px"><b>${SKN[sk]}</b></div><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:6px">${SKX[sk].map((x,i)=>btn(sk,x,i)).join('')}</div>`).join('')+`<details style="margin-top:8px"><summary class="mut" style="cursor:pointer">What do the action grades mean?</summary>${ADVK.map(sk=>`<div style="margin-top:6px"><b>${SKN[sk]}</b></div>${SKX[sk].map((x,i)=>`<div class="mut" style="margin-top:2px"><b>${G(GRK[i])}</b> ${esc(x.n)}: ${esc(x.d)}</div>`).join('')}`).join('')}</details>`}
 const actCount=(m,sk,g)=>ScoutStats.count(m,sk,g);
-function lostTable(m){const any=ADVK.some(sk=>GRK.some(g=>actCount(m,sk,g)));if(!any&&scoutMode!=='adv')return'';
+function lostTable(m){const any=ADVK.some(sk=>GRK.some(g=>actCount(m,sk,g)));if(!any&&Settings.level()!=='adv')return'';
   return`<h2>Action grades</h2><div class="card sc"><table><tr><th></th>${GRK.map(g=>`<th>${G(g)}</th>`).join('')}</tr>${ADVK.map(sk=>`<tr><td>${SKN[sk]}</td>${GRK.map(g=>`<td>${actCount(m,sk,g)}</td>`).join('')}</tr>`).join('')}</table></div>`}
 function matchView(m){
   m.lu=m.lu||{h:[],a:[]};m.st=m.st||{};
@@ -552,15 +544,15 @@ function matchView(m){
   if(S.mt==='roster')return h+rosterView(m);
   if(S.mt==='set')return h+setView(m);
   if(!setReady(m,m.n)&&!m.log.some(e=>e.s===m.n))return h+`<div class="card"><b>Set ${m.n+1} is not set up yet.</b><div class="mut">Choose the line-up and serve or receive first, then start the set.</div><div style="margin-top:12px"><button class="pri" onclick="S.mt='set';render()">Go to Set ${m.n+1}</button></div></div>${reopenBtn(m)}`;
-  if(layoutMode!=='compact')h+=`<div class="board" aria-live="polite"><div class="side h"><div class="nm">${esc(m.home)}</div><div class="num">${x}</div></div><div class="side a"><div class="nm">${esc(m.away)}</div><div class="num">${y}</div></div></div>`;
+  if(Settings.layout()!=='compact')h+=`<div class="board" aria-live="polite"><div class="side h"><div class="nm">${esc(m.home)}</div><div class="num">${x}</div></div><div class="side a"><div class="nm">${esc(m.away)}</div><div class="num">${y}</div></div></div>`;
   if(tmin&&tm&&!m.done){const l=timeLeft(m);h+=`<div class="row sp" style="margin:8px 0"><span>Match time left <b id="tmr" class="num" style="font-size:28px" data-up="${l<=0?1:0}">${fmtT(l)}</b></span>${l>0?`<button onclick="toggleTimer()">${tm.run?'Pause':'Resume'}</button>`:''}</div>`}
   if(sw&&!m.done){const wn=sw[0]==='h'?m.home:m.away,pr=[...Array(m.n).keys()].filter(i=>{const[a,b]=sc(m,i);return sw[0]==='h'?a>b:b>a}).length+1;
     h+=`<div class="banner"><b>${esc(wn)}</b> has won set ${m.n+1}${sw[1]==='time'?' on time, with the most points. Time is up, so the match is over: finish the match to lock the result.':'. '+(pr>=need?'That wins the match. Finish the match to lock the result.':!last?'End the set to start the next one.':'Finish the match to lock the result.')}</div>`;
     if(S.pd!==m.id+':'+m.n)h+=endPopup(m,wn,sw,x,y,sw[1]==='time'||pr>=need||last)}
   else if(!m.done&&tup)h+=`<div class="banner">Time is up and the score is level. The next point wins the set.</div>`;
-  h+=(layoutMode==='compact'?compactTop(m,x,y):toBoxes(m)+pieBox(m))+serveCard(m)+f5Card(m);
+  h+=(Settings.layout()==='compact'?compactTop(m,x,y):toBoxes(m)+pieBox(m))+serveCard(m)+f5Card(m);
   if(!m.done){
-    h+=gateBtns(m,`<div class="pts a"><div class="mut" style="grid-column:1/-1">Point for ${esc(m.away)}</div>${(scoutMode==='adv'?TA.filter(x=>x[0]!=='kill'&&x[0]!=='ace'):TA).map(([k,l])=>`<button onclick="point('a','${k}')">${l}</button>`).join('')}</div>`)+`
+    h+=gateBtns(m,`<div class="pts a"><div class="mut" style="grid-column:1/-1">Point for ${esc(m.away)}</div>${(Settings.level()==='adv'?TA.filter(x=>x[0]!=='kill'&&x[0]!=='ace'):TA).map(([k,l])=>`<button onclick="point('a','${k}')">${l}</button>`).join('')}</div>`)+`
     <div class="row" style="margin-top:12px"><button onclick="undo()" ${m.log.length||(m.sl||[]).some(e=>e.s===m.n)||(m.sb||[]).some(e=>e.s===m.n)||(m.ag||[]).some(e=>e.s===m.n)||f5Mid(m,m.n)?'':'disabled'}>Undo last point</button>${!last&&!tup?`<button onclick="endSet()">End set ${m.n+1}</button>`:''}<button class="pri" onclick="finish()">Finish match</button></div>${setBusy(m,m.n)?`<div class="row" style="margin-top:8px"><button class="del" onclick="resetSet(${m.n})">Delete and re-scout set ${m.n+1}</button></div>`:''}`}
   else h+=`<div class="row"><button onclick="finish()">Reopen match</button></div>`;
   h+=`<h2>Set scores</h2><div>${Array.from({length:m.n+1},(_,i)=>{const[a,b]=sc(m,i);return i<m.n?`<button class="chip" style="min-height:36px" onclick="S.mt='set';S.setv=${i};S.pick=null;render()">Set ${i+1}: ${a}–${b}</button>`:`<span class="chip">Set ${i+1}: ${a}–${b}</span>`}).join('')}</div>${m.n>0?'<div class="mut">Tap a finished set to see how it ended.</div>':''}
@@ -592,57 +584,24 @@ function teamsView(){
     h+=`<button class="m" onclick="openTeam('${t.id}')"><div class="row sp"><b>${esc(t.name)}</b><span class="mut">${n} player${n===1?'':'s'}${na?', '+na+' archived':''}</span></div></button>`});
   return h}
 
-function buildBackup(){return{app:'volleyscout',v:22,exported:new Date().toISOString(),data:{matches:S.m,players:S.p,teams:S.t,rules:S.r,scale:SC.map(x=>({n:x.n,d:x.d})),skills:SKX,tournaments:S.tn,scorer:S.sm,scorerTours:S.stt}}}
-async function exportData(){const txt=JSON.stringify(buildBackup()),name='volleyscout-backup-'+new Date().toISOString().slice(0,10)+'.json';
-  try{const f=new File([txt],name,{type:'application/json'});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'VolleyScout backup'});return}}catch(e){if(e&&e.name==='AbortError')return}
-  const a=document.createElement('a'),u=URL.createObjectURL(new Blob([txt],{type:'application/json'}));a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
-function parseBackup(txt){let o;try{o=JSON.parse(txt)}catch(e){return null}const d=o&&o.app==='volleyscout'&&o.data;
-  if(!d||!Array.isArray(d.matches)||!Array.isArray(d.players)||!Array.isArray(d.teams))return null;
-  return{matches:d.matches,players:d.players,teams:d.teams,rules:Array.isArray(d.rules)?d.rules:[],scale:Array.isArray(d.scale)&&d.scale.length===5?d.scale:null,skills:d.skills&&typeof d.skills==='object'?d.skills:null,tournaments:Array.isArray(d.tournaments)?d.tournaments:[],scorer:Array.isArray(d.scorer)?d.scorer:[],scorerTours:Array.isArray(d.scorerTours)?d.scorerTours.filter(t=>t&&t.id&&t.name):[]}}
+async function exportData(){await Backup.exportFile(LIB,SC,SKX)}
 function applyBackup(d,mode){
-  if(mode==='replace'){S.sm=d.scorer||[]}else{(d.scorer||[]).forEach(x=>{if(!S.sm.some(y=>y.id===x.id))S.sm.push(x)})}saveSM();
-  if(mode==='replace'){S.stt=d.scorerTours||[]}else{(d.scorerTours||[]).forEach(t=>{if(!S.stt.some(y=>y.id===t.id))S.stt.push(t)})}saveStt();
-  if(mode==='replace'){S.m=d.matches;S.p=d.players;S.t=d.teams;S.r=d.rules;S.tn=d.tournaments||[];
-    if(d.scale){SC=d.scale.map((x,i)=>({k:SCDEF[i].k,n:x.n||SCDEF[i].n,d:x.d||SCDEF[i].d}));Store.write(SK,SC)}
-    if(d.skills){setSkx(d.skills);saveSkx()}}
-  else{const map={},tmap={},fresh=new Set();
-    (d.tournaments||[]).forEach(t=>{const l=S.tn.find(x=>x.name.toLowerCase()===String(t.name).toLowerCase());if(l)tmap[t.id]=l.id;else{const n=S.tn.some(x=>x.id===t.id)?{...t,id:'t'+Date.now().toString(36)+Math.random().toString(36).slice(2,5)}:{...t};S.tn.push(n);fresh.add(n.id);tmap[t.id]=n.id}});
-    d.teams.forEach(t=>{const l=S.t.find(x=>x.name.toLowerCase()===String(t.name).toLowerCase());if(l)map[t.id]=l.id;else{const n={...t};S.t.push(n);map[t.id]=n.id}});
-    (d.tournaments||[]).forEach(t=>{const l=S.tn.find(x=>x.id===tmap[t.id]);if(!l||!t.teams)return;const ids=[...new Set([...(fresh.has(l.id)?[]:(l.teams||[])),...t.teams.map(i=>map[i]||i)])].filter(i=>S.t.some(x=>x.id===i));if(ids.length)l.teams=ids;else delete l.teams});
-    d.players.forEach(p=>{if(S.p.some(x=>x.id===p.id))return;S.p.push({...p,teamId:map[p.teamId]||p.teamId,...(p.also&&p.also.length?{also:p.also.map(i=>map[i]||i)}:{}),...(p.tm?{tm:Object.fromEntries(Object.entries(p.tm).map(([k,x])=>[map[k]||k,x]))}:{})})});
-    d.rules.forEach(r=>{if(!S.r.some(x=>x.id===r.id))S.r.push(r)});
-    d.matches.forEach(m=>{if(S.m.some(x=>x.id===m.id))return;S.m.push({...m,hid:map[m.hid]||m.hid,aid:map[m.aid]||m.aid,...(m.tid?{tid:tmap[m.tid]||m.tid}:{})})})}
-  save();saveP();saveT();saveR();saveTn();S.cur=null;S.team=null;S.edit=null;S.rd=null;render()}
-let impMode='replace';
-function pickImport(mode){impMode=mode;const i=document.getElementById('imp');i.value='';i.click()}
-function importFile(inp){const f=inp.files&&inp.files[0];if(!f)return;const r=new FileReader();
-  r.onload=()=>{const d=parseBackup(String(r.result));if(!d){alert('This file is not a VolleyScout backup.');return}
-    const msg=d.matches.length+' matches, '+d.teams.length+' teams, '+d.players.length+' players. '+(impMode==='replace'?'This replaces everything on this device. Continue?':'Anything missing is added and nothing here is deleted. Continue?');
-    if(!confirm(msg))return;applyBackup(d,impMode);alert('Import finished.')};
-  r.readAsText(f)}
+  Backup.apply(LIB,d,mode,{saveScorer:saveSM,saveTours:saveStt,
+    setScale:sc=>{SC=sc.map((x,i)=>({k:SCDEF[i].k,n:x.n||SCDEF[i].n,d:x.d||SCDEF[i].d}));Store.write(SK,SC)},
+    setSkills:o=>{setSkx(o);saveSkx()},
+    saveLists:()=>{save();saveP();saveT();saveR();saveTn()}});
+  S.cur=null;S.team=null;S.edit=null;S.rd=null;render()}
+function pickImport(mode){Backup.pick(mode)}
+function importFile(inp){Backup.importFile(inp,d=>applyBackup(d,Backup.mode()),m=>alert(m),m=>confirm(m))}
 function rulesHtml(){
   let rules=`<div class="mut">A rule set defines the number of sets, the points to win, hard limits and time limits. You pick one when you create a match.</div>`;
   allRules().forEach(r=>{const bi=BUILT.some(b=>b.id===r.id);
     rules+=`<div class="card"><div class="row sp"><b>${esc(r.name)}</b>${bi?'<span class="mut">Built in</span>':`<button onclick="editRule('${r.id}')">Edit</button>`}</div>${r.sets.map((x,i)=>`<div class="mut">Set ${i+1}: ${x.win} to win${x.hard?', hard limit '+x.hard:', win by 2'}</div>`).join('')}${ruleMin(r)?`<div class="mut">Match time: ${ruleMin(r)} minutes</div>`:''}<div class="mut">Timeouts: ${ruleTO(r)} per team per set</div><div class="mut">Substitutions: ${ruleSub(r)} per team per set</div>${ruleRoster(r)?'<div class="mut">Roster limit: 12 players + 1 or 2 liberos</div>':''}${r.five?'<div class="mut">Teams may play with 5 players</div>':''}${r.pts?`<div class="mut" style="white-space:pre-line">Tournament points: ${esc(r.pts)}</div>`:''}</div>`});
   rules+=`<button class="pri" onclick="newRule()">Create rule set</button>`;
   return rules}
-function backupHtml(){return `<div class="mut">Data lives only on this device. Export a file, send it to your other device (AirDrop, email, messages, cloud drive) and import it there. Export also works as a backup.</div><div class="row" style="margin-top:12px"><button class="pri" onclick="exportData()">Export data</button></div><div class="row" style="margin-top:10px"><button onclick="pickImport('replace')">Import and replace</button><button onclick="pickImport('merge')">Import and add</button></div><div class="mut" style="margin-top:8px"><b>Replace</b> makes this device match the file. <b>Add</b> keeps what is here and adds the matches, teams and players that are missing.</div><input id="imp" type="file" accept=".json,application/json" style="display:none" onchange="importFile(this)">`}
 /* ===== Settings: one page builder for both views. Every group says in which views it is shown. To show a group (or a part of one) in another view, add that view to its list; nothing is rebuilt. ===== */
-const settingsNm=(L,k)=>((L.find(x=>x[0]===k)||[])[1])||'';
-const settingsThemeHtml=()=>`<h2 style="margin-top:0">Theme</h2><div class="seg" role="group" aria-label="Theme">${[['auto','Auto'],['light','Light'],['dark','Dark']].map(([k,l])=>`<button aria-pressed="${Theme.mode()===k}" onclick="setTheme('${k}')">${l}</button>`).join('')}</div><div class="mut" style="margin-top:6px">Auto follows your device setting.</div>`;
-const settingsLayoutHtml=()=>`<h2>Scout layout</h2><div class="seg" role="group" aria-label="Scout layout in settings">${LAYOUTS.map(([k,l])=>`<button aria-pressed="${layoutMode===k}" onclick="setLayout('${k}')">${l}</button>`).join('')}</div><div class="mut" style="margin-top:6px"><b>Extended:</b> everything in one column, for phones and small screens. <b>Compact:</b> for larger screens, to fit more without scrolling. The pie is on the left, with the scores and the timeouts in a column on its right.</div>`;
-const settingsScoutHtml=()=>`<h2 style="margin-top:0">Default scouting level</h2><div class="seg" role="group" aria-label="Default scouting level">${LVL.map(([k,l])=>`<button aria-pressed="${defMode===k}" onclick="setDefMode('${k}')">${l}</button>`).join('')}</div><div class="mut" style="margin-top:6px">The level the Scout page starts at each time the app is opened. The cog on the Scout page still switches level, until the app is closed and reopened.</div><h2>Tap feedback</h2><div>${[['flash','Colour flash on scouting buttons'],['sound','Click sound on scouting buttons']].map(([k,l])=>`<div class="row sp" style="margin:6px 0"><span>${l}</span><div class="seg" role="group" aria-label="${l}">${[[true,'On'],[false,'Off']].map(([v,t])=>`<button aria-pressed="${fx[k]===v}" onclick="setFx('${k}',${v})">${t}</button>`).join('')}</div></div>`).join('')}</div>`;
-const settingsGradesHtml=()=>`<div class="mut">The same five symbols are used for every skill. The symbols are fixed; you can rename each one and change its description. Open a skill to edit it. For serves, a ${G('--')} gives the opponents the point and a ${G('++')} gives your team the point. Only serves are graded on the Scout page for now.</div>${Object.keys(SKN).map(sk=>`<details class="card" ${S.gopen&&S.gopen[sk]?'open':''} ontoggle="(S.gopen=S.gopen||{})['${sk}']=this.open"><summary><b>${SKN[sk]} grades</b></summary>${gScale(sk).map((x,i)=>`<div style="margin-top:10px"><b>${G(x.k)}</b><label for="g-${sk}-n${i}">Short label</label><input id="g-${sk}-n${i}" maxlength="12" value="${esc(x.n)}"><label for="g-${sk}-d${i}">Description</label><input id="g-${sk}-d${i}" value="${esc(x.d)}"></div>`).join('')}<div class="row" style="margin-top:12px"><button class="pri" onclick="saveScale('${sk}')">Save</button><button onclick="resetScale('${sk}')">Reset to defaults</button></div></details>`).join('')}`;
-const SETTINGS=[
-  {id:'app',title:'Appearance',views:['coach','scorer'],hint:v=>settingsNm(SET_THEMES,Theme.mode())+(v==='coach'?' \u00b7 '+settingsNm(LAYOUTS,layoutMode):''),body:v=>settingsThemeHtml()+(v==='coach'?settingsLayoutHtml():'')},
-  {id:'sct',title:'Scouting',views:['coach'],hint:()=>settingsNm(LVL,defMode),body:()=>settingsScoutHtml()},
-  {id:'org',title:'Organiser',views:['scorer'],hint:()=>ORG.name||'',body:()=>orgBody()},
-  {id:'rul',title:'Tournament rules',views:['coach'],hint:()=>allRules().length+' rule sets',body:()=>rulesHtml()},
-  {id:'grd',title:'Grades',views:['coach'],hint:()=>'',body:()=>settingsGradesHtml()},
-  {id:'bak',title:'Backup and transfer',views:['coach','scorer'],hint:()=>'',body:()=>backupHtml()}
-];
-const settingsBox=(id,title,hint,body)=>`<details class="card" ${S.sopen&&S.sopen[id]?'open':''} ontoggle="(S.sopen=S.sopen||{})['${id}']=this.open"><summary style="cursor:pointer"><b>${title}</b>${hint?` <span class="mut">\u00b7 ${esc(hint)}</span>`:''}</summary><div style="margin-top:10px">${body}</div></details>`;
-function settingsPage(view){return`<h1>Settings</h1>${SETTINGS.filter(g=>g.views.includes(view)).map(g=>settingsBox(g.id,g.title,g.hint(view),g.body(view))).join('')}<div class="card"><div class="row sp"><div><b>View</b><div class="mut">${view==='coach'?'Coach view':'Score table'}</div></div><button onclick="changeView()">Change view</button></div></div>`}
+const settingsParts=()=>({sopen:S.sopen,gopen:S.gopen,org:orgBody,rules:rulesHtml,ruleCount:()=>allRules().length,skills:SKN,scale:gScale,glyph:G});
+function settingsPage(view){return SettingsPage.page(view,settingsParts())}
 function settingsView(){if(S.rd)return ruleForm();return settingsPage('coach')}
 const RD0=()=>RuleSet.blank().data();
 function newRule(){S.rd=RD0();render()}
@@ -707,15 +666,10 @@ function statsView(){
   return h}
 
 const VER=App.versionHtml();
-const FXK=Store.key('fx');let fx={flash:true,sound:true};{const r=Store.read(FXK,null);if(r&&typeof r==='object')fx=Object.assign(fx,r)}
-function setFx(k,v){fx[k]=!!v;Store.write(FXK,fx);render()}
-let actx=null;
-function clickSound(){if(!fx.sound)return;try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;actx=actx||new AC();if(actx.state==='suspended')actx.resume();const o=actx.createOscillator(),g=actx.createGain(),t=actx.currentTime;o.type='square';o.frequency.value=1000;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.12,t+.004);g.gain.exponentialRampToValueAtTime(.0001,t+.05);o.connect(g);g.connect(actx.destination);o.start(t);o.stop(t+.06)}catch(e){}}
-document.addEventListener('click',e=>{const b=e.target&&e.target.closest?e.target.closest('button[onclick]'):null;if(!b||b.disabled)return;const k=b.getAttribute('onclick');if(!/^(serve|advGrade|point)\(/.test(k))return;clickSound();S.fx=fx.flash?{k,t:Date.now()}:null},true);
-function applyFx(){const f=S.fx;if(!f)return;S.fx=null;if(Date.now()-f.t>1500)return;
-  const b=[...document.querySelectorAll('button[onclick]')].find(x=>x.getAttribute('onclick')===f.k);
-  if(b){const g=/'(--|\+\+)'\)$/.exec(f.k),c=g?(g[1]==='--'?'fx-bad':'fx-good'):f.k.startsWith("point('a'")?'fx-away':'fx';b.classList.add(c);b.addEventListener('animationend',()=>b.classList.remove(c),{once:true});return}
-  const card=[...document.querySelectorAll('.card')].find(x=>x.textContent.includes('Graded'));if(card){card.classList.add('fx-card');card.addEventListener('animationend',()=>card.classList.remove('fx-card'),{once:true})}}
+Feedback.load();
+function setFx(k,v){Feedback.set(k,v);render()}
+Feedback.start(r=>{S.fx=r});
+function applyFx(){const f=S.fx;if(!f)return;S.fx=null;Feedback.flash(f)}
 function renderCoach(){
   const m=S.cur&&get(S.cur);
   document.getElementById('app').innerHTML=(m?matchView(m):S.tab==='stats'?statsView():S.tab==='settings'?settingsView():S.tab==='teams'||S.tab==='opps'?teamsView():listView())+VER;
@@ -888,8 +842,8 @@ function tossView(){const ts=S.ts,m=S.sm.find(x=>x.id===ts.id);if(!m){S.ts=null;
   return h}
 
 /* ===== Steps (breadcrumbs) ===== */
-const STEPS=[['match','Match'],['roster','Roster'],['toss','Toss'],['lineup','Line-up'],['board','Scoreboard'],['sheet','Sheet']];
-const boardStarted=m=>!!(m.sets&&m.sets.some(x=>x.on));
+const STEPS=Crumbs.steps();
+const boardStarted=m=>Crumbs.boardStarted(m);
 const f5=(set,t)=>Lineup.fiveInSet(set,t);
 const rcapOf=(m,t)=>Captaincy.teamCaptain(m[t].pl);
 const capNum=(m,t,set)=>Captaincy.onCourt(m[t].pl,set.lu[t],set.cap&&set.cap[t]);
@@ -897,23 +851,16 @@ const capNum=(m,t,set)=>Captaincy.onCourt(m[t].pl,set.lu[t],set.cap&&set.cap[t])
 function scCapNeed(m,t,st,out,inn){return Captaincy.mustDeclare(m[t].pl,st.pos[t],st.cap&&st.cap[t],out,inn)}
 const lineupDone=m=>{const x=m.sets&&m.sets[m.cur||0];return !!(x&&['a','b'].every(t=>Lineup.complete(x.lu[t],f5(x,t)))&&(x.on||['a','b'].every(t=>capNum(m,t,x)!=null)))};
 function bpCap(t,n){const m=S.sm.find(x=>x.id===S.mv.id),set=bset(m);if(set.on)return;(set.cap=set.cap||{})[t]=String(n);saveSM();if(lineupDone(m)){S.bp=null;S.mv.step='board';render();scrollTo(0,0);return}render()}
-function stepsDone(m){return[true,rosterDone(m),!!(m.toss&&m.toss.serve),lineupDone(m),false,false]}
-function editLocked(m,k){if(k!=='match'&&k!=='roster'&&k!=='toss')return false;return boardStarted(m)||stepsDone(m).slice(4).some(Boolean)}
-const DOCIC=Html.icon('doc');
-function crumbs(m,cur){const d=m?stepsDone(m):STEPS.map(()=>false),main=STEPS.filter(x=>x[0]!=='sheet');
-  const li=main.map(([k,l],i)=>{const on=m?(i===0||d[i-1]):i===0,mark=d[i]&&m?'\u2713 ':'',lab=`<span class="cn">${i+1}</span> ${mark}${l}`;
-    return`<li>${k===cur?`<span class="cr cur" aria-current="step">${lab}</span>`:on?`<button class="cr${d[i]?'':' rdy'}" onclick="goStep('${k}')">${lab}</button>`:`<span class="cr off" aria-disabled="true">${lab}</span>`}</li>`}).join('');
-  const sh=!m?`<span class="cr off sheetb" aria-disabled="true">${DOCIC} Scoresheet</span>`:cur==='sheet'?`<span class="cr cur sheetb" aria-current="step">${DOCIC} Scoresheet</span>`:`<button class="cr sheetb" onclick="goStep('sheet')">${DOCIC} Scoresheet</button>`;
-  const ls=m&&m.sets?m.sets.map((z,i)=>(isTB(m,i)?`<li>${cur==='tbtoss'?`<span class="cr cur" aria-current="step">${tbTossOk(m)?'\u2713 ':''}Tie-break toss</span>`:`<button class="cr${tbTossOk(m)?'':' rdy'}" onclick="goStep('tbtoss')">${tbTossOk(m)?'\u2713 ':''}Tie-break toss</button>`}</li>`:'')+(z&&(z.on||z.end)?`<li>${cur==='set'+i?`<span class="cr cur" aria-current="step">Set ${i+1}${z.end?' \u2713':''}</span>`:`<button class="cr" onclick="openSetView('${m.id}',${i})">Set ${i+1}${z.end?' \u2713':''}</button>`}</li>`:'')).join(''):'',
-    sg=m&&m.fin?`<li>${cur==='sign'?`<span class="cr cur" aria-current="step">Signatures${m.fin.signed?' \u2713':''}</span>`:`<button class="cr${m.fin.signed?'':' rdy'}" onclick="openSign('${m.id}')">Signatures${m.fin.signed?' \u2713':''}</button>`}</li>`:'';
-  return`<div class="crumbs" role="navigation" aria-label="Match steps"><ol><li><button class="cr back" onclick="tsBack()">\u2039 Matches</button></li>${li}${ls}${sg}<li class="sheetli">${sh}</li><li>${m?(cur==='log'?`<span class="cr cur" aria-current="step">Log</span>`:`<button class="cr" onclick="goStep('log')">Log</button>`):`<span class="cr off" aria-disabled="true">Log</span>`}</li></ol></div>`}
+function stepsDone(m){return Crumbs.done(m,rosterDone(m),lineupDone(m))}
+function editLocked(m,k){return Crumbs.locked(m,k,()=>stepsDone(m))}
+function crumbs(m,cur){return Crumbs.html(m,cur,m?stepsDone(m):null)}
 function showStep(m,k){S.sx=null;S.ts=null;S.rx=null;if(k==='match'){editSM(m.id);return}if(k==='roster'){openRoster(m.id);return}if(k==='toss'){openToss(m.id);return}if(k==='lineup'){openLineup(m.id);return}if(k==='board'){openBoard(m.id);return}if(k==='sheet'){openSheet(m.id);return}if(k==='log'){openLog(m.id);return}S.mv={id:m.id,step:k};render();scrollTo(0,0)}
 function openMatch(id){const m=S.sm.find(x=>x.id===id);if(!m)return;if(m.fin&&!m.fin.signed){openSign(id);return}const d=stepsDone(m),i=d.findIndex(x=>!x);showStep(m,STEPS[i<0?STEPS.length-1:i][0])}
 function goStep(k){const m=S.mv&&S.sm.find(x=>x.id===S.mv.id);if(!m)return;if(k==='log'){showStep(m,k);return}if(k==='tbtoss'){S.sx=null;S.rx=null;openToss(m.id,true);return}const i=STEPS.findIndex(x=>x[0]===k),d=stepsDone(m);if(i<0||(k!=='sheet'&&!(i===0||d[i-1])))return;showStep(m,k)}
-const stepHead=(m,k)=>`${crumbs(m,k)}<h1 style="margin-top:10px">${STEPS.find(x=>x[0]===k)[1]}</h1><div class="mut">${esc(m.a.name)} v ${esc(m.b.name)}</div>`;
-function stepSoon(m,k){return stepHead(m,k)+`<div class="card"><b>Not built yet.</b><div class="mut">This step comes in a later version.</div></div>`}
-const roLine=t=>t.pl.length?t.pl.map(p=>'#'+esc(p.n)+(p.name?' '+esc(p.name):'')+(p.cap?' (captain)':'')+(p.lib?' (libero)':'')).join(', '):'No roster.';
-const roNote=k=>`<div class="mut">Read-only: the first set has started, so the ${k} can no longer be changed.</div>`;
+const stepHead=(m,k)=>Crumbs.head(m,k,stepsDone(m));
+function stepSoon(m,k){return Crumbs.soon(m,k,stepsDone(m))}
+const roLine=t=>Crumbs.roLine(t);
+const roNote=k=>Crumbs.roNote(k);
 function matchRO(m){return stepHead(m,'match')+`<div class="card"><b>${esc(m.rule.name)}</b><div class="mut">${esc(m.date||'')}</div>${sttOf(m.tid)?`<div class="mut">Tournament: ${esc(sttOf(m.tid).name)}</div>`:''}</div>`+(HDF.some(([k])=>m.hd&&m.hd[k])?`<div class="card">${HDF.filter(([k])=>m.hd&&m.hd[k]).map(([k,l])=>`<div class="mut">${l}</div><div>${esc(m.hd[k])}</div>`).join('')}</div>`:'')+roNote('match details')}
 function rosterRO(m){return stepHead(m,'roster')+`<div class="card"><b>${esc(m.a.name)}</b><div class="mut">${roLine(m.a)}</div>${teamSigned(m,'a')?`<div class="sgbox">${sigSvg(m.sig.a)}</div>`:''}</div><div class="card"><b>${esc(m.b.name)}</b><div class="mut">${roLine(m.b)}</div>${teamSigned(m,'b')?`<div class="sgbox">${sigSvg(m.sig.b)}</div>`:''}</div>`+roNote('rosters')}
 function tossRO(m,tb){const t=tb?m.toss2:m.toss;return(tb?crumbs(m,'tbtoss')+`<h1 style="margin-top:10px">Tie-break toss</h1><div class="mut">${esc(m.a.name)} v ${esc(m.b.name)}</div>`:stepHead(m,'toss'))+`<div class="card"><b>Result</b><div style="margin-top:6px">${t&&t.serve?esc(tossText(m,t)):'No toss recorded.'}</div></div>`+(tb?'<div class="mut">Read-only: the deciding set has started, so the toss can no longer be changed.</div>':roNote('toss'))}
@@ -921,7 +868,7 @@ function tossRO(m,tb){const t=tb?m.toss2:m.toss;return(tb?crumbs(m,'tbtoss')+`<h
 const hm=ms=>Fmt.clock(ms);
 const lockedM=(id,k)=>{const m=S.sm.find(x=>x.id===id);return !!(m&&editLocked(m,k))};
 const libLine=(m,t)=>{const L=m[t].pl.filter(p=>p.lib),any=['a','b'].some(k=>m[k].pl.some(p=>p.lib));return L.length?`<div class="libs" aria-label="${esc(m[t].name)} libero numbers">Libero${L.length>1?'s':''}${L.map(p=>` <b>#${esc(p.n)}</b>`).join('')}</div>`:any?`<div class="libs" aria-hidden="true" style="visibility:hidden">Libero <b>#00</b></div>`:''};
-const startedTxt=set=>set&&set.on&&set.t0?`<small>Started ${hm(set.t0)}</small>`:'';
+const startedTxt=set=>Crumbs.startedTxt(set);
 /* the deciding set (tie break) has its own toss, m.toss2; without it the sides and the serve alternate as in the other sets */
 const isTB=(m,i)=>new CourtSides(m).isDecidingSet(i);
 /* change of courts in the deciding set: when the first team reaches 8 points the teams swap courts (rule option, on unless switched off). Derived from the point log, so undo and remove points keep it right. */
@@ -1151,16 +1098,12 @@ function boardView(){const m=S.sm.find(x=>x.id===S.mv.id);if(!m||!m.toss||!m.tos
     sfdlg=sq2?`<div class="ov"><div class="dlg" role="alertdialog" aria-modal="true" aria-labelledby="sf-t" aria-describedby="sf-d" style="max-height:92vh;overflow:auto" onkeydown="if(event.key==='Escape')scSetFfCancel()"><b id="sf-t" style="font-size:18px">End of set ${i+1}</b><div id="sf-d" style="margin-top:8px"><div>Score: ${esc(m[L].name)} ${st.pts[L]} : ${st.pts[Rt]} ${esc(m[Rt].name)}</div><div class="mut" style="margin-top:10px">Reason</div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px" role="group" aria-label="Reason">${['a','b'].map(t=>`<button id="sf-r-${t}" aria-pressed="${sq2.reason===t}" style="flex:1 1 45%;min-width:0;padding:8px 4px;${sq2.reason===t?'background:var(--home);color:var(--onc);border-color:var(--home)':''}" onclick="scSetFfPick('${t}')">${esc(m[t].name)} forfeits the set</button>`).join('')}<button id="sf-r-susp" aria-pressed="${sq2.reason==='susp'}" style="flex:1 1 100%;min-width:0;padding:8px 4px;${sq2.reason==='susp'?'background:var(--home);color:var(--onc);border-color:var(--home)':''}" onclick="scSetFfPick('susp')">Court unavailable (hazard)</button></div>${sq2.reason==='susp'?`<div style="margin-top:12px"><b>No winner</b></div><div class="mut">No point is awarded to any team. The match is suspended and replayed another day.</div>`:''}${sfr?`<div style="margin-top:12px"><b>${esc(m[sfr.w].name)} wins the set ${sfr.a} : ${sfr.b}</b></div><div class="mut">${esc(m[sfr.f].name)} keeps its points. The next set can still be played.</div>`:''}</div><div class="row" style="margin-top:14px;gap:8px;flex-wrap:nowrap"><button id="sf-c" style="flex:1" onclick="scSetFfCancel()">Cancel</button><button class="pri" style="flex:1"${sq2.reason?'':' disabled'} onclick="scSetFfConfirm()">${sq2.reason==='susp'?'Suspend match':'Confirm set end'}</button></div><div class="row" style="margin-top:10px"><button style="flex:1" onclick="scSetFfMatch()">End match</button></div></div></div>`:'';
   return`${swdlg}${dlg}${sdlg}${rdlg}${edlg}${rmd}${fdlg}${sfdlg}${crumbs(m,'board')}<div class="sbh">${head(L)}<div class="st">Set ${i+1}${startedTxt(set)}</div>${head(Rt)}</div><div class="sb">${col(L)}${col(Rt)}</div>${timeUp}<div class="row" style="margin-top:10px"><button id="rm-btn" onclick="scRemAsk()">Remark${(m.rem||[]).length?' ('+m.rem.length+')':''}</button>${m.fin?'':set.on&&!ended?'<button id="es-btn" onclick="scSetEndAsk()">End set</button>':''}</div>${m.fin?finCard:ended?endCard:on?`${win&&S.sdis===ekey?setPt:''}${st.gh?`<div class="banner" role="status" style="margin-top:10px"><b>Ghost rotation.</b> ${esc(m[st.gh].name)} won the rally but has no server. The serve stays with ${esc(m[st.gh==='a'?'b':'a'].name)} and no point is awarded to them.</div>`:''}<div class="row" style="margin-top:10px"><button onclick="scUndo()"${scCanUndo(set)&&!m.fin?'':' disabled'}>Undo</button></div>${lvCard}<div class="mut" style="margin-top:8px">Set ${i+1} is in progress. Points, serve and rotation are tracked here.</div>`:`<div style="margin-top:12px"><button class="pri" onclick="startSetS()">Start set ${i+1}</button><div class="row" style="margin-top:8px"><button onclick="scFinAsk()">End match</button></div><div class="mut" style="margin-top:4px">The score and the buttons switch on when the set starts. The line-up can still be changed until then.</div></div>`}`}
 /* ===== Organiser (name or logo in the first cell of the sheet) ===== */
-const ORGK=Store.key('organiser');
-let ORG={name:'',logo:''};{const r=Store.read(ORGK,null);if(r&&typeof r==='object')ORG={name:String(r.name||''),logo:String(r.logo||'')}}
-const orgSave=()=>{Store.write(ORGK,ORG)};
-const orgLogoOk=()=>/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(ORG.logo);
-function orgSetName(v){ORG.name=String(v).slice(0,60);orgSave()}
-function orgClearLogo(){ORG.logo='';orgSave();render()}
-function orgPickLogo(inp){const f=inp.files&&inp.files[0];if(!f)return;if(!/^image\//.test(f.type)){alert('Choose an image file.');return}
-  const rd=new FileReader();rd.onload=()=>{const img=new Image();img.onload=()=>{const k=Math.min(1,400/img.width,160/img.height),c=document.createElement('canvas');c.width=Math.max(1,Math.round(img.width*k));c.height=Math.max(1,Math.round(img.height*k));c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-    try{ORG.logo=c.toDataURL('image/png')}catch(e){alert('This image cannot be used.');return}orgSave();render()};img.onerror=()=>alert('This image cannot be read.');img.src=rd.result};rd.readAsDataURL(f)}
-function orgBody(){return`<div class="mut">Shown in the first cell at the top of the scoresheet: the logo if there is one, otherwise the name.</div><label for="org-n">Name</label><input id="org-n" autocomplete="off" value="${esc(ORG.name)}" onchange="orgSetName(this.value);render()" maxlength="60"><label for="org-l">Logo</label>${orgLogoOk()?`<div class="sgbox" style="max-width:220px"><img src="${ORG.logo}" alt="Organiser logo" style="display:block;max-width:100%;max-height:70px;margin:0 auto"></div>`:''}<input id="org-l" type="file" accept="image/*" onchange="orgPickLogo(this)">${orgLogoOk()?'<div class="row" style="margin-top:8px"><button class="del" onclick="orgClearLogo()">Remove logo</button></div>':''}`}
+Organiser.load();
+const orgLogoOk=()=>Organiser.logoOk();
+function orgSetName(v){Organiser.setName(v)}
+function orgClearLogo(){Organiser.clearLogo();render()}
+function orgPickLogo(inp){Organiser.pickLogo(inp,render,m=>alert(m))}
+function orgBody(){return`<div class="mut">Shown in the first cell at the top of the scoresheet: the logo if there is one, otherwise the name.</div><label for="org-n">Name</label><input id="org-n" autocomplete="off" value="${esc(Organiser.name())}" onchange="orgSetName(this.value);render()" maxlength="60"><label for="org-l">Logo</label>${orgLogoOk()?`<div class="sgbox" style="max-width:220px"><img src="${Organiser.logo()}" alt="Organiser logo" style="display:block;max-width:100%;max-height:70px;margin:0 auto"></div>`:''}<input id="org-l" type="file" accept="image/*" onchange="orgPickLogo(this)">${orgLogoOk()?'<div class="row" style="margin-top:8px"><button class="del" onclick="orgClearLogo()">Remove logo</button></div>':''}`}
 /* ===== Scoresheet (A5 landscape, one page) ===== */
 function sheetHtml(m){
   const P=t=>m[t].pl.filter(p=>!p.lib).sort((a,b)=>+a.n-+b.n),Lb=t=>m[t].pl.filter(p=>p.lib).sort((a,b)=>+a.n-+b.n);
@@ -1217,12 +1160,12 @@ function sheetHtml(m){
   if(N>=3)tabs.push(`<div class="stable tie" data-sets="${N}">${shr(N)}${shs(N,3)}${sgrid(N,3)}</div>`);
   const dmy=d=>/^\d{4}-\d{2}-\d{2}$/.test(d||'')?d.slice(8)+'/'+d.slice(5,7)+'/'+d.slice(0,4):String(d||''),
     hcell=(t,k,w,val)=>{const v=val!=null?val:String((m.hd&&m.hd[k])||'');return`<div class="hr"><span class="ht">${t}</span><span class="hd" style="font-size:${fitPt(v,w,7,4.5,1)}pt">${esc(v)}</span></div>`};
-  const org=orgLogoOk()?`<img src="${ORG.logo}" alt="Organiser logo">`:ORG.name?esc(ORG.name):'<span class="ph">Organiser</span>';
+  const org=orgLogoOk()?`<img src="${Organiser.logo()}" alt="Organiser logo">`:Organiser.name()?esc(Organiser.name()):'<span class="ph">Organiser</span>';
   return`<div class="sheet"><div class="shead"><div class="org">${org}</div><div class="hc h2">${hcell("Venue","venue",52)}${hcell("Match","match",52)}</div><div class="hc h3">${hcell("Match #","no",26)}${hcell("Court","court",26)}</div><div class="hc h4">${hcell("Date","",28,dmy(m.date))}${hcell("Time","",28,m.sets&&m.sets[0]&&m.sets[0].t0?hm(m.sets[0].t0):'')}</div><div class="hc h5">${hcell("Referee Team","ref",42)}</div></div><div class="sbody"><div class="sets">${tabs.join('')}</div><div class="right" data-rows="${rows+lrows+N}" style="--rh:${rh};--fs:${fs}pt">${table}${result}${remarks}</div></div></div>`}
 function openSheet(id){const m=S.sm.find(x=>x.id===id);if(!m)return;S.sx=null;S.ts=null;S.rx=null;S.bp=null;S.mv={id,step:'sheet'};render();scrollTo(0,0)}
 function sheetView(){const m=S.sm.find(x=>x.id===S.mv.id);if(!m){S.mv=null;return scorerMatches()}
   return`${crumbs(m,'sheet')}<div class="row sp"><button class="pri" onclick="window.print()">Print / save as PDF</button></div><div class="mut" style="margin:6px 0">A5 landscape, one page. In the print dialog choose Save as PDF, margins none, scale 100%. This is a preview and fills in as the match is recorded.</div><div class="sheetwrap">${sheetHtml(m)}</div>`}
-function fitCrumbs(){const ol=document.querySelector('.crumbs ol'),c=ol&&ol.querySelector('.cur');if(c)ol.scrollLeft=Math.max(0,c.offsetLeft-ol.offsetLeft-70)}
+function fitCrumbs(){Crumbs.fit()}
 function fitPt(txt,w,max,min,lines){for(let f=max;f>=min;f-=.25){const L=Math.ceil(String(txt).length*.58*f*.3528*1.08/Math.max(1,w));if(L<=lines&&L*f*.3528*1.1<=6.2)return f}return min}
 function fitNames(){document.querySelectorAll('.sheet .nm,.sheet .rt th,.sheet .hd').forEach(el=>{let f=parseFloat(el.style.fontSize)||7;for(let i=0;i<16&&(el.scrollWidth>el.clientWidth+1||el.scrollHeight>el.clientHeight+1)&&f>4.5;i++){f-=.25;el.style.fontSize=f+'pt'}})}
 function fitRight(){const r=document.querySelector('.sheet .right'),b=document.querySelector('.sheet .sbody');if(!r||!b||!b.clientHeight)return;const rows=+r.getAttribute('data-rows')||19;let rh=parseFloat(r.style.getPropertyValue('--rh'))||3;
